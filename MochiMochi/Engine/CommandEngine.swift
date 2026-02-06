@@ -337,7 +337,7 @@ enum CommandEngine {
     // MARK: - /settings
 
     private static func executeSettings(appState: AppState) {
-        appState.selectedTab = .chat // Settings is opened via the window
+        appState.selectedTab = .settings
         appState.messages.append(Message(
             role: .assistant,
             content: "Ouvre les reglages avec Cmd+, ou via le menu de l'application."
@@ -362,6 +362,7 @@ enum CommandEngine {
 
     private static func executeEnd(appState: AppState) {
         appState.memoryService.saveSession(messages: appState.messages)
+        appState.claudeCodeService.resetSession()
         appState.saveState()
 
         let message: String

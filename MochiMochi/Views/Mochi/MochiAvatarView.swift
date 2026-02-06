@@ -8,6 +8,11 @@ struct MochiAvatarView: View {
 
     var body: some View {
         ZStack {
+            // Soft background circle for contrast
+            Circle()
+                .fill(bodyColor.opacity(0.15))
+                .frame(width: size * 1.1, height: size * 1.1)
+
             // Body
             mochiBody
 
@@ -27,20 +32,36 @@ struct MochiAvatarView: View {
         Ellipse()
             .fill(bodyGradient)
             .frame(width: size * 0.85, height: size * 0.75)
-            .shadow(color: bodyColor.opacity(0.3), radius: 8, y: 4)
+            .overlay(
+                Ellipse()
+                    .stroke(bodyStrokeColor, lineWidth: size * 0.012)
+                    .frame(width: size * 0.85, height: size * 0.75)
+            )
+            .shadow(color: bodyColor.opacity(0.4), radius: 8, y: 4)
             .overlay(
                 Ellipse()
                     .fill(
                         RadialGradient(
-                            colors: [.white.opacity(0.4), .clear],
+                            colors: [.white.opacity(0.5), .clear],
                             center: .topLeading,
                             startRadius: 0,
                             endRadius: size * 0.5
                         )
                     )
-                    .frame(width: size * 0.5, height: size * 0.35)
+                    .frame(width: size * 0.45, height: size * 0.3)
                     .offset(x: -size * 0.1, y: -size * 0.1)
             )
+    }
+
+    private var bodyStrokeColor: Color {
+        switch color {
+        case .white: return Color(red: 0.82, green: 0.80, blue: 0.77)
+        case .pink: return Color(red: 0.9, green: 0.6, blue: 0.68)
+        case .teal: return Color(red: 0.40, green: 0.68, blue: 0.63)
+        case .matcha: return Color(red: 0.55, green: 0.72, blue: 0.53)
+        case .skyBlue: return Color(red: 0.55, green: 0.7, blue: 0.9)
+        case .golden: return Color(red: 0.9, green: 0.75, blue: 0.35)
+        }
     }
 
     private var bodyGradient: LinearGradient {
@@ -53,8 +74,9 @@ struct MochiAvatarView: View {
 
     private var bodyColor: Color {
         switch color {
-        case .white: return Color(red: 0.96, green: 0.95, blue: 0.93)
+        case .white: return Color(red: 0.95, green: 0.92, blue: 0.86)
         case .pink: return Color(red: 1.0, green: 0.8, blue: 0.85)
+        case .teal: return Color(red: 0.55, green: 0.83, blue: 0.78)
         case .matcha: return Color(red: 0.75, green: 0.88, blue: 0.73)
         case .skyBlue: return Color(red: 0.75, green: 0.87, blue: 1.0)
         case .golden: return Color(red: 1.0, green: 0.9, blue: 0.6)
@@ -217,33 +239,36 @@ struct MochiAvatarView: View {
 
     // MARK: - Eye Components
 
+    private var faceColor: Color {
+        Color(red: 0.2, green: 0.15, blue: 0.12)
+    }
+
     private var mochiEye: some View {
         Ellipse()
-            .fill(.primary)
-            .frame(width: size * 0.07, height: size * 0.09)
+            .fill(faceColor)
+            .frame(width: size * 0.09, height: size * 0.11)
     }
 
     private var happyEye: some View {
-        // Upside down U shape for happy eyes
         HalfCircleShape()
-            .stroke(.primary, lineWidth: size * 0.025)
-            .frame(width: size * 0.08, height: size * 0.05)
+            .stroke(faceColor, lineWidth: size * 0.03)
+            .frame(width: size * 0.1, height: size * 0.06)
     }
 
     private var starEye: some View {
         Image(systemName: "star.fill")
-            .font(.system(size: size * 0.08))
+            .font(.system(size: size * 0.1))
             .foregroundStyle(.yellow)
     }
 
     private func determinedEye(left: Bool) -> some View {
         VStack(spacing: 0) {
             Rectangle()
-                .fill(.primary)
+                .fill(faceColor)
                 .frame(width: size * 0.09, height: size * 0.02)
                 .rotationEffect(.degrees(left ? -10 : 10))
             Ellipse()
-                .fill(.primary)
+                .fill(faceColor)
                 .frame(width: size * 0.06, height: size * 0.07)
         }
     }
@@ -251,24 +276,24 @@ struct MochiAvatarView: View {
     private var closedEye: some View {
         HalfCircleShape()
             .rotation(.degrees(180))
-            .stroke(.primary, lineWidth: size * 0.025)
+            .stroke(faceColor, lineWidth: size * 0.025)
             .frame(width: size * 0.08, height: size * 0.04)
     }
 
     private var worriedEye: some View {
         Ellipse()
-            .fill(.primary)
+            .fill(faceColor)
             .frame(width: size * 0.08, height: size * 0.1)
     }
 
     private var sadEye: some View {
         VStack(spacing: 1) {
             Rectangle()
-                .fill(.primary)
+                .fill(faceColor)
                 .frame(width: size * 0.09, height: size * 0.015)
                 .rotationEffect(.degrees(10))
             Ellipse()
-                .fill(.primary)
+                .fill(faceColor)
                 .frame(width: size * 0.06, height: size * 0.07)
         }
     }
@@ -286,24 +311,24 @@ struct MochiAvatarView: View {
         Group {
             if open {
                 Ellipse()
-                    .fill(.primary)
+                    .fill(faceColor)
                     .frame(width: size * 0.06, height: size * 0.05)
             } else if flat {
                 Rectangle()
-                    .fill(.primary)
+                    .fill(faceColor)
                     .frame(width: size * (wide ? 0.1 : 0.06), height: size * 0.015)
             } else if wavy {
                 WavyLineShape()
-                    .stroke(.primary, lineWidth: size * 0.02)
+                    .stroke(faceColor, lineWidth: size * 0.02)
                     .frame(width: size * 0.08, height: size * 0.03)
             } else if sad {
                 HalfCircleShape()
                     .rotation(.degrees(180))
-                    .stroke(.primary, lineWidth: size * 0.02)
+                    .stroke(faceColor, lineWidth: size * 0.02)
                     .frame(width: size * 0.07, height: size * 0.03)
             } else {
                 HalfCircleShape()
-                    .stroke(.primary, lineWidth: size * 0.02)
+                    .stroke(faceColor, lineWidth: size * 0.02)
                     .frame(width: size * (wide ? 0.1 : 0.07), height: size * 0.03)
             }
         }

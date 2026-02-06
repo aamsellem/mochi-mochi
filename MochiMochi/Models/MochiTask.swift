@@ -40,6 +40,7 @@ struct MochiTask: Identifiable, Codable {
     var description: String?
     var priority: TaskPriority
     var deadline: Date?
+    var isInProgress: Bool
     var isCompleted: Bool
     var completedAt: Date?
     let createdAt: Date
@@ -51,6 +52,7 @@ struct MochiTask: Identifiable, Codable {
         description: String? = nil,
         priority: TaskPriority = .normal,
         deadline: Date? = nil,
+        isInProgress: Bool = false,
         isCompleted: Bool = false,
         completedAt: Date? = nil,
         createdAt: Date = Date(),
@@ -61,6 +63,7 @@ struct MochiTask: Identifiable, Codable {
         self.description = description
         self.priority = priority
         self.deadline = deadline
+        self.isInProgress = isInProgress
         self.isCompleted = isCompleted
         self.completedAt = completedAt
         self.createdAt = createdAt

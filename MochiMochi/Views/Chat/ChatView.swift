@@ -7,28 +7,56 @@ struct ChatView: View {
     @FocusState private var isInputFocused: Bool
 
     var body: some View {
-        HSplitView {
-            // Left: Chat messages (65%)
-            chatPanel
-                .frame(minWidth: 400)
-
-            // Right: Mochi companion (35%)
-            MochiView()
-                .frame(minWidth: 220, idealWidth: 280, maxWidth: 350)
+        VStack(spacing: 0) {
+            chatHeader
+            Divider()
+            messagesArea
+            inputBar
         }
+        .background(Color.white)
+        .clipShape(RoundedRectangle(cornerRadius: MochiTheme.cornerRadiusXL, style: .continuous))
     }
 
-    // MARK: - Chat Panel
+    // MARK: - Header
 
-    private var chatPanel: some View {
-        VStack(spacing: 0) {
-            // Messages list
-            messagesArea
+    private var chatHeader: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Mochi Chat")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundStyle(MochiTheme.textLight)
+                Text("Assistant IA \u{2022} En ligne")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
 
-            Divider()
+            Spacer()
 
-            // Input bar
-            inputBar
+            HStack(spacing: 8) {
+                headerButton(icon: "clock.arrow.circlepath")
+                headerButton(icon: "ellipsis")
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 14)
+        .background(Color.white)
+    }
+
+    private func headerButton(icon: String) -> some View {
+        Button(action: {}) {
+            Image(systemName: icon)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(MochiTheme.textLight)
+                .frame(width: 32, height: 32)
+                .background(
+                    Circle()
+                        .fill(Color.gray.opacity(0.08))
+                )
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering in
+            // hover effect handled via NSCursor if needed
         }
     }
 
@@ -37,13 +65,13 @@ struct ChatView: View {
     private var messagesArea: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                LazyVStack(spacing: 12) {
+                LazyVStack(spacing: 16) {
                     if appState.messages.isEmpty {
                         emptyState
                     }
 
                     ForEach(appState.messages) { message in
-                        MessageBubbleView(message: message)
+                        chatBubble(for: message)
                             .id(message.id)
                     }
 
@@ -51,8 +79,8 @@ struct ChatView: View {
                         loadingIndicator
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 16)
             }
             .onChange(of: appState.messages.count) { _, _ in
                 if let lastMessage = appState.messages.last {
@@ -67,8 +95,6 @@ struct ChatView: View {
     private var emptyState: some View {
         VStack(spacing: 12) {
             Spacer()
-            Text("🍡")
-                .font(.system(size: 48))
             Text("Bienvenue ! Ecris un message ou utilise une /commande")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
@@ -79,71 +105,240 @@ struct ChatView: View {
     }
 
     private var loadingIndicator: some View {
-        HStack(spacing: 4) {
-            ForEach(0..<3, id: \.self) { index in
-                Circle()
-                    .fill(Color.secondary)
-                    .frame(width: 6, height: 6)
-                    .opacity(0.4)
-                    .animation(
-                        .easeInOut(duration: 0.6)
-                        .repeatForever()
-                        .delay(Double(index) * 0.2),
-                        value: appState.isLoading
-                    )
+        HStack(spacing: 8) {
+            // Mochi badge
+            Text("M")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 28, height: 28)
+                .background(Circle().fill(MochiTheme.secondary))
+
+            HStack(spacing: 4) {
+                ForEach(0..<3, id: \.self) { index in
+                    Circle()
+                        .fill(MochiTheme.secondary)
+                        .frame(width: 6, height: 6)
+                        .opacity(0.4)
+                        .animation(
+                            .easeInOut(duration: 0.6)
+                            .repeatForever()
+                            .delay(Double(index) * 0.2),
+                            value: appState.isLoading
+                        )
+                }
+                Text("\(appState.mochi.name) reflechit...")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
-            Text("\(appState.mochi.name) reflechit...")
-                .font(.caption)
-                .foregroundStyle(.secondary)
         }
         .padding(.vertical, 8)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    // MARK: - Chat Bubble
+
+    @ViewBuilder
+    private func chatBubble(for message: Message) -> some View {
+        let isUser = message.role == .user
+
+        HStack(alignment: .bottom, spacing: 8) {
+            if isUser {
+                Spacer(minLength: 40)
+            } else {
+                // Mochi avatar badge
+                Text("M")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 30, height: 30)
+                    .background(Circle().fill(MochiTheme.secondary))
+            }
+
+            VStack(alignment: isUser ? .trailing : .leading, spacing: 4) {
+                if isUser {
+                    userBubbleContent(message)
+                } else {
+                    assistantBubbleContent(message)
+                }
+
+                // Timestamp
+                Text(formattedTime(message.timestamp))
+                    .font(.system(size: 10))
+                    .foregroundStyle(Color.gray.opacity(0.6))
+                    .padding(.horizontal, 4)
+            }
+            .frame(maxWidth: isUser
+                   ? UIConstants.userMaxWidthFraction
+                   : UIConstants.assistantMaxWidthFraction,
+                   alignment: isUser ? .trailing : .leading)
+
+            if !isUser {
+                Spacer(minLength: 30)
+            }
+        }
+    }
+
+    private func userBubbleContent(_ message: Message) -> some View {
+        Text(message.content)
+            .textSelection(.enabled)
+            .foregroundStyle(.white)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(
+                UnevenRoundedRectangle(
+                    topLeadingRadius: 20,
+                    bottomLeadingRadius: 20,
+                    bottomTrailingRadius: 20,
+                    topTrailingRadius: 4
+                )
+                .fill(MochiTheme.primary)
+            )
+            .shadow(color: .black.opacity(0.08), radius: 4, x: 0, y: 2)
+    }
+
+    private func assistantBubbleContent(_ message: Message) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Mochi")
+                .font(.subheadline)
+                .fontWeight(.bold)
+                .foregroundStyle(MochiTheme.primary)
+
+            formattedAssistantText(message.content)
+                .textSelection(.enabled)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(
+            UnevenRoundedRectangle(
+                topLeadingRadius: 4,
+                bottomLeadingRadius: 20,
+                bottomTrailingRadius: 20,
+                topTrailingRadius: 20
+            )
+            .fill(Color.gray.opacity(0.05))
+            .overlay(
+                UnevenRoundedRectangle(
+                    topLeadingRadius: 4,
+                    bottomLeadingRadius: 20,
+                    bottomTrailingRadius: 20,
+                    topTrailingRadius: 20
+                )
+                .stroke(Color.gray.opacity(0.15), lineWidth: 1)
+            )
+        )
+    }
+
+    // MARK: - Formatted Assistant Text (Code Blocks)
+
+    @ViewBuilder
+    private func formattedAssistantText(_ content: String) -> some View {
+        let blocks = parseCodeBlocks(content)
+        VStack(alignment: .leading, spacing: 6) {
+            ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in
+                if block.isCode {
+                    Text(block.text)
+                        .font(.system(size: 12, design: .monospaced))
+                        .foregroundStyle(Color(hex: "E0E0E0"))
+                        .padding(10)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .fill(Color(hex: "2D2D2D"))
+                        )
+                } else {
+                    Text(block.text)
+                        .foregroundStyle(MochiTheme.textLight)
+                }
+            }
+        }
+    }
+
+    private struct TextBlock {
+        let text: String
+        let isCode: Bool
+    }
+
+    private func parseCodeBlocks(_ text: String) -> [TextBlock] {
+        var blocks: [TextBlock] = []
+        let parts = text.components(separatedBy: "```")
+
+        for (index, part) in parts.enumerated() {
+            let trimmed = part.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { continue }
+
+            if index % 2 == 1 {
+                // Code block: strip optional language hint on first line
+                let lines = trimmed.components(separatedBy: "\n")
+                let codeContent = lines.count > 1
+                    ? lines.dropFirst().joined(separator: "\n")
+                    : trimmed
+                blocks.append(TextBlock(text: codeContent, isCode: true))
+            } else {
+                blocks.append(TextBlock(text: trimmed, isCode: false))
+            }
+        }
+
+        return blocks
+    }
+
     // MARK: - Input Bar
 
     private var inputBar: some View {
-        HStack(alignment: .bottom, spacing: 10) {
-            // Text editor for multi-line input
-            ZStack(alignment: .topLeading) {
-                if inputText.isEmpty {
-                    Text("Ecris un message ou une /commande...")
-                        .foregroundStyle(.tertiary)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 8)
+        HStack(alignment: .center, spacing: 10) {
+            // Plus button
+            Button(action: {}) {
+                Image(systemName: "plus.circle")
+                    .font(.system(size: 20))
+                    .foregroundStyle(Color.gray)
+            }
+            .buttonStyle(.plain)
+
+            // Text field
+            TextField("Tape un message ou une commande...", text: $inputText, axis: .vertical)
+                .font(.body)
+                .foregroundStyle(MochiTheme.textLight)
+                .lineLimit(1...6)
+                .textFieldStyle(.plain)
+                .focused($isInputFocused)
+                .onSubmit { sendIfReady() }
+                .onChange(of: inputText) { _, newValue in
+                    showSlashMenu = newValue.hasPrefix("/") && !newValue.contains(" ")
                 }
 
-                TextEditor(text: $inputText)
-                    .font(.body)
-                    .scrollContentBackground(.hidden)
-                    .frame(minHeight: 36, maxHeight: 120)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .focused($isInputFocused)
-                    .onSubmit { sendIfReady() }
-                    .onChange(of: inputText) { _, newValue in
-                        showSlashMenu = newValue.hasPrefix("/") && !newValue.contains(" ")
-                    }
+            // Microphone button
+            Button(action: {}) {
+                Image(systemName: "mic")
+                    .font(.system(size: 16))
+                    .foregroundStyle(Color.gray)
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color(nsColor: .controlBackgroundColor))
-            )
+            .buttonStyle(.plain)
 
             // Send button
             Button(action: sendMessage) {
-                Image(systemName: "arrow.up.circle.fill")
-                    .font(.title2)
-                    .foregroundStyle(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.secondary : Color.accentColor)
+                Image(systemName: "paperplane.fill")
+                    .font(.system(size: 14))
+                    .foregroundStyle(.white)
+                    .frame(width: 34, height: 34)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                                  ? MochiTheme.primary.opacity(0.4)
+                                  : MochiTheme.primary)
+                    )
+                    .shadow(color: MochiTheme.primary.opacity(0.3), radius: 4, x: 0, y: 2)
             }
             .buttonStyle(.plain)
             .disabled(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            .keyboardShortcut(.return, modifiers: [])
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(.bar)
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: MochiTheme.cornerRadius2XL, style: .continuous)
+                .fill(MochiTheme.backgroundLight)
+                .overlay(
+                    RoundedRectangle(cornerRadius: MochiTheme.cornerRadius2XL, style: .continuous)
+                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                )
+        )
+        .padding(16)
         .overlay(alignment: .top) {
             if showSlashMenu {
                 slashCommandMenu
@@ -205,13 +400,6 @@ struct ChatView: View {
                                 .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
-                            .background(
-                                RoundedRectangle(cornerRadius: 6)
-                                    .fill(Color.accentColor.opacity(0.0))
-                            )
-                            .onHover { hovering in
-                                // Visual hover handled by button highlight
-                            }
                         }
                     }
                     .padding(8)
@@ -245,10 +433,25 @@ struct ChatView: View {
             await appState.sendMessage(text)
         }
     }
+
+    // MARK: - Helpers
+
+    private func formattedTime(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
+    }
+
+    // MARK: - Constants
+
+    private enum UIConstants {
+        static let userMaxWidthFraction: CGFloat = 500
+        static let assistantMaxWidthFraction: CGFloat = 600
+    }
 }
 
 #Preview {
     ChatView()
         .environmentObject(AppState())
-        .frame(width: 800, height: 600)
+        .frame(width: 600, height: 700)
 }

@@ -65,12 +65,15 @@ struct GamificationState: Codable {
         return TaskRewards(xp: xp, riceGrains: rice)
     }
 
-    mutating func applyRewards(_ rewards: TaskRewards) {
+    @discardableResult
+    mutating func applyRewards(_ rewards: TaskRewards) -> Bool {
+        let previousLevel = level
         currentXP += rewards.xp
         totalXP += rewards.xp
         riceGrains += rewards.riceGrains
 
         checkLevelUp()
+        return level > previousLevel
     }
 
     // MARK: - Level Up

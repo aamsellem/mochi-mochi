@@ -21,24 +21,36 @@
 
 ```
 MochiMochi/
-├── App/                        # Point d'entrée, AppDelegate, configuration
+├── App/                        # Point d'entrée, configuration, thème
 │   ├── MochiMochiApp.swift    # @main, WindowGroup, MenuBarExtra
-│   └── AppState.swift         # État global de l'application
+│   ├── AppState.swift         # État global (@MainActor, @Published)
+│   ├── ContentView.swift      # Layout principal (3 colonnes sur Dashboard)
+│   └── Theme.swift            # Design system (MochiTheme: couleurs, dimensions)
 ├── Models/                     # Modèles de données
 │   ├── MochiCharacter.swift   # État du Mochi (émotion, niveau, accessoires)
-│   ├── MochiTask.swift        # Tâche utilisateur
-│   ├── Personality.swift      # Personnalités du Mochi
+│   ├── MochiTask.swift        # Tâche utilisateur (priorité, deadline)
+│   ├── Personality.swift      # 8 personnalités du Mochi
 │   ├── GamificationState.swift # XP, niveaux, 🍙, streaks
 │   ├── ShopItem.swift         # Items cosmétiques
-│   └── Message.swift          # Message de chat
+│   ├── Message.swift          # Message de chat
+│   └── ClaudeCodeContext.swift # Contexte enrichi pour Claude Code
 ├── Views/                      # Vues SwiftUI
-│   ├── Chat/                  # Interface de conversation
-│   ├── Dashboard/             # Tableau de bord productivité
-│   ├── Mochi/                 # Rendu et animation du compagnon
+│   ├── Navigation/            # Barre de navigation avec onglets pilules
+│   │   └── NavigationBarView.swift  # AppTab enum + nav bar
+│   ├── Chat/                  # Interface de conversation avec Claude Code
+│   │   └── ChatView.swift     # Bulles asymétriques, slash commands
+│   ├── Dashboard/             # Tableau de bord et suivi des tâches
+│   │   ├── TodaysFocusView.swift    # Timeline des tâches (sidebar gauche)
+│   │   ├── TasksTrackingView.swift  # Suivi complet des tâches (onglet Tâches)
+│   │   ├── DashboardView.swift      # Vue dashboard legacy
+│   │   └── TaskRowView.swift        # Ligne de tâche réutilisable
+│   ├── Mochi/                 # Compagnon virtuel (sidebar droite)
+│   │   ├── MochiView.swift    # Carte compagnon + stats + tâches en attente
+│   │   └── MochiAvatarView.swift # Avatar avec 9 émotions
 │   ├── MenuBar/               # Icône menubar + mini-panel
-│   ├── Onboarding/            # Assistant de première configuration
+│   ├── Onboarding/            # Assistant 8 étapes
 │   ├── Shop/                  # Boutique et inventaire
-│   └── Settings/              # Réglages de l'application
+│   └── Settings/              # Réglages (5 onglets)
 ├── Services/                   # Services métier
 │   ├── ClaudeCodeService.swift    # Communication avec Claude Code (Process)
 │   ├── MemoryService.swift        # Lecture/écriture Markdown
@@ -46,12 +58,34 @@ MochiMochi/
 │   ├── NotificationService.swift  # Notifications macOS
 │   └── KeyboardShortcutService.swift # Raccourcis globaux
 ├── Engine/                     # Moteur de traitement
-│   ├── CommandEngine.swift    # Orchestration des commandes
+│   ├── CommandEngine.swift    # Orchestration des 14 commandes slash
 │   └── SlashCommandParser.swift # Parsing des commandes /slash
 └── Persistence/                # Couche de persistance
-    ├── MarkdownStorage.swift  # CRUD fichiers Markdown
+    ├── MarkdownStorage.swift  # CRUD fichiers Markdown (~/.mochi-mochi/)
     └── KeychainHelper.swift   # Stockage sécurisé (Keychain)
 ```
+
+### Design System (Theme.swift)
+
+| Couleur | Hex | Usage |
+|---------|-----|-------|
+| `primary` | #FF9EAA | Rose — boutons, accents, avatar |
+| `secondary` | #3AA6B9 | Bleu-vert — badge assistant |
+| `accent` | #FFD0D0 | Rose pâle — dégradés |
+| `backgroundLight` | #F9F5F0 | Beige chaud — fond global |
+| `surfaceLight` | #FFFFFF | Blanc — cartes |
+| `textLight` | #4A4A4A | Texte principal |
+| `pastelBlue` | #BAE1FF | Catégorie Deep Work |
+| `pastelGreen` | #BAFFC9 | Catégorie Meeting |
+| `pastelYellow` | #FFDFBA | Catégorie Planning |
+
+### Navigation (AppTab)
+
+4 onglets via `NavigationBarView` (pilules arrondies) :
+- **Tableau de bord** : layout 3 colonnes (Focus | Chat | Compagnon)
+- **Tâches** : suivi complet avec filtres, stats, ajout
+- **Boutique** : achat de cosmétiques avec 🍙
+- **Réglages** : 5 sous-onglets (Général, Personnalité, Notifications, Notion, Raccourcis)
 
 ### Flux de communication avec Claude Code
 

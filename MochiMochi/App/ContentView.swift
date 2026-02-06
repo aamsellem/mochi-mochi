@@ -13,56 +13,39 @@ struct ContentView: View {
 
     private var mainView: some View {
         VStack(spacing: 0) {
-            // Tab bar
-            tabBar
-            Divider()
+            NavigationBarView(selectedTab: $appState.selectedTab)
 
-            // Tab content
             Group {
                 switch appState.selectedTab {
-                case .chat:
-                    ChatView()
                 case .dashboard:
-                    DashboardView()
+                    dashboardLayout
+                case .tasks:
+                    TasksTrackingView()
+                case .shop:
+                    ShopView()
+                case .settings:
+                    SettingsView()
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(16)
         }
+        .background(MochiTheme.backgroundLight)
     }
 
-    private var tabBar: some View {
-        HStack {
-            Text("🍡 Mochi Mochi")
-                .font(.headline)
+    private var dashboardLayout: some View {
+        HStack(spacing: 16) {
+            TodaysFocusView()
+                .frame(minWidth: 280, maxWidth: 320)
 
-            Spacer()
+            ChatView()
 
-            ForEach(AppTab.allCases, id: \.self) { tab in
-                Button {
-                    appState.selectedTab = tab
-                } label: {
-                    Text(tab.rawValue)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(appState.selectedTab == tab ? Color.accentColor.opacity(0.15) : Color.clear)
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
-                }
-                .buttonStyle(.plain)
-            }
-
-            Spacer()
-
-            Button {
-                NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-            } label: {
-                Image(systemName: "gear")
-            }
-            .buttonStyle(.plain)
+            MochiView()
+                .frame(minWidth: 280, maxWidth: 320)
         }
-        .padding(.horizontal)
-        .padding(.vertical, 8)
     }
 }
+
 
 #Preview {
     ContentView()

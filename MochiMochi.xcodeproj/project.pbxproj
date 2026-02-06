@@ -17,6 +17,10 @@
 		35EC7E48C923D8DB2C1D9C8C /* Personality.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B90D1A0246AE377AD3CEE28 /* Personality.swift */; };
 		3D37F160DB11B15374D2C117 /* ShopItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = B85C47B8B5AE0F7CE5571B90 /* ShopItem.swift */; };
 		3FB3FD1BEFB9BB571EA9E262 /* MarkdownStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F4D9B561403758FB54A58DA /* MarkdownStorage.swift */; };
+		57C6850AC5F20D48D3405FF4 /* TodaysFocusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 449F1E33878B5D7A1A4D0E7D /* TodaysFocusView.swift */; };
+		598ABA465508A6F284755E34 /* TasksTrackingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AECDC1B92B28D2C418D37307 /* TasksTrackingView.swift */; };
+		5C818B83416BB09828A075DE /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE56D0A8E3C2C587BF5C5DEE /* Theme.swift */; };
+		5FD499057FA66320CCE603DF /* NavigationBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49BD912EA38C8139C8F95648 /* NavigationBarView.swift */; };
 		6359FA6AD9318280D445DBAC /* NotionSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93F2A97D4A854D8AEF03DC75 /* NotionSyncService.swift */; };
 		6A4A635C3AA88FBB8107EF61 /* MochiMochiApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EEC43619F3A2F7B2AEE0D93 /* MochiMochiApp.swift */; };
 		6C7CA7589D6F4CABA02B2BC6 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3667DD83AC857A1F64951CE2 /* SettingsView.swift */; };
@@ -59,7 +63,9 @@
 		3667DD83AC857A1F64951CE2 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		3B068B9BC6F530BCEF9B0DBD /* CommandEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandEngine.swift; sourceTree = "<group>"; };
 		3EEC43619F3A2F7B2AEE0D93 /* MochiMochiApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MochiMochiApp.swift; sourceTree = "<group>"; };
+		449F1E33878B5D7A1A4D0E7D /* TodaysFocusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodaysFocusView.swift; sourceTree = "<group>"; };
 		4631B739C9C44DF637EB5066 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
+		49BD912EA38C8139C8F95648 /* NavigationBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationBarView.swift; sourceTree = "<group>"; };
 		6382964E544F6F48FDB321B8 /* InventoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InventoryView.swift; sourceTree = "<group>"; };
 		64B52DB21E0DCB97DC1FF7BC /* MochiTask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MochiTask.swift; sourceTree = "<group>"; };
 		6B90D1A0246AE377AD3CEE28 /* Personality.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Personality.swift; sourceTree = "<group>"; };
@@ -72,8 +78,10 @@
 		9FE488471CAEC649B74453FA /* ShopView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShopView.swift; sourceTree = "<group>"; };
 		A0AE19BBFB98F4ACCF1F4C59 /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
 		AAE47536BAAFAF4B81CA051D /* SlashCommandParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlashCommandParser.swift; sourceTree = "<group>"; };
+		AECDC1B92B28D2C418D37307 /* TasksTrackingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TasksTrackingView.swift; sourceTree = "<group>"; };
 		B555B86C8B5673A52128050D /* MochiView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MochiView.swift; sourceTree = "<group>"; };
 		B85C47B8B5AE0F7CE5571B90 /* ShopItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShopItem.swift; sourceTree = "<group>"; };
+		BE56D0A8E3C2C587BF5C5DEE /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		CD9E9441F66D54320140C352 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		CDD71A163F8A7C094B574C9E /* MochiMochi.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MochiMochi.entitlements; sourceTree = "<group>"; };
 		D2B3068D7F50BA3BACED8AC7 /* TaskRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskRowView.swift; sourceTree = "<group>"; };
@@ -93,6 +101,14 @@
 				F0E87403BED2AEC9D14C6F06 /* MiniPanelView.swift */,
 			);
 			path = MenuBar;
+			sourceTree = "<group>";
+		};
+		20112C1AE27FCB478F19D482 /* Navigation */ = {
+			isa = PBXGroup;
+			children = (
+				49BD912EA38C8139C8F95648 /* NavigationBarView.swift */,
+			);
+			path = Navigation;
 			sourceTree = "<group>";
 		};
 		4182FE965574B28C919CF161 = {
@@ -132,6 +148,7 @@
 				8F3D445715D70EF278B6B962 /* Dashboard */,
 				1E5E6AAFC19E732267627388 /* MenuBar */,
 				C59576F9928F1720312BD3CF /* Mochi */,
+				20112C1AE27FCB478F19D482 /* Navigation */,
 				932A9EA76E61B21574418291 /* Onboarding */,
 				8F113AE9C2F1E6C273D28B6D /* Settings */,
 				45935B6DF3408C9BC8EACD9E /* Shop */,
@@ -161,6 +178,8 @@
 			children = (
 				F18AFE577A4E2CE012100CA9 /* DashboardView.swift */,
 				D2B3068D7F50BA3BACED8AC7 /* TaskRowView.swift */,
+				AECDC1B92B28D2C418D37307 /* TasksTrackingView.swift */,
+				449F1E33878B5D7A1A4D0E7D /* TodaysFocusView.swift */,
 			);
 			path = Dashboard;
 			sourceTree = "<group>";
@@ -181,6 +200,7 @@
 				CD9E9441F66D54320140C352 /* Info.plist */,
 				CDD71A163F8A7C094B574C9E /* MochiMochi.entitlements */,
 				3EEC43619F3A2F7B2AEE0D93 /* MochiMochiApp.swift */,
+				BE56D0A8E3C2C587BF5C5DEE /* Theme.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -356,6 +376,7 @@
 				6A4A635C3AA88FBB8107EF61 /* MochiMochiApp.swift in Sources */,
 				E2349302083D99EE281B7A42 /* MochiTask.swift in Sources */,
 				9584934852E53BE8C46D2727 /* MochiView.swift in Sources */,
+				5FD499057FA66320CCE603DF /* NavigationBarView.swift in Sources */,
 				34836866FD96A405E588CC2E /* NotificationService.swift in Sources */,
 				6359FA6AD9318280D445DBAC /* NotionSyncService.swift in Sources */,
 				A12139DDB8263150E1866E82 /* OnboardingView.swift in Sources */,
@@ -365,6 +386,9 @@
 				E17F47AE18ED8D5F59514189 /* ShopView.swift in Sources */,
 				E81C6D30E4359759DDADFE0C /* SlashCommandParser.swift in Sources */,
 				94E94B174A943864BB3B28C5 /* TaskRowView.swift in Sources */,
+				598ABA465508A6F284755E34 /* TasksTrackingView.swift in Sources */,
+				5C818B83416BB09828A075DE /* Theme.swift in Sources */,
+				57C6850AC5F20D48D3405FF4 /* TodaysFocusView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

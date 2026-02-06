@@ -62,7 +62,11 @@ struct InventoryView: View {
         ScrollView {
             LazyVStack(spacing: 8) {
                 ForEach(ownedItems) { item in
-                    InventoryItemRow(item: item)
+                    InventoryItemRow(item: item) {
+                        if item.category == .color {
+                            appState.equipColor(item.name)
+                        }
+                    }
                 }
             }
             .padding()
@@ -70,11 +74,11 @@ struct InventoryView: View {
     }
 
     private var ownedItems: [ShopItem] {
-        appState.mochi.equippedItems.filter { $0.category == selectedCategory && $0.isOwned }
+        appState.inventory.filter { $0.category == selectedCategory && $0.isOwned }
     }
 
     private var allOwnedItems: [ShopItem] {
-        appState.mochi.equippedItems.filter { $0.isOwned }
+        appState.inventory.filter { $0.isOwned }
     }
 }
 
@@ -82,17 +86,30 @@ struct InventoryView: View {
 
 struct InventoryItemRow: View {
     let item: ShopItem
+    let onEquip: () -> Void
+    @EnvironmentObject var appState: AppState
+
+    private var isColorEquipped: Bool {
+        guard item.category == .color else { return item.isEquipped }
+        return item.name == appState.mochi.color.displayName
+    }
 
     var body: some View {
         HStack(spacing: 12) {
             // Preview
-            RoundedRectangle(cornerRadius: 6)
-                .fill(Color.secondary.opacity(0.1))
-                .frame(width: 44, height: 44)
-                .overlay {
-                    Text(categoryEmoji)
-                        .font(.title3)
-                }
+            if item.category == .color {
+                Circle()
+                    .fill(colorPreview(for: item.name))
+                    .frame(width: 36, height: 36)
+            } else {
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(Color.secondary.opacity(0.1))
+                    .frame(width: 44, height: 44)
+                    .overlay {
+                        Text(categoryEmoji)
+                            .font(.title3)
+                    }
+            }
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.name)
@@ -104,20 +121,20 @@ struct InventoryItemRow: View {
 
             Spacer()
 
-            if item.isEquipped {
+            if isColorEquipped {
                 Label("Equipe", systemImage: "checkmark.circle.fill")
                     .font(.caption)
                     .foregroundStyle(.green)
-            } else {
+            } else if item.category == .color {
                 Button("Equiper") {
-                    // Toggle equip in a full implementation
+                    onEquip()
                 }
                 .controlSize(.small)
             }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(item.isEquipped ? Color.green.opacity(0.05) : Color.clear)
+        .background(isColorEquipped ? Color.green.opacity(0.05) : Color.clear)
         .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 
@@ -127,6 +144,18 @@ struct InventoryItemRow: View {
         case .hat: return "🎩"
         case .accessory: return "👓"
         case .background: return "🏞️"
+        }
+    }
+
+    private func colorPreview(for name: String) -> Color {
+        switch name {
+        case "Blanc": return Color(red: 0.95, green: 0.92, blue: 0.86)
+        case "Rose": return Color(red: 1.0, green: 0.8, blue: 0.85)
+        case "Teal": return Color(red: 0.55, green: 0.83, blue: 0.78)
+        case "Matcha": return Color(red: 0.75, green: 0.88, blue: 0.73)
+        case "Bleu ciel": return Color(red: 0.75, green: 0.87, blue: 1.0)
+        case "Dore": return Color(red: 1.0, green: 0.9, blue: 0.6)
+        default: return Color.gray
         }
     }
 }

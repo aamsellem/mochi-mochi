@@ -5,12 +5,12 @@ struct SettingsView: View {
         TabView {
             GeneralSettingsTab()
                 .tabItem {
-                    Label("General", systemImage: "gear")
+                    Label("Général", systemImage: "gear")
                 }
 
             PersonalitySettingsTab()
                 .tabItem {
-                    Label("Personnalite", systemImage: "face.smiling")
+                    Label("Personnalité", systemImage: "face.smiling")
                 }
 
             NotificationSettingsTab()
@@ -28,7 +28,13 @@ struct SettingsView: View {
                     Label("Raccourcis", systemImage: "keyboard")
                 }
         }
-        .frame(width: 500, height: 400)
+        .background(Color.white)
+        .clipShape(RoundedRectangle(cornerRadius: MochiTheme.cornerRadiusXL, style: .continuous))
+        .shadow(color: .black.opacity(0.04), radius: 10, y: 4)
+        .overlay(
+            RoundedRectangle(cornerRadius: MochiTheme.cornerRadiusXL, style: .continuous)
+                .stroke(Color.gray.opacity(0.1), lineWidth: 1)
+        )
     }
 }
 
@@ -38,7 +44,19 @@ struct GeneralSettingsTab: View {
     @EnvironmentObject var appState: AppState
 
     @State private var mochiName: String = ""
-    @State private var selectedColor: MochiColor = .white
+    @State private var selectedColor: MochiColor = .pink
+
+    /// Colors the user owns (starter colors + purchased)
+    private var ownedColors: [MochiColor] {
+        let starterColors: [MochiColor] = [.pink, .teal]
+        let purchasedColorNames = appState.inventory
+            .filter { $0.category == .color && $0.isOwned }
+            .map { $0.name }
+        let purchased = MochiColor.allCases.filter { purchasedColorNames.contains($0.displayName) }
+        return Array(Set(starterColors + purchased)).sorted { lhs, rhs in
+            MochiColor.allCases.firstIndex(of: lhs)! < MochiColor.allCases.firstIndex(of: rhs)!
+        }
+    }
 
     var body: some View {
         Form {
@@ -47,27 +65,48 @@ struct GeneralSettingsTab: View {
                     .onAppear { mochiName = appState.mochi.name }
                     .onChange(of: mochiName) { _, newValue in
                         appState.mochi.name = newValue
+                        appState.saveConfig()
                     }
 
                 Picker("Couleur", selection: $selectedColor) {
-                    ForEach(MochiColor.allCases, id: \.self) { color in
+                    ForEach(ownedColors, id: \.self) { color in
                         Text(color.displayName).tag(color)
                     }
                 }
                 .onAppear { selectedColor = appState.mochi.color }
                 .onChange(of: selectedColor) { _, newValue in
-                    appState.mochi.color = newValue
+                    appState.equipColor(newValue.displayName)
+                }
+
+                Button("Plus de couleurs dans la boutique") {
+                    appState.selectedTab = .shop
+                }
+                .font(.caption)
+                .foregroundStyle(Color.accentColor)
+            }
+
+            Section("Stockage") {
+                HStack {
+                    Image(systemName: "folder.fill")
+                        .foregroundStyle(.secondary)
+                    Text(MarkdownStorage.storedBaseDirectory.path
+                        .replacingOccurrences(of: FileManager.default.homeDirectoryForCurrentUser.path, with: "~"))
+                        .font(.system(.body, design: .monospaced))
+                        .lineLimit(1)
+                        .truncationMode(.middle)
                 }
             }
 
             Section("Application") {
                 Button("Relancer l'onboarding") {
                     appState.isOnboardingComplete = false
+                    appState.saveConfig()
                 }
             }
         }
         .padding()
     }
+
 }
 
 // MARK: - Personality Settings
@@ -116,6 +155,7 @@ struct PersonalitySettingsTab: View {
         )
         .onTapGesture {
             appState.currentPersonality = personality
+            appState.saveConfig()
         }
     }
 }

@@ -5,6 +5,7 @@ import Foundation
 struct AppConfig {
     var mochiName: String
     var personality: Personality
+    var mochiColor: MochiColor
     var isOnboardingComplete: Bool
     var notificationFrequency: String
     var globalShortcut: String
@@ -13,6 +14,7 @@ struct AppConfig {
     init(
         mochiName: String = "Mochi",
         personality: Personality = .kawaii,
+        mochiColor: MochiColor = .white,
         isOnboardingComplete: Bool = false,
         notificationFrequency: String = "normal",
         globalShortcut: String = "⌘⇧M",
@@ -20,6 +22,7 @@ struct AppConfig {
     ) {
         self.mochiName = mochiName
         self.personality = personality
+        self.mochiColor = mochiColor
         self.isOnboardingComplete = isOnboardingComplete
         self.notificationFrequency = notificationFrequency
         self.globalShortcut = globalShortcut
@@ -54,12 +57,25 @@ final class MarkdownStorage {
         return formatter
     }()
 
+    static let storagePathKey = "mochiStoragePath"
+
+    static var storedBaseDirectory: URL {
+        if let saved = UserDefaults.standard.string(forKey: storagePathKey) {
+            return URL(fileURLWithPath: saved)
+        }
+        return FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".mochi-mochi")
+    }
+
+    static func setStoragePath(_ url: URL) {
+        UserDefaults.standard.set(url.path, forKey: storagePathKey)
+    }
+
     init(baseDirectory: URL? = nil) {
         if let baseDirectory = baseDirectory {
             self.baseDirectory = baseDirectory
         } else {
-            self.baseDirectory = fileManager.homeDirectoryForCurrentUser
-                .appendingPathComponent(".mochi-mochi")
+            self.baseDirectory = MarkdownStorage.storedBaseDirectory
         }
     }
 
@@ -164,6 +180,10 @@ final class MarkdownStorage {
                 if let p = Personality(rawValue: value) {
                     config.personality = p
                 }
+            case "couleur":
+                if let c = MochiColor(rawValue: value) {
+                    config.mochiColor = c
+                }
             case "onboarding":
                 config.isOnboardingComplete = value == "true"
             case "notifications":
@@ -184,6 +204,7 @@ final class MarkdownStorage {
         var lines = ["# Configuration Mochi Mochi", ""]
         lines.append("- nom: \(config.mochiName)")
         lines.append("- personnalite: \(config.personality.rawValue)")
+        lines.append("- couleur: \(config.mochiColor.rawValue)")
         lines.append("- onboarding: \(config.isOnboardingComplete)")
         lines.append("- notifications: \(config.notificationFrequency)")
         lines.append("- raccourci: \(config.globalShortcut)")
@@ -209,6 +230,7 @@ final class MarkdownStorage {
             var description: String?
             var priority: TaskPriority = .normal
             var deadline: Date?
+            var isInProgress = false
             var isCompleted = false
             var completedAt: Date?
             var createdAt = Date()
@@ -232,6 +254,8 @@ final class MarkdownStorage {
                     if let p = TaskPriority(rawValue: value) { priority = p }
                 case "deadline":
                     deadline = isoFormatter.date(from: value)
+                case "en_cours":
+                    isInProgress = value == "true"
                 case "complete":
                     isCompleted = value == "true"
                 case "complete_le":
@@ -259,6 +283,7 @@ final class MarkdownStorage {
                 description: description,
                 priority: priority,
                 deadline: deadline,
+                isInProgress: isInProgress,
                 isCompleted: isCompleted,
                 completedAt: completedAt,
                 createdAt: createdAt,
@@ -283,6 +308,7 @@ final class MarkdownStorage {
             if let deadline = task.deadline {
                 lines.append("- deadline: \(isoFormatter.string(from: deadline))")
             }
+            lines.append("- en_cours: \(task.isInProgress)")
             lines.append("- complete: \(task.isCompleted)")
             if let completedAt = task.completedAt {
                 lines.append("- complete_le: \(isoFormatter.string(from: completedAt))")
