@@ -6,6 +6,9 @@ struct MochiView: View {
     @State private var bounceOffset: CGFloat = 0
     @State private var isAnimating = false
     @State private var emotionScale: CGFloat = 1.0
+    @State private var thinkingWobble: Double = 0
+    @State private var thinkingScale: CGFloat = 1.0
+    @State private var isThinking = false
     @State private var showCustomize = false
 
     var body: some View {
@@ -49,8 +52,9 @@ struct MochiView: View {
                 equippedItems: appState.mochi.equippedItems,
                 size: 100
             )
-            .scaleEffect(emotionScale)
+            .scaleEffect(isThinking ? thinkingScale : emotionScale)
             .offset(y: bounceOffset)
+            .rotationEffect(.degrees(isThinking ? thinkingWobble : 0))
             .animation(.spring(response: 0.4, dampingFraction: 0.5), value: appState.mochi.emotion)
             .onChange(of: appState.mochi.emotion) { _, newEmotion in
                 reactToEmotion(newEmotion)
@@ -316,7 +320,54 @@ struct MochiView: View {
         }
     }
 
+    private func startThinkingAnimation() {
+        isThinking = true
+        // Wobble rotation
+        withAnimation(
+            .easeInOut(duration: 0.5)
+            .repeatForever(autoreverses: true)
+        ) {
+            thinkingWobble = 5
+        }
+        // Pulse scale
+        withAnimation(
+            .easeInOut(duration: 0.7)
+            .repeatForever(autoreverses: true)
+        ) {
+            thinkingScale = 1.08
+        }
+        // Faster bounce
+        withAnimation(
+            .easeInOut(duration: 0.8)
+            .repeatForever(autoreverses: true)
+        ) {
+            bounceOffset = -10
+        }
+    }
+
+    private func stopThinkingAnimation() {
+        isThinking = false
+        thinkingWobble = 0
+        thinkingScale = 1.0
+        // Retour au bounce idle
+        withAnimation(
+            .easeInOut(duration: 2.0)
+            .repeatForever(autoreverses: true)
+        ) {
+            bounceOffset = -4
+        }
+    }
+
     private func reactToEmotion(_ emotion: MochiEmotion) {
+        if emotion == .thinking {
+            startThinkingAnimation()
+            return
+        }
+
+        if isThinking {
+            stopThinkingAnimation()
+        }
+
         withAnimation(.spring(response: 0.2, dampingFraction: 0.3)) {
             emotionScale = emotion == .excited ? 1.15 : 1.08
         }

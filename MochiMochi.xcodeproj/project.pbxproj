@@ -27,6 +27,7 @@
 		6C7CA7589D6F4CABA02B2BC6 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3667DD83AC857A1F64951CE2 /* SettingsView.swift */; };
 		79A8D4E173ECB6AD647E664D /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0AE19BBFB98F4ACCF1F4C59 /* KeychainHelper.swift */; };
 		7D1CA2FF881A0151F36F780E /* ClaudeCodeContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C2ED744C9199CA5D7C9ABBD /* ClaudeCodeContext.swift */; };
+		8476F243C292553F0135E7DD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA3BF3A71202B599340A0885 /* Assets.xcassets */; };
 		94E94B174A943864BB3B28C5 /* TaskRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2B3068D7F50BA3BACED8AC7 /* TaskRowView.swift */; };
 		9584934852E53BE8C46D2727 /* MochiView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B555B86C8B5673A52128050D /* MochiView.swift */; };
 		A0D344B188A77723A604ABE1 /* MiniPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0E87403BED2AEC9D14C6F06 /* MiniPanelView.swift */; };
@@ -79,6 +80,7 @@
 		93F2A97D4A854D8AEF03DC75 /* NotionSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotionSyncService.swift; sourceTree = "<group>"; };
 		9FE488471CAEC649B74453FA /* ShopView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShopView.swift; sourceTree = "<group>"; };
 		A0AE19BBFB98F4ACCF1F4C59 /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
+		AA3BF3A71202B599340A0885 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		AAE47536BAAFAF4B81CA051D /* SlashCommandParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlashCommandParser.swift; sourceTree = "<group>"; };
 		AECDC1B92B28D2C418D37307 /* TasksTrackingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TasksTrackingView.swift; sourceTree = "<group>"; };
 		B555B86C8B5673A52128050D /* MochiView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MochiView.swift; sourceTree = "<group>"; };
@@ -219,6 +221,7 @@
 		A308984EE1B195BDB478E321 /* MochiMochi */ = {
 			isa = PBXGroup;
 			children = (
+				AA3BF3A71202B599340A0885 /* Assets.xcassets */,
 				96671056FA680B818BDF1091 /* App */,
 				A119EAB84324109E3B656236 /* Engine */,
 				FA5EFB2073DB539FE8FF2DDC /* Models */,
@@ -286,6 +289,7 @@
 			buildConfigurationList = 90F53E291D3745DF540BBF9A /* Build configuration list for PBXNativeTarget "MochiMochi" */;
 			buildPhases = (
 				3FD3394E31698ECB198B3978 /* Sources */,
+				11A95535FAE13BBE1274CF12 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -352,6 +356,17 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		11A95535FAE13BBE1274CF12 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8476F243C292553F0135E7DD /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		3FD3394E31698ECB198B3978 /* Sources */ = {

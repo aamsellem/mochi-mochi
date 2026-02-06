@@ -22,7 +22,7 @@ enum MemoryError: LocalizedError {
 // MARK: - Memory Service
 
 final class MemoryService {
-    private let storage: MarkdownStorage
+    let storage: MarkdownStorage
 
     init(storage: MarkdownStorage = .shared) {
         self.storage = storage

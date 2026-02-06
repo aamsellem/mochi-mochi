@@ -14,6 +14,9 @@ final class AppState: ObservableObject {
     @Published var inventory: [ShopItem] = []
     @Published var isLoading: Bool = false
     @Published var selectedTab: AppTab = .dashboard
+    @Published var userName: String = ""
+    @Published var userOccupation: String = ""
+    @Published var userGoal: String = ""
     @Published var notificationFrequency: String = "normal"
     @Published var morningBriefingEnabled: Bool = true
     @Published var morningBriefingHour: Int = 9
@@ -48,6 +51,9 @@ final class AppState: ObservableObject {
             self.isOnboardingComplete = config.isOnboardingComplete
             self.mochi.name = config.mochiName
             self.mochi.color = config.mochiColor
+            self.userName = config.userName
+            self.userOccupation = config.userOccupation
+            self.userGoal = config.userGoal
             self.notificationFrequency = config.notificationFrequency
             self.morningBriefingEnabled = config.morningBriefingEnabled
             self.morningBriefingHour = config.morningBriefingHour
@@ -61,6 +67,7 @@ final class AppState: ObservableObject {
         self.tasks = memoryService.loadTasks()
         self.inventory = memoryService.loadInventory()
         self.mochi.updateEmotion(from: gamification, tasks: tasks)
+        updateClaudeMd()
     }
 
     func saveConfig() {
@@ -69,6 +76,9 @@ final class AppState: ObservableObject {
             personality: currentPersonality,
             mochiColor: mochi.color,
             isOnboardingComplete: isOnboardingComplete,
+            userName: userName,
+            userOccupation: userOccupation,
+            userGoal: userGoal,
             notificationFrequency: notificationFrequency,
             morningBriefingEnabled: morningBriefingEnabled,
             morningBriefingHour: morningBriefingHour,
@@ -82,6 +92,19 @@ final class AppState: ObservableObject {
         memoryService.saveMochiState(gamification)
         memoryService.saveTasks(tasks)
         memoryService.saveInventory(inventory)
+        updateClaudeMd()
+    }
+
+    /// Storage directory where CLAUDE.md lives and where Claude Code is launched
+    var storageDirectory: URL {
+        memoryService.storage.baseDirectory
+    }
+
+    /// Write/update the CLAUDE.md file so Claude Code reads context automatically
+    func updateClaudeMd() {
+        let context = buildContext()
+        let content = context.buildClaudeMd()
+        try? memoryService.storage.write(file: "CLAUDE.md", content: content)
     }
 
     // MARK: - Notifications
@@ -138,8 +161,8 @@ final class AppState: ObservableObject {
         // Check for slash commands
         if text.hasPrefix("/") {
             let result = SlashCommandParser.parse(text)
-            isLoading = false
             await CommandEngine.execute(result, appState: self)
+            isLoading = false
             if let lastMessage = messages.last, lastMessage.role == .assistant {
                 setReactiveEmotion(from: lastMessage.content)
             }
@@ -161,10 +184,10 @@ final class AppState: ObservableObject {
 
         // Send to Claude Code
         do {
+            updateClaudeMd()
             let response = try await claudeCodeService.send(
                 message: text,
-                personality: currentPersonality,
-                context: buildContext()
+                workingDirectory: storageDirectory
             )
             isLoading = false
 
@@ -404,7 +427,10 @@ final class AppState: ObservableObject {
             personality: currentPersonality,
             tasks: tasks,
             gamification: gamification,
-            mochiName: mochi.name
+            mochiName: mochi.name,
+            userName: userName,
+            userOccupation: userOccupation,
+            userGoal: userGoal
         )
     }
 }

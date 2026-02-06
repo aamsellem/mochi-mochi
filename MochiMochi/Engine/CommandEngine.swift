@@ -64,18 +64,11 @@ enum CommandEngine {
         briefing += "- Streak : \(appState.gamification.streakDays) jour(s)\n"
         briefing += "- Niveau \(appState.gamification.level) (\(appState.gamification.currentXP)/\(appState.gamification.xpRequiredForCurrentLevel) XP)"
 
-        let context = ClaudeCodeContext(
-            personality: appState.currentPersonality,
-            tasks: appState.tasks,
-            gamification: appState.gamification,
-            mochiName: appState.mochi.name
-        )
-
         do {
+            appState.updateClaudeMd()
             let response = try await appState.claudeCodeService.send(
                 message: "Donne-moi un briefing matinal en utilisant ces infos : \(briefing)",
-                personality: appState.currentPersonality,
-                context: context
+                workingDirectory: appState.storageDirectory
             )
             appState.messages.append(Message(role: .assistant, content: response))
         } catch {
@@ -134,18 +127,11 @@ enum CommandEngine {
         summary += "- Streak : \(appState.gamification.streakDays) jour(s)\n"
         summary += "- Niveau \(appState.gamification.level) | \(appState.gamification.riceGrains) grains de riz"
 
-        let context = ClaudeCodeContext(
-            personality: appState.currentPersonality,
-            tasks: appState.tasks,
-            gamification: appState.gamification,
-            mochiName: appState.mochi.name
-        )
-
         do {
+            appState.updateClaudeMd()
             let response = try await appState.claudeCodeService.send(
                 message: "Fais un bilan de ma journee avec ces infos : \(summary)",
-                personality: appState.currentPersonality,
-                context: context
+                workingDirectory: appState.storageDirectory
             )
             appState.messages.append(Message(role: .assistant, content: response))
         } catch {
@@ -383,18 +369,11 @@ enum CommandEngine {
     // MARK: - Unknown (send to Claude Code)
 
     private static func executeUnknown(rawInput: String, appState: AppState) async {
-        let context = ClaudeCodeContext(
-            personality: appState.currentPersonality,
-            tasks: appState.tasks,
-            gamification: appState.gamification,
-            mochiName: appState.mochi.name
-        )
-
         do {
+            appState.updateClaudeMd()
             let response = try await appState.claudeCodeService.send(
                 message: rawInput,
-                personality: appState.currentPersonality,
-                context: context
+                workingDirectory: appState.storageDirectory
             )
             appState.messages.append(Message(role: .assistant, content: response))
         } catch {

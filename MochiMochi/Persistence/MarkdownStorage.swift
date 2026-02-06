@@ -7,6 +7,9 @@ struct AppConfig {
     var personality: Personality
     var mochiColor: MochiColor
     var isOnboardingComplete: Bool
+    var userName: String
+    var userOccupation: String
+    var userGoal: String
     var notificationFrequency: String
     var morningBriefingEnabled: Bool
     var morningBriefingHour: Int
@@ -19,6 +22,9 @@ struct AppConfig {
         personality: Personality = .kawaii,
         mochiColor: MochiColor = .white,
         isOnboardingComplete: Bool = false,
+        userName: String = "",
+        userOccupation: String = "",
+        userGoal: String = "",
         notificationFrequency: String = "normal",
         morningBriefingEnabled: Bool = true,
         morningBriefingHour: Int = 9,
@@ -30,6 +36,9 @@ struct AppConfig {
         self.personality = personality
         self.mochiColor = mochiColor
         self.isOnboardingComplete = isOnboardingComplete
+        self.userName = userName
+        self.userOccupation = userOccupation
+        self.userGoal = userGoal
         self.notificationFrequency = notificationFrequency
         self.morningBriefingEnabled = morningBriefingEnabled
         self.morningBriefingHour = morningBriefingHour
@@ -195,6 +204,12 @@ final class MarkdownStorage {
                 }
             case "onboarding":
                 config.isOnboardingComplete = value == "true"
+            case "utilisateur":
+                config.userName = value
+            case "occupation":
+                config.userOccupation = value
+            case "objectif":
+                config.userGoal = value
             case "notifications":
                 config.notificationFrequency = value
             case "briefing_actif":
@@ -221,6 +236,15 @@ final class MarkdownStorage {
         lines.append("- personnalite: \(config.personality.rawValue)")
         lines.append("- couleur: \(config.mochiColor.rawValue)")
         lines.append("- onboarding: \(config.isOnboardingComplete)")
+        if !config.userName.isEmpty {
+            lines.append("- utilisateur: \(config.userName)")
+        }
+        if !config.userOccupation.isEmpty {
+            lines.append("- occupation: \(config.userOccupation)")
+        }
+        if !config.userGoal.isEmpty {
+            lines.append("- objectif: \(config.userGoal)")
+        }
         lines.append("- notifications: \(config.notificationFrequency)")
         lines.append("- briefing_actif: \(config.morningBriefingEnabled)")
         lines.append("- briefing_heure: \(config.morningBriefingHour)")

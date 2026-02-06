@@ -5,6 +5,7 @@ struct MochiAvatarView: View {
     let color: MochiColor
     let equippedItems: [ShopItem]
     var size: CGFloat = 160
+    @State private var thinkingDotsAnimate = false
 
     var body: some View {
         ZStack {
@@ -250,16 +251,25 @@ struct MochiAvatarView: View {
             mochiMouth(smile: false, flat: true)
         }
         .overlay(
-            // Thinking dots
-            HStack(spacing: 3) {
-                ForEach(0..<3, id: \.self) { _ in
+            // Thinking dots animees
+            HStack(spacing: 4) {
+                ForEach(0..<3, id: \.self) { index in
                     Circle()
-                        .fill(.secondary)
-                        .frame(width: size * 0.03)
+                        .fill(Color.secondary)
+                        .frame(width: size * 0.035)
+                        .offset(y: thinkingDotsAnimate ? -size * 0.04 : size * 0.02)
+                        .animation(
+                            .easeInOut(duration: 0.4)
+                            .repeatForever(autoreverses: true)
+                            .delay(Double(index) * 0.15),
+                            value: thinkingDotsAnimate
+                        )
                 }
             }
-            .offset(x: size * 0.2, y: -size * 0.15)
+            .offset(x: size * 0.22, y: -size * 0.15)
         )
+        .onAppear { thinkingDotsAnimate = true }
+        .onDisappear { thinkingDotsAnimate = false }
     }
 
     // MARK: - Eye Components

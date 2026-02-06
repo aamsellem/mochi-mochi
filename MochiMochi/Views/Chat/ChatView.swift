@@ -78,6 +78,7 @@ struct ChatView: View {
 
                     if appState.isLoading {
                         loadingIndicator
+                            .id("loading")
                     }
                 }
                 .padding(.horizontal, 20)
@@ -87,6 +88,13 @@ struct ChatView: View {
                 if let lastMessage = appState.messages.last {
                     withAnimation(.easeOut(duration: 0.3)) {
                         proxy.scrollTo(lastMessage.id, anchor: .bottom)
+                    }
+                }
+            }
+            .onChange(of: appState.isLoading) { _, isLoading in
+                if isLoading {
+                    withAnimation(.easeOut(duration: 0.3)) {
+                        proxy.scrollTo("loading", anchor: .bottom)
                     }
                 }
             }
@@ -106,43 +114,70 @@ struct ChatView: View {
     }
 
     private var loadingIndicator: some View {
-        HStack(spacing: 8) {
-            // Mochi badge avec animation de pulse
-            Text("M")
-                .font(.system(size: 11, weight: .bold))
-                .foregroundStyle(.white)
-                .frame(width: 28, height: 28)
-                .background(Circle().fill(MochiTheme.secondary))
-                .scaleEffect(thinkingBounce ? 1.15 : 0.95)
-                .animation(
-                    .easeInOut(duration: 0.6).repeatForever(autoreverses: true),
-                    value: thinkingBounce
-                )
+        HStack(alignment: .bottom, spacing: 8) {
+            // Mini Mochi avatar
+            MochiAvatarView(
+                emotion: .thinking,
+                color: appState.mochi.color,
+                equippedItems: appState.mochi.equippedItems,
+                size: 40
+            )
 
-            HStack(spacing: 5) {
-                ForEach(0..<3, id: \.self) { index in
-                    Circle()
-                        .fill(MochiTheme.secondary)
-                        .frame(width: 7, height: 7)
-                        .offset(y: thinkingBounce ? -4 : 4)
+            // Bulle de reflexion
+            VStack(alignment: .leading, spacing: 6) {
+                Text(appState.mochi.name)
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(MochiTheme.primary)
+
+                HStack(spacing: 6) {
+                    ForEach(0..<3, id: \.self) { index in
+                        Circle()
+                            .fill(MochiTheme.primary)
+                            .frame(width: 8, height: 8)
+                            .scaleEffect(thinkingBounce ? 1.0 : 0.4)
+                            .opacity(thinkingBounce ? 1.0 : 0.3)
+                            .animation(
+                                .easeInOut(duration: 0.5)
+                                .repeatForever(autoreverses: true)
+                                .delay(Double(index) * 0.2),
+                                value: thinkingBounce
+                            )
+                    }
+
+                    Text("reflechit...")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.secondary)
+                        .opacity(thinkingBounce ? 1.0 : 0.4)
                         .animation(
-                            .easeInOut(duration: 0.45)
-                            .repeatForever(autoreverses: true)
-                            .delay(Double(index) * 0.15),
+                            .easeInOut(duration: 1.2).repeatForever(autoreverses: true),
                             value: thinkingBounce
                         )
                 }
-                Text("\(appState.mochi.name) reflechit...")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .opacity(thinkingBounce ? 1.0 : 0.5)
-                    .animation(
-                        .easeInOut(duration: 1.0).repeatForever(autoreverses: true),
-                        value: thinkingBounce
-                    )
             }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(
+                UnevenRoundedRectangle(
+                    topLeadingRadius: 4,
+                    bottomLeadingRadius: 16,
+                    bottomTrailingRadius: 16,
+                    topTrailingRadius: 16
+                )
+                .fill(MochiTheme.primary.opacity(0.08))
+                .overlay(
+                    UnevenRoundedRectangle(
+                        topLeadingRadius: 4,
+                        bottomLeadingRadius: 16,
+                        bottomTrailingRadius: 16,
+                        topTrailingRadius: 16
+                    )
+                    .stroke(MochiTheme.primary.opacity(0.2), lineWidth: 1)
+                )
+            )
+
+            Spacer(minLength: 30)
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, 4)
         .frame(maxWidth: .infinity, alignment: .leading)
         .onAppear { thinkingBounce = true }
         .onDisappear { thinkingBounce = false }
@@ -159,7 +194,7 @@ struct ChatView: View {
                 Spacer(minLength: 40)
             } else {
                 // Mochi avatar badge
-                Text("M")
+                Text(String(appState.mochi.name.prefix(1)).uppercased())
                     .font(.system(size: 12, weight: .bold))
                     .foregroundStyle(.white)
                     .frame(width: 30, height: 30)
@@ -240,15 +275,32 @@ struct ChatView: View {
         )
     }
 
-    // MARK: - Formatted Assistant Text (Code Blocks)
+    // MARK: - Markdown Rendering
+
+    private enum MarkdownBlock {
+        case heading(level: Int, text: String)
+        case paragraph(text: String)
+        case codeBlock(code: String)
+        case horizontalRule
+        case orderedList(items: [String])
+        case unorderedList(items: [String])
+    }
 
     @ViewBuilder
     private func formattedAssistantText(_ content: String) -> some View {
-        let blocks = parseCodeBlocks(content)
-        VStack(alignment: .leading, spacing: 6) {
+        let blocks = parseMarkdown(content)
+        VStack(alignment: .leading, spacing: 10) {
             ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in
-                if block.isCode {
-                    Text(block.text)
+                switch block {
+                case .heading(let level, let text):
+                    markdownHeading(level: level, text: text)
+
+                case .paragraph(let text):
+                    markdownInlineText(text)
+                        .foregroundStyle(MochiTheme.textLight)
+
+                case .codeBlock(let code):
+                    Text(code)
                         .font(.system(size: 12, design: .monospaced))
                         .foregroundStyle(MochiTheme.codeText)
                         .padding(10)
@@ -257,39 +309,181 @@ struct ChatView: View {
                             RoundedRectangle(cornerRadius: 8, style: .continuous)
                                 .fill(MochiTheme.codeBackground)
                         )
-                } else {
-                    Text(block.text)
-                        .foregroundStyle(MochiTheme.textLight)
+
+                case .horizontalRule:
+                    Rectangle()
+                        .fill(MochiTheme.primary.opacity(0.25))
+                        .frame(height: 1.5)
+                        .padding(.vertical, 4)
+
+                case .orderedList(let items):
+                    VStack(alignment: .leading, spacing: 6) {
+                        ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+                            HStack(alignment: .top, spacing: 8) {
+                                Text("\(index + 1).")
+                                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                                    .foregroundStyle(MochiTheme.primary)
+                                    .frame(width: 22, alignment: .trailing)
+                                markdownInlineText(item)
+                                    .foregroundStyle(MochiTheme.textLight)
+                            }
+                        }
+                    }
+                    .padding(.leading, 4)
+
+                case .unorderedList(let items):
+                    VStack(alignment: .leading, spacing: 6) {
+                        ForEach(Array(items.enumerated()), id: \.offset) { _, item in
+                            HStack(alignment: .top, spacing: 8) {
+                                Circle()
+                                    .fill(MochiTheme.primary)
+                                    .frame(width: 6, height: 6)
+                                    .offset(y: 6)
+                                markdownInlineText(item)
+                                    .foregroundStyle(MochiTheme.textLight)
+                            }
+                        }
+                    }
+                    .padding(.leading, 4)
                 }
             }
         }
     }
 
-    private struct TextBlock {
-        let text: String
-        let isCode: Bool
+    @ViewBuilder
+    private func markdownHeading(level: Int, text: String) -> some View {
+        let size: CGFloat = level == 1 ? 18 : (level == 2 ? 15 : 13)
+        HStack(spacing: 8) {
+            if level == 1 {
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(MochiTheme.primary)
+                    .frame(width: 4, height: size + 4)
+            }
+            markdownInlineText(text)
+                .font(.system(size: size, weight: .bold, design: .rounded))
+                .foregroundStyle(level == 1 ? MochiTheme.primary : MochiTheme.textLight)
+        }
+        .padding(.top, level == 1 ? 4 : 2)
     }
 
-    private func parseCodeBlocks(_ text: String) -> [TextBlock] {
-        var blocks: [TextBlock] = []
-        let parts = text.components(separatedBy: "```")
+    private func markdownInlineText(_ string: String) -> Text {
+        if let attributed = try? AttributedString(
+            markdown: string,
+            options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
+        ) {
+            return Text(attributed)
+        }
+        return Text(string)
+    }
 
-        for (index, part) in parts.enumerated() {
-            let trimmed = part.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !trimmed.isEmpty else { continue }
+    private func parseMarkdown(_ text: String) -> [MarkdownBlock] {
+        var blocks: [MarkdownBlock] = []
+        let lines = text.components(separatedBy: "\n")
+        var i = 0
+        var paragraphLines: [String] = []
 
-            if index % 2 == 1 {
-                // Code block: strip optional language hint on first line
-                let lines = trimmed.components(separatedBy: "\n")
-                let codeContent = lines.count > 1
-                    ? lines.dropFirst().joined(separator: "\n")
-                    : trimmed
-                blocks.append(TextBlock(text: codeContent, isCode: true))
-            } else {
-                blocks.append(TextBlock(text: trimmed, isCode: false))
+        func flushParagraph() {
+            let joined = paragraphLines.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+            if !joined.isEmpty {
+                blocks.append(.paragraph(text: joined))
             }
+            paragraphLines = []
         }
 
+        while i < lines.count {
+            let line = lines[i]
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+
+            // Code block
+            if trimmed.hasPrefix("```") {
+                flushParagraph()
+                i += 1
+                var codeLines: [String] = []
+                while i < lines.count && !lines[i].trimmingCharacters(in: .whitespaces).hasPrefix("```") {
+                    codeLines.append(lines[i])
+                    i += 1
+                }
+                blocks.append(.codeBlock(code: codeLines.joined(separator: "\n")))
+                if i < lines.count { i += 1 }
+                continue
+            }
+
+            // Horizontal rule
+            if trimmed == "---" || trimmed == "***" || trimmed == "___" {
+                flushParagraph()
+                blocks.append(.horizontalRule)
+                i += 1
+                continue
+            }
+
+            // Heading
+            if let match = trimmed.wholeMatch(of: /^(#{1,3})\s+(.+)/) {
+                flushParagraph()
+                blocks.append(.heading(level: match.1.count, text: String(match.2)))
+                i += 1
+                continue
+            }
+
+            // Ordered list
+            if trimmed.wholeMatch(of: /^\d+\.\s+.+/) != nil {
+                flushParagraph()
+                var items: [String] = []
+                while i < lines.count {
+                    let l = lines[i].trimmingCharacters(in: .whitespaces)
+                    if let m = l.wholeMatch(of: /^\d+\.\s+(.+)/) {
+                        items.append(String(m.1))
+                        i += 1
+                    } else if l.isEmpty && i + 1 < lines.count &&
+                                lines[i + 1].trimmingCharacters(in: .whitespaces).wholeMatch(of: /^\d+\.\s+.+/) != nil {
+                        i += 1
+                    } else {
+                        break
+                    }
+                }
+                blocks.append(.orderedList(items: items))
+                continue
+            }
+
+            // Unordered list
+            if trimmed.hasPrefix("- ") || trimmed.hasPrefix("* ") {
+                flushParagraph()
+                var items: [String] = []
+                while i < lines.count {
+                    let l = lines[i].trimmingCharacters(in: .whitespaces)
+                    if l.hasPrefix("- ") {
+                        items.append(String(l.dropFirst(2)))
+                        i += 1
+                    } else if l.hasPrefix("* ") {
+                        items.append(String(l.dropFirst(2)))
+                        i += 1
+                    } else if l.isEmpty && i + 1 < lines.count {
+                        let next = lines[i + 1].trimmingCharacters(in: .whitespaces)
+                        if next.hasPrefix("- ") || next.hasPrefix("* ") {
+                            i += 1
+                        } else {
+                            break
+                        }
+                    } else {
+                        break
+                    }
+                }
+                blocks.append(.unorderedList(items: items))
+                continue
+            }
+
+            // Empty line = paragraph break
+            if trimmed.isEmpty {
+                flushParagraph()
+                i += 1
+                continue
+            }
+
+            // Regular text
+            paragraphLines.append(line)
+            i += 1
+        }
+
+        flushParagraph()
         return blocks
     }
 

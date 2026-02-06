@@ -43,7 +43,8 @@ final class ClaudeCodeService: @unchecked Sendable {
     }
 
     /// Send a message within the current session. Creates a new session on first call.
-    func send(message: String, personality: Personality, context: ClaudeCodeContext) async throws -> String {
+    /// Claude Code reads CLAUDE.md automatically from the working directory.
+    func send(message: String, workingDirectory: URL) async throws -> String {
         guard isClaudeCodeInstalled() else {
             throw ClaudeCodeError.notInstalled
         }
@@ -52,15 +53,10 @@ final class ClaudeCodeService: @unchecked Sendable {
         var args = ["-p", message, "--output-format", "json"]
 
         if let sessionId = currentSessionId {
-            // Continue existing session
             args += ["--resume", sessionId]
-        } else {
-            // First message: inject system context
-            let systemPrompt = context.buildSystemPrompt()
-            args += ["--append-system-prompt", systemPrompt]
         }
 
-        let rawOutput = try await executeClaudeCode(arguments: args)
+        let rawOutput = try await executeClaudeCode(arguments: args, workingDirectory: workingDirectory)
         return try parseResponse(rawOutput, isNewSession: isNewSession)
     }
 
@@ -115,7 +111,7 @@ final class ClaudeCodeService: @unchecked Sendable {
         return env
     }
 
-    private func executeClaudeCode(arguments: [String]) async throws -> String {
+    private func executeClaudeCode(arguments: [String], workingDirectory: URL) async throws -> String {
         guard let executablePath = claudeCodePath() else {
             throw ClaudeCodeError.notInstalled
         }
@@ -124,7 +120,7 @@ final class ClaudeCodeService: @unchecked Sendable {
         process.executableURL = URL(fileURLWithPath: executablePath)
         process.arguments = arguments
         process.environment = buildProcessEnvironment()
-        process.currentDirectoryURL = URL(fileURLWithPath: NSHomeDirectory())
+        process.currentDirectoryURL = workingDirectory
 
         let outputPipe = Pipe()
         let errorPipe = Pipe()
