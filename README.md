@@ -309,7 +309,7 @@ Les contributions sont les bienvenues !
 
 ## 📜 Crédits
 
-Inspiré par [ULY](https://github.com/aamsellem/uly) et [MARVIN](https://github.com/SterlingChin/marvin-template).
+Inspiré par [ULY](https://github.com/aamsellem/uly).
 
 ---
 
