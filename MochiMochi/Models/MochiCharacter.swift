@@ -23,6 +23,11 @@ enum MochiColor: String, Codable, CaseIterable {
     case matcha
     case skyBlue
     case golden
+    case grey
+    case black
+    case nightBlue
+    case violet
+    case pride
 
     var displayName: String {
         switch self {
@@ -32,6 +37,11 @@ enum MochiColor: String, Codable, CaseIterable {
         case .matcha: return "Matcha"
         case .skyBlue: return "Bleu ciel"
         case .golden: return "Dore"
+        case .grey: return "Gris"
+        case .black: return "Noir"
+        case .nightBlue: return "Bleu nuit"
+        case .violet: return "Violet"
+        case .pride: return "Pride"
         }
     }
 
@@ -40,10 +50,23 @@ enum MochiColor: String, Codable, CaseIterable {
         switch self {
         case .pink: return 1
         case .teal: return 1
+        case .grey: return 2
         case .white: return 3
         case .matcha: return 5
+        case .black: return 6
         case .skyBlue: return 8
+        case .nightBlue: return 10
         case .golden: return 12
+        case .violet: return 14
+        case .pride: return 18
+        }
+    }
+
+    /// Couleurs sombres qui necessitent un visage clair
+    var isDark: Bool {
+        switch self {
+        case .black, .nightBlue: return true
+        default: return false
         }
     }
 

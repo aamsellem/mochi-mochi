@@ -154,7 +154,7 @@ Le Mochi est un personnage rond, style mochi japonais (pâtisserie de riz), affi
 
 | État | Déclencheur | Animation |
 |---|---|---|
-| **Idle / Repos** | Aucune interaction récente | Léger rebond doux, clignements aléatoires |
+| **Idle / Repos** | Aucune interaction récente | Léger rebond doux, clignements des yeux (toutes les 2.5-5s), messages d'encouragement personnalisés selon la personnalité (toutes les 8-15s), micro-animations spécifiques par personnalité |
 | **Content** | Tâche complétée, streak maintenu | Sourire, petits bonds joyeux, étoiles |
 | **Excité** | Level up, nouveau record, gros objectif atteint | Sautille vivement, confettis, yeux brillants |
 | **Concentré** | Mode focus activé | Regard déterminé, petite bulle de concentration |
@@ -190,7 +190,7 @@ L'utilisateur choisit une personnalité à l'onboarding et peut en changer à to
 L'utilisateur peut personnaliser l'apparence du Mochi avec des éléments cosmétiques débloqués via la boutique.
 
 **Catégories d'items** :
-- **Couleurs** : couleur du corps du Mochi (blanc, rose, vert matcha, bleu ciel, doré…)
+- **Couleurs** : couleur du corps du Mochi (blanc, rose, vert matcha, bleu ciel, doré, gris, noir, bleu nuit, violet, pride/arc-en-ciel). Les couleurs sombres (noir, bleu nuit) inversent automatiquement la couleur du visage pour garder les yeux et la bouche visibles.
 - **Chapeaux** : béret, couronne, casquette, chapeau de sorcier, bandeau ninja…
 - **Accessoires** : lunettes, écharpe, nœud papillon, cape, ailes…
 - **Décors de fond** : jardin zen, bureau cosy, espace, forêt de bambous…
@@ -273,10 +273,12 @@ La fenêtre de chat est composée de deux zones :
 - Historique de conversation scrollable
 - Support Markdown dans les réponses (code, listes, tableaux)
 - Indicateur de chargement quand Claude Code traite une requête (le Mochi "réfléchit")
+- **Upload de fichiers** : bouton "+" ouvre un `NSOpenPanel` pour joindre des documents (PDF, texte, code source, images, spreadsheets). Les fichiers sont copiés dans `~/.mochi-mochi/attachments/`. Le contenu des fichiers texte est lu directement, le texte des PDF est extrait via PDFKit, et les fichiers binaires sont mentionnés par chemin. Les pièces jointes apparaissent en chips dans les bulles de message (cliquables pour ouvrir le fichier).
+- **Dictée vocale** : bouton micro utilisant `SFSpeechRecognizer` (locale `fr_FR`) et `AVAudioEngine` pour une transcription en temps réel. Le texte se met à jour au fur et à mesure dans une barre de feedback. Arrêt automatique après 3 secondes de silence. Le texte transcrit est inséré dans le champ de saisie pour édition avant envoi.
 - Bouton de copie sur les réponses
 - Possibilité de relancer/régénérer une réponse
 
-**Données en entrée** : texte libre ou commande slash de l'utilisateur
+**Données en entrée** : texte libre, commande slash, fichiers joints (PDF, texte, code, images) ou dictée vocale
 **Données en sortie** : réponse formatée de Claude Code avec le ton de la personnalité active
 
 **Règles de gestion** :
@@ -385,7 +387,7 @@ Le dashboard est un onglet dans la fenêtre principale de l'application (à côt
 | **Briefing matinal** | Heure configurable (défaut : 9h) | "Ohayo ! 4 tâches aujourd'hui dont 1 urgente. On attaque ?" |
 
 **Règles de gestion** :
-- Fréquence configurable dans les réglages (de "zen" à "intense")
+- Fréquence configurable dans les réglages : "zen" (pas de relances), "normal" (relance à 1h), "intense" (relance toutes les 15 minutes)
 - Mode "Ne pas déranger" respecté (macOS Focus)
 - Le mode `/focus` désactive temporairement les relances
 - Chaque notification est rédigée avec le ton de la personnalité active
@@ -429,6 +431,7 @@ Le dashboard est un onglet dans la fenêtre principale de l'application (à côt
 │   ├── current.md         # Tâches et priorités actuelles
 │   ├── goals.md           # Objectifs long terme
 │   └── mochi.md           # État du Mochi (niveau, XP, 🍙, streak, items)
+├── attachments/            # Fichiers joints au chat ({uuid}_{filename})
 ├── sessions/
 │   ├── 2026-02-06.md      # Session du jour
 │   └── ...
@@ -644,12 +647,19 @@ L'intégration Notion utilise l'API REST officielle Notion avec authentification
 - Mémoire persistante en Markdown
 - Menubar app basique
 
-### Phase 2 — Gamification (v0.2)
+### Phase 2 — Gamification (v0.2) ✅
 - Système d'XP et niveaux complet
 - Grains de riz et boutique cosmétique
-- Animations évoluées du Mochi (Rive/SpriteKit)
-- Streaks et notifications
+- 11 couleurs de Mochi (dont noir, bleu nuit, violet, pride avec visage adaptatif)
+- Animations : clignement des yeux (2.5-5s), messages d'encouragement idle par personnalité (8-15s), micro-animations spécifiques
+- Streaks et notifications (fréquence zen/normal/intense)
 - Dashboard
+
+### Phase 2.5 — Chat enrichi (v0.2.5) ✅
+- Upload de fichiers (PDF, texte, code source, images) avec extraction de contenu
+- Dictée vocale (SFSpeechRecognizer, locale fr_FR, arrêt auto après 3s de silence)
+- Pièces jointes affichées en chips dans les bulles de messages
+- Stockage local des attachments dans ~/.mochi-mochi/attachments/
 
 ### Phase 3 — Intégrations (v0.3)
 - Synchronisation bidirectionnelle Notion

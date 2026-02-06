@@ -110,6 +110,99 @@ enum Personality: String, Codable, CaseIterable {
         }
     }
 
+    var idleMessages: [String] {
+        switch self {
+        case .kawaii:
+            return [
+                "Tu es genial, continue comme ca~",
+                "Je crois en toi, toujours !",
+                "Chaque petit pas compte !",
+                "Tu fais du super boulot !",
+                "Je suis tellement fier de toi !",
+                "N'oublie pas de sourire !",
+                "Tu es ma personne preferee !",
+                "Ensemble on peut tout faire !",
+            ]
+        case .sensei:
+            return [
+                "La discipline forge le succes.",
+                "Un maitre echoue plus que l'eleve n'essaie.",
+                "Concentre-toi sur le processus.",
+                "L'excellence est une habitude.",
+                "Chaque jour est une chance de progresser.",
+                "La patience est la cle.",
+                "Ne confonds pas vitesse et precipitation.",
+                "Respire. Puis agis.",
+            ]
+        case .pote:
+            return [
+                "Eh, t'assures grave en fait !",
+                "Tranquille, tu geres ca !",
+                "On est ensemble, chef !",
+                "T'es chaud la, continue !",
+                "Pas de pression, tu vas tout dechirer.",
+                "Moi je dis respect, franchement.",
+                "T'as vu ca ? T'es un boss.",
+                "Allez, on lache rien !",
+            ]
+        case .butler:
+            return [
+                "Monsieur fait preuve d'une admirable tenacite.",
+                "Puis-je souligner votre excellente progression ?",
+                "Votre determination force le respect.",
+                "Je n'ai aucun doute quant a votre reussite.",
+                "Si je puis me permettre, c'est remarquable.",
+                "Votre constance est tout a votre honneur.",
+                "Je me permets de saluer votre effort.",
+                "Chapeau bas, si j'ose dire.",
+            ]
+        case .coach:
+            return [
+                "ALLEZ, T'ES UNE MACHINE !",
+                "On lache RIEN, champion !",
+                "C'est TON moment, saisis-le !",
+                "PLUS FORT, PLUS HAUT, PLUS LOIN !",
+                "T'as ca dans le sang !",
+                "ZERO EXCUSE, que des resultats !",
+                "Tu vas EXPLOSER tes objectifs !",
+                "CHAQUE SECONDE COMPTE, FONCE !",
+            ]
+        case .sage:
+            return [
+                "Le chemin est aussi important que la destination.",
+                "Dans le calme nait la clarte.",
+                "Celui qui avance doucement va loin.",
+                "Meme la plus longue nuit finit par un lever de soleil.",
+                "La graine que tu plantes aujourd'hui sera l'arbre de demain.",
+                "Accepte ce qui est, vise ce qui peut etre.",
+                "L'eau qui coule finit par percer la roche.",
+                "Le silence aussi est une forme de progres.",
+            ]
+        case .chat:
+            return [
+                "Bon... t'es pas si nul, j'imagine.",
+                "Je suppose que tu merites un compliment. Voila.",
+                "Continue, ca me divertit.",
+                "Hmph. Pas mal. Pour un humain.",
+                "J'accepte de reconnaitre ton effort. Exceptionnellement.",
+                "Tu progresses. Ne laisse pas ca te monter a la tete.",
+                "Je daigne etre impressionne. Un peu.",
+                "Bon, OK, c'etait bien. Mais dis-le a personne.",
+            ]
+        case .heroique:
+            return [
+                "Le destin sourit aux audacieux, heros !",
+                "Ta legende s'ecrit a chaque instant !",
+                "Les bardes chanteront tes exploits !",
+                "En avant, brave guerrier !",
+                "L'aventure t'appelle, reponds a l'appel !",
+                "Tu portes la lumiere dans les tenebres !",
+                "Aucune quete n'est trop grande pour toi !",
+                "Que la gloire guide ton chemin !",
+            ]
+        }
+    }
+
     var errorMessage: String {
         switch self {
         case .kawaii: return "Oh non, je n'arrive pas a joindre Claude Code... Reessaie dans un moment~"

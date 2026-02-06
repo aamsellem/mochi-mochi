@@ -205,6 +205,11 @@ struct GeneralSettingsTab: View {
         case .matcha: return Color(hex: "BFE0B9")
         case .skyBlue: return Color(hex: "BFDDFF")
         case .golden: return Color(hex: "FFE699")
+        case .grey: return Color(hex: "B8B8B8")
+        case .black: return Color(hex: "2A2A2A")
+        case .nightBlue: return Color(hex: "1E2659")
+        case .violet: return Color(hex: "B373D9")
+        case .pride: return Color(hex: "E65C5C")
         }
     }
 }

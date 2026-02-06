@@ -107,6 +107,7 @@ final class MarkdownStorage {
             baseDirectory.appendingPathComponent("content/notes"),
             baseDirectory.appendingPathComponent("content/ideas"),
             baseDirectory.appendingPathComponent("inventory"),
+            baseDirectory.appendingPathComponent("attachments"),
             baseDirectory.appendingPathComponent("integrations/notion"),
         ]
 

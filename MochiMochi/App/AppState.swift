@@ -1,5 +1,6 @@
 import SwiftUI
 import Combine
+import PDFKit
 
 @MainActor
 final class AppState: ObservableObject {
@@ -22,14 +23,21 @@ final class AppState: ObservableObject {
     @Published var morningBriefingHour: Int = 9
     @Published var weekendsProtected: Bool = false
 
+    // MARK: - Speech (forwarded from SpeechService)
+
+    @Published var isRecordingVoice: Bool = false
+    @Published var voiceTranscription: String = ""
+
     // MARK: - Services
 
     let claudeCodeService: ClaudeCodeService
     let memoryService: MemoryService
     let notificationService: NotificationService
+    let speechService: SpeechService
 
     // MARK: - Emotion Timer
     private var emotionResetTask: Task<Void, Never>?
+    private var speechCancellables = Set<AnyCancellable>()
 
     // MARK: - Init
 
@@ -39,6 +47,15 @@ final class AppState: ObservableObject {
         self.claudeCodeService = ClaudeCodeService()
         self.memoryService = MemoryService()
         self.notificationService = NotificationService()
+        self.speechService = SpeechService()
+
+        // Forward SpeechService published properties so SwiftUI observes them
+        speechService.$isRecording
+            .receive(on: RunLoop.main)
+            .assign(to: &$isRecordingVoice)
+        speechService.$transcribedText
+            .receive(on: RunLoop.main)
+            .assign(to: &$voiceTranscription)
 
         loadState()
     }
@@ -140,7 +157,8 @@ final class AppState: ObservableObject {
             if notificationFrequency != "zen" {
                 notificationService.scheduleTaskReminder(
                     for: task,
-                    personality: currentPersonality
+                    personality: currentPersonality,
+                    frequency: notificationFrequency
                 )
             }
             notificationService.scheduleDeadlineWarning(
@@ -152,8 +170,8 @@ final class AppState: ObservableObject {
 
     // MARK: - Chat
 
-    func sendMessage(_ text: String) async {
-        let userMessage = Message(role: .user, content: text)
+    func sendMessage(_ text: String, attachments: [Attachment] = []) async {
+        let userMessage = Message(role: .user, content: text, attachments: attachments)
         messages.append(userMessage)
         isLoading = true
         setTemporaryEmotion(.thinking)
@@ -182,11 +200,14 @@ final class AppState: ObservableObject {
             return
         }
 
+        // Build enriched prompt with attachment contents
+        let enrichedMessage = buildEnrichedMessage(text, attachments: attachments)
+
         // Send to Claude Code
         do {
             updateClaudeMd()
             let response = try await claudeCodeService.send(
-                message: text,
+                message: enrichedMessage,
                 workingDirectory: storageDirectory
             )
             isLoading = false
@@ -211,6 +232,49 @@ final class AppState: ObservableObject {
         }
 
         saveState()
+    }
+
+    private func buildEnrichedMessage(_ text: String, attachments: [Attachment]) -> String {
+        guard !attachments.isEmpty else { return text }
+
+        var parts: [String] = []
+        if !text.isEmpty {
+            parts.append(text)
+        }
+
+        for attachment in attachments {
+            let fullPath = memoryService.storage.baseDirectory
+                .appendingPathComponent(attachment.filePath).path
+
+            if attachment.isPDF {
+                if let pdfText = extractPDFText(at: fullPath) {
+                    parts.append("[Fichier joint : \(attachment.fileName)]\n```\n\(pdfText)\n```")
+                } else {
+                    parts.append("[Fichier joint : \(attachment.fileName)] (PDF non lisible)")
+                }
+            } else if attachment.isTextReadable {
+                if let content = try? String(contentsOfFile: fullPath, encoding: .utf8) {
+                    parts.append("[Fichier joint : \(attachment.fileName)]\n```\n\(content)\n```")
+                } else {
+                    parts.append("[Fichier joint : \(attachment.fileName)] (lecture impossible)")
+                }
+            } else {
+                parts.append("[Fichier joint : \(attachment.fileName)] (fichier binaire, chemin: \(fullPath))")
+            }
+        }
+
+        return parts.joined(separator: "\n\n")
+    }
+
+    private func extractPDFText(at path: String) -> String? {
+        guard let pdfDoc = PDFDocument(url: URL(fileURLWithPath: path)) else { return nil }
+        var text = ""
+        for i in 0..<pdfDoc.pageCount {
+            if let page = pdfDoc.page(at: i), let pageText = page.string {
+                text += pageText + "\n"
+            }
+        }
+        return text.isEmpty ? nil : text
     }
 
     // MARK: - Emotion Management
@@ -269,7 +333,8 @@ final class AppState: ObservableObject {
         if notificationFrequency != "zen" {
             notificationService.scheduleTaskReminder(
                 for: task,
-                personality: currentPersonality
+                personality: currentPersonality,
+                frequency: notificationFrequency
             )
         }
         notificationService.scheduleDeadlineWarning(

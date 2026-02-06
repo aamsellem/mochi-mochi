@@ -6,12 +6,14 @@ struct MochiAvatarView: View {
     let equippedItems: [ShopItem]
     var size: CGFloat = 160
     @State private var thinkingDotsAnimate = false
+    @State private var isBlinking = false
+    @State private var blinkTimer: Timer? = nil
 
     var body: some View {
         ZStack {
             // 1. Soft background circle for contrast
             Circle()
-                .fill(bodyColor.opacity(0.15))
+                .fill(bodyColor.opacity(color.isDark ? 0.25 : 0.15))
                 .frame(width: size * 1.1, height: size * 1.1)
 
             // 2. Cape (si equipee) — DERRIERE le corps
@@ -50,6 +52,38 @@ struct MochiAvatarView: View {
             }
         }
         .frame(width: size, height: size)
+        .onAppear { startBlinkTimer() }
+        .onDisappear {
+            blinkTimer?.invalidate()
+            blinkTimer = nil
+        }
+    }
+
+    // MARK: - Blink Timer
+
+    private func startBlinkTimer() {
+        blinkTimer?.invalidate()
+        scheduleNextBlink()
+    }
+
+    private func scheduleNextBlink() {
+        let interval = Double.random(in: 2.5...5.0)
+        blinkTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: false) { _ in
+            Task { @MainActor in
+                // Blink: close eyes
+                withAnimation(.easeIn(duration: 0.08)) {
+                    isBlinking = true
+                }
+                // Open eyes after brief moment
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+                    withAnimation(.easeOut(duration: 0.1)) {
+                        isBlinking = false
+                    }
+                    // Schedule next blink
+                    scheduleNextBlink()
+                }
+            }
+        }
     }
 
     // MARK: - Body
@@ -68,7 +102,7 @@ struct MochiAvatarView: View {
                 Ellipse()
                     .fill(
                         RadialGradient(
-                            colors: [.white.opacity(0.5), .clear],
+                            colors: [.white.opacity(color.isDark ? 0.25 : 0.5), .clear],
                             center: .topLeading,
                             startRadius: 0,
                             endRadius: size * 0.5
@@ -87,11 +121,30 @@ struct MochiAvatarView: View {
         case .matcha: return Color(red: 0.55, green: 0.72, blue: 0.53)
         case .skyBlue: return Color(red: 0.55, green: 0.7, blue: 0.9)
         case .golden: return Color(red: 0.9, green: 0.75, blue: 0.35)
+        case .grey: return Color(red: 0.55, green: 0.55, blue: 0.55)
+        case .black: return Color(red: 0.25, green: 0.25, blue: 0.25)
+        case .nightBlue: return Color(red: 0.1, green: 0.12, blue: 0.35)
+        case .violet: return Color(red: 0.55, green: 0.3, blue: 0.7)
+        case .pride: return Color(red: 0.85, green: 0.4, blue: 0.4)
         }
     }
 
     private var bodyGradient: LinearGradient {
-        LinearGradient(
+        if color == .pride {
+            return LinearGradient(
+                colors: [
+                    Color(red: 0.9, green: 0.3, blue: 0.3),   // rouge
+                    Color(red: 0.95, green: 0.6, blue: 0.2),  // orange
+                    Color(red: 0.95, green: 0.9, blue: 0.3),  // jaune
+                    Color(red: 0.3, green: 0.8, blue: 0.4),   // vert
+                    Color(red: 0.3, green: 0.5, blue: 0.9),   // bleu
+                    Color(red: 0.6, green: 0.3, blue: 0.8),   // violet
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
+        return LinearGradient(
             colors: [bodyColor.opacity(0.9), bodyColor],
             startPoint: .top,
             endPoint: .bottom
@@ -106,6 +159,11 @@ struct MochiAvatarView: View {
         case .matcha: return Color(red: 0.75, green: 0.88, blue: 0.73)
         case .skyBlue: return Color(red: 0.75, green: 0.87, blue: 1.0)
         case .golden: return Color(red: 1.0, green: 0.9, blue: 0.6)
+        case .grey: return Color(red: 0.72, green: 0.72, blue: 0.72)
+        case .black: return Color(red: 0.15, green: 0.15, blue: 0.15)
+        case .nightBlue: return Color(red: 0.12, green: 0.15, blue: 0.35)
+        case .violet: return Color(red: 0.7, green: 0.45, blue: 0.85)
+        case .pride: return Color(red: 0.9, green: 0.5, blue: 0.5) // fallback for shadow
         }
     }
 
@@ -275,13 +333,15 @@ struct MochiAvatarView: View {
     // MARK: - Eye Components
 
     private var faceColor: Color {
-        Color(red: 0.2, green: 0.15, blue: 0.12)
+        color.isDark
+            ? Color(red: 0.92, green: 0.9, blue: 0.85)
+            : Color(red: 0.2, green: 0.15, blue: 0.12)
     }
 
     private var mochiEye: some View {
         Ellipse()
             .fill(faceColor)
-            .frame(width: size * 0.09, height: size * 0.11)
+            .frame(width: size * 0.09, height: isBlinking ? size * 0.02 : size * 0.11)
     }
 
     private var happyEye: some View {
@@ -318,7 +378,7 @@ struct MochiAvatarView: View {
     private var worriedEye: some View {
         Ellipse()
             .fill(faceColor)
-            .frame(width: size * 0.08, height: size * 0.1)
+            .frame(width: size * 0.08, height: isBlinking ? size * 0.02 : size * 0.1)
     }
 
     private var sadEye: some View {

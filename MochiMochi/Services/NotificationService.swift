@@ -34,14 +34,22 @@ final class NotificationService {
 
     // MARK: - Task Reminders
 
-    func scheduleTaskReminder(for task: MochiTask, personality: Personality) {
+    func scheduleTaskReminder(for task: MochiTask, personality: Personality, frequency: String = "normal") {
         let content = UNMutableNotificationContent()
         content.title = "\(personality.emoji) \(personality.displayName)"
         content.body = taskReminderMessage(for: task, personality: personality)
         content.sound = .default
         content.userInfo = ["taskId": task.id.uuidString]
 
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 3600, repeats: false)
+        let interval: TimeInterval
+        switch frequency {
+        case "intense": interval = 900    // 15 min
+        case "normal":  interval = 3600   // 1h
+        case "zen":     interval = 7200   // 2h (fallback, zen ne devrait pas schedule)
+        default:        interval = 3600
+        }
+
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: interval, repeats: false)
         let request = UNNotificationRequest(
             identifier: "task-reminder-\(task.id.uuidString)",
             content: content,

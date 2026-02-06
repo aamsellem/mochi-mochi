@@ -41,6 +41,7 @@
 		E2349302083D99EE281B7A42 /* MochiTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64B52DB21E0DCB97DC1FF7BC /* MochiTask.swift */; };
 		E81C6D30E4359759DDADFE0C /* SlashCommandParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAE47536BAAFAF4B81CA051D /* SlashCommandParser.swift */; };
 		EB4225458494F14780CDBC41 /* GamificationState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A118D86137E506228517AD4 /* GamificationState.swift */; };
+		ED61B7901277ADA1EDBD899A /* SpeechService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F243FB1AF9B7EF8D5540198B /* SpeechService.swift */; };
 		F66D1B1A75450723C5B1DB6C /* ClaudeCodeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4A809BE2B9B3C523BD2CA87 /* ClaudeCodeService.swift */; };
 		FE8A76E3A818609F0CCE2441 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F18AFE577A4E2CE012100CA9 /* DashboardView.swift */; };
 /* End PBXBuildFile section */
@@ -96,6 +97,7 @@
 		EE9AEDDB99F9624BAE2E9697 /* KeyboardShortcutService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardShortcutService.swift; sourceTree = "<group>"; };
 		F0E87403BED2AEC9D14C6F06 /* MiniPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniPanelView.swift; sourceTree = "<group>"; };
 		F18AFE577A4E2CE012100CA9 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
+		F243FB1AF9B7EF8D5540198B /* SpeechService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -141,6 +143,7 @@
 				2508228670C1BC3C8B85CFAC /* MemoryService.swift */,
 				4631B739C9C44DF637EB5066 /* NotificationService.swift */,
 				93F2A97D4A854D8AEF03DC75 /* NotionSyncService.swift */,
+				F243FB1AF9B7EF8D5540198B /* SpeechService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -404,6 +407,7 @@
 				3D37F160DB11B15374D2C117 /* ShopItem.swift in Sources */,
 				E17F47AE18ED8D5F59514189 /* ShopView.swift in Sources */,
 				E81C6D30E4359759DDADFE0C /* SlashCommandParser.swift in Sources */,
+				ED61B7901277ADA1EDBD899A /* SpeechService.swift in Sources */,
 				94E94B174A943864BB3B28C5 /* TaskRowView.swift in Sources */,
 				598ABA465508A6F284755E34 /* TasksTrackingView.swift in Sources */,
 				5C818B83416BB09828A075DE /* Theme.swift in Sources */,

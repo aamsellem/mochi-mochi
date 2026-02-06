@@ -32,11 +32,13 @@ Les assistants IA actuels souffrent d'amnésie chronique. Chaque conversation re
 
 Mochi Mochi reprend le concept d'ULY et l'enveloppe dans une **application macOS native** avec une identité forte : un compagnon virtuel attachant qui vous accompagne au quotidien.
 
-- 🍡 **Compagnon animé** — Un Mochi vivant qui réagit à votre productivité
+- 🍡 **Compagnon animé** — Un Mochi vivant qui réagit à votre productivité, cligne des yeux et vous encourage
 - 🧠 **Mémoire persistante** — Il se souvient de tout, session après session (fichiers Markdown locaux)
 - 🎮 **Gamification** — XP, niveaux, grains de riz 🍙, boutique cosmétique
 - 🎭 **8 personnalités** — Du Mochi Kawaii au Mochi Butler, choisissez votre style
 - 📋 **Gestion de tâches** — Suivi intelligent avec relances personnalisées
+- 📎 **Upload de documents** — Joignez des fichiers (PDF, code, texte) au chat
+- 🎤 **Dictée vocale** — Parlez au lieu de taper grâce à la reconnaissance vocale
 - 🔗 **Sync Notion** — Bidirectionnelle, vos tâches partout
 - 🖥️ **Menubar** — Accès rapide sans quitter votre travail
 - 🏠 **100% local** — Vos données restent chez vous
@@ -82,6 +84,7 @@ Votre Mochi est un personnage rond, inspiré des mochis japonais, qui vit dans v
 
 | État | Déclencheur | Animation |
 |------|-------------|-----------|
+| 💬 **Idle** | Aucune interaction récente | Clignements des yeux, messages d'encouragement selon la personnalité |
 | 😊 **Content** | Tâche complétée, streak maintenu | Sourire, petits bonds, étoiles |
 | 🤩 **Excité** | Level up, nouveau record | Sautille vivement, confettis |
 | 🧐 **Concentré** | Mode focus activé | Regard déterminé, bulle de concentration |
@@ -93,7 +96,7 @@ Votre Mochi est un personnage rond, inspiré des mochis japonais, qui vit dans v
 ### Personnalisation
 
 Équipez votre Mochi d'items cosmétiques gagnés en boutique :
-- **Couleurs** : blanc, rose, vert matcha, bleu ciel, doré...
+- **Couleurs** : blanc, rose, vert matcha, bleu ciel, doré, gris, noir, bleu nuit, violet, pride (arc-en-ciel)...
 - **Chapeaux** : béret, couronne, casquette, chapeau de sorcier...
 - **Accessoires** : lunettes, écharpe, nœud papillon, cape, ailes...
 - **Décors** : jardin zen, bureau cosy, espace, forêt de bambous...
@@ -149,6 +152,8 @@ Configurez des jours off (week-ends) qui ne cassent pas le streak.
 
 | Commande | Action |
 |----------|--------|
+| `+` (bouton) | Joindre un fichier (PDF, texte, code, image) |
+| 🎤 (bouton) | Dictée vocale (reconnaissance fr_FR en temps réel) |
 | `/bonjour` | Briefing du jour : tâches, deadlines, streak |
 | `/add [texte]` | Ajouter une tâche rapidement |
 | `/bilan` | Résumé de la journée ou semaine |
@@ -208,6 +213,7 @@ Synchronisation bidirectionnelle avec Notion :
 │   ├── current.md         # Tâches et priorités actuelles
 │   ├── goals.md           # Objectifs long terme
 │   └── mochi.md           # État du Mochi (niveau, XP, 🍙, streak, items)
+├── attachments/            # Fichiers joints au chat
 ├── sessions/
 │   └── 2026-02-06.md      # Sessions quotidiennes
 ├── content/
@@ -290,7 +296,8 @@ MochiMochi/
 ## 📋 Roadmap
 
 - [x] **Phase 1 — MVP (v0.1)** : Chat + Claude Code + mémoire Markdown + Mochi statique
-- [ ] **Phase 2 — Gamification (v0.2)** : XP, niveaux, 🍙, boutique, animations, dashboard
+- [x] **Phase 2 — Gamification (v0.2)** : XP, niveaux, 🍙, boutique, animations, dashboard, 11 couleurs, clignement des yeux, messages idle
+- [x] **Phase 2.5 — Chat enrichi (v0.2.5)** : Upload de documents (PDF, texte, code), dictée vocale (fr_FR), pièces jointes dans les messages
 - [ ] **Phase 3 — Intégrations (v0.3)** : Sync Notion, raccourcis globaux, mode focus
 - [ ] **Phase 4 — Polish (v1.0)** : Onboarding complet, toutes les personnalités, distribution DMG
 

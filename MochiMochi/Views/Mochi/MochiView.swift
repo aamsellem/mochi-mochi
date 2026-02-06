@@ -10,6 +10,9 @@ struct MochiView: View {
     @State private var thinkingScale: CGFloat = 1.0
     @State private var isThinking = false
     @State private var showCustomize = false
+    @State private var idleActionText: String? = nil
+    @State private var idleActionOpacity: Double = 0
+    @State private var idleTimer: Timer? = nil
 
     var body: some View {
         ScrollView {
@@ -45,21 +48,55 @@ struct MochiView: View {
                 .buttonStyle(.plain)
             }
 
-            // Avatar
-            MochiAvatarView(
-                emotion: appState.mochi.emotion,
-                color: appState.mochi.color,
-                equippedItems: appState.mochi.equippedItems,
-                size: 100
-            )
-            .scaleEffect(isThinking ? thinkingScale : emotionScale)
-            .offset(y: bounceOffset)
-            .rotationEffect(.degrees(isThinking ? thinkingWobble : 0))
-            .animation(.spring(response: 0.4, dampingFraction: 0.5), value: appState.mochi.emotion)
-            .onChange(of: appState.mochi.emotion) { _, newEmotion in
-                reactToEmotion(newEmotion)
+            // Avatar + idle action bubble
+            ZStack {
+                MochiAvatarView(
+                    emotion: appState.mochi.emotion,
+                    color: appState.mochi.color,
+                    equippedItems: appState.mochi.equippedItems,
+                    size: 100
+                )
+                .scaleEffect(isThinking ? thinkingScale : emotionScale)
+                .offset(y: bounceOffset)
+                .rotationEffect(.degrees(isThinking ? thinkingWobble : 0))
+                .animation(.spring(response: 0.4, dampingFraction: 0.5), value: appState.mochi.emotion)
+                .onChange(of: appState.mochi.emotion) { _, newEmotion in
+                    reactToEmotion(newEmotion)
+                    if newEmotion == .idle {
+                        startIdleActions()
+                    } else {
+                        dismissIdleAction()
+                    }
+                }
+                .onAppear {
+                    startIdleAnimation()
+                    startIdleActions()
+                }
+                .onDisappear {
+                    idleTimer?.invalidate()
+                    idleTimer = nil
+                }
+
+                // Idle action floating bubble
+                if let action = idleActionText {
+                    Text(action)
+                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                        .foregroundStyle(MochiTheme.textLight.opacity(0.75))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .fill(Color.white.opacity(0.9))
+                                .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
+                        )
+                        .offset(y: -65)
+                        .opacity(idleActionOpacity)
+                        .transition(.asymmetric(
+                            insertion: .scale(scale: 0.8).combined(with: .opacity),
+                            removal: .opacity
+                        ))
+                }
             }
-            .onAppear { startIdleAnimation() }
 
             // Name
             Text(appState.mochi.name)
@@ -355,6 +392,149 @@ struct MochiView: View {
             .repeatForever(autoreverses: true)
         ) {
             bounceOffset = -4
+        }
+    }
+
+    // MARK: - Idle Actions
+
+    private func startIdleActions() {
+        idleTimer?.invalidate()
+        idleTimer = Timer.scheduledTimer(withTimeInterval: Double.random(in: 8...15), repeats: true) { _ in
+            Task { @MainActor in
+                guard appState.mochi.emotion == .idle, !appState.isLoading else { return }
+                showRandomIdleAction()
+                // Reschedule with random interval for natural feel
+                idleTimer?.invalidate()
+                idleTimer = Timer.scheduledTimer(withTimeInterval: Double.random(in: 8...15), repeats: true) { _ in
+                    Task { @MainActor in
+                        guard appState.mochi.emotion == .idle, !appState.isLoading else { return }
+                        showRandomIdleAction()
+                    }
+                }
+            }
+        }
+    }
+
+    private func showRandomIdleAction() {
+        let actions = appState.currentPersonality.idleMessages
+        guard let action = actions.randomElement() else { return }
+
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+            idleActionText = action
+            idleActionOpacity = 1.0
+        }
+
+        // Personality-specific micro-animation
+        playIdleMicroAnimation()
+
+        // Dismiss after a few seconds
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) {
+            dismissIdleAction()
+        }
+    }
+
+    private func dismissIdleAction() {
+        withAnimation(.easeOut(duration: 0.4)) {
+            idleActionOpacity = 0
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            idleActionText = nil
+        }
+    }
+
+    private func playIdleMicroAnimation() {
+        switch appState.currentPersonality {
+        case .kawaii:
+            // Petit sautillement joyeux
+            withAnimation(.spring(response: 0.25, dampingFraction: 0.3)) {
+                emotionScale = 1.1
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) {
+                    emotionScale = 1.0
+                }
+            }
+        case .coach:
+            // Mouvement energique rapide
+            withAnimation(.spring(response: 0.15, dampingFraction: 0.2)) {
+                emotionScale = 1.15
+                bounceOffset = -12
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.4)) {
+                    emotionScale = 1.0
+                    bounceOffset = -4
+                }
+            }
+        case .chat:
+            // Rotation hautaine
+            withAnimation(.easeInOut(duration: 0.6)) {
+                thinkingWobble = -8
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                withAnimation(.easeInOut(duration: 0.6)) {
+                    thinkingWobble = 0
+                }
+            }
+        case .heroique:
+            // Pose heroique avec scale
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.4)) {
+                emotionScale = 1.12
+                bounceOffset = -8
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.5)) {
+                    emotionScale = 1.0
+                    bounceOffset = -4
+                }
+            }
+        case .sage:
+            // Respiration lente et calme
+            withAnimation(.easeInOut(duration: 1.2)) {
+                emotionScale = 1.05
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                withAnimation(.easeInOut(duration: 1.2)) {
+                    emotionScale = 1.0
+                }
+            }
+        case .butler:
+            // Legere inclinaison polie
+            withAnimation(.easeInOut(duration: 0.5)) {
+                thinkingWobble = 5
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                withAnimation(.easeInOut(duration: 0.5)) {
+                    thinkingWobble = 0
+                }
+            }
+        case .pote:
+            // Petit wobble decontracte
+            withAnimation(.easeInOut(duration: 0.4)) {
+                thinkingWobble = 6
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                withAnimation(.easeInOut(duration: 0.4)) {
+                    thinkingWobble = -4
+                }
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    thinkingWobble = 0
+                }
+            }
+        case .sensei:
+            // Lente montee concentree
+            withAnimation(.easeInOut(duration: 0.8)) {
+                bounceOffset = -8
+                emotionScale = 1.03
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                withAnimation(.easeInOut(duration: 0.8)) {
+                    bounceOffset = -4
+                    emotionScale = 1.0
+                }
+            }
         }
     }
 

@@ -697,6 +697,11 @@ struct OnboardingView: View {
         case .matcha: return Color(red: 0.75, green: 0.88, blue: 0.73)
         case .skyBlue: return Color(red: 0.75, green: 0.87, blue: 1.0)
         case .golden: return Color(red: 1.0, green: 0.9, blue: 0.6)
+        case .grey: return Color(red: 0.72, green: 0.72, blue: 0.72)
+        case .black: return Color(red: 0.15, green: 0.15, blue: 0.15)
+        case .nightBlue: return Color(red: 0.12, green: 0.15, blue: 0.35)
+        case .violet: return Color(red: 0.7, green: 0.45, blue: 0.85)
+        case .pride: return Color(red: 0.9, green: 0.36, blue: 0.36)
         }
     }
 }

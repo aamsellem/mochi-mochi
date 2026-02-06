@@ -1,10 +1,12 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct ChatView: View {
     @EnvironmentObject var appState: AppState
     @State private var inputText = ""
     @State private var showSlashMenu = false
     @State private var thinkingBounce = false
+    @State private var pendingAttachments: [Attachment] = []
     @FocusState private var isInputFocused: Bool
 
     var body: some View {
@@ -16,6 +18,19 @@ struct ChatView: View {
         }
         .background(MochiTheme.surfaceLight)
         .clipShape(RoundedRectangle(cornerRadius: MochiTheme.cornerRadiusXL, style: .continuous))
+        .onChange(of: appState.isRecordingVoice) { wasRecording, isRecording in
+            // Auto-insert transcribed text when recording stops (e.g. silence timeout)
+            if wasRecording && !isRecording {
+                let transcribed = appState.voiceTranscription
+                if !transcribed.isEmpty {
+                    if inputText.isEmpty {
+                        inputText = transcribed
+                    } else {
+                        inputText += " " + transcribed
+                    }
+                }
+            }
+        }
     }
 
     // MARK: - Header
@@ -226,21 +241,32 @@ struct ChatView: View {
     }
 
     private func userBubbleContent(_ message: Message) -> some View {
-        Text(message.content)
-            .textSelection(.enabled)
-            .foregroundStyle(.white)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(
-                UnevenRoundedRectangle(
-                    topLeadingRadius: 20,
-                    bottomLeadingRadius: 20,
-                    bottomTrailingRadius: 20,
-                    topTrailingRadius: 4
-                )
-                .fill(MochiTheme.primary)
+        VStack(alignment: .trailing, spacing: 6) {
+            if !message.attachments.isEmpty {
+                VStack(alignment: .trailing, spacing: 4) {
+                    ForEach(message.attachments) { attachment in
+                        attachmentChip(attachment, light: true)
+                    }
+                }
+            }
+            if !message.content.isEmpty {
+                Text(message.content)
+                    .textSelection(.enabled)
+                    .foregroundStyle(.white)
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(
+            UnevenRoundedRectangle(
+                topLeadingRadius: 20,
+                bottomLeadingRadius: 20,
+                bottomTrailingRadius: 20,
+                topTrailingRadius: 4
             )
-            .shadow(color: .black.opacity(0.08), radius: 4, x: 0, y: 2)
+            .fill(MochiTheme.primary)
+        )
+        .shadow(color: .black.opacity(0.08), radius: 4, x: 0, y: 2)
     }
 
     private func assistantBubbleContent(_ message: Message) -> some View {
@@ -489,54 +515,77 @@ struct ChatView: View {
 
     // MARK: - Input Bar
 
+    private var canSend: Bool {
+        !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !pendingAttachments.isEmpty
+    }
+
     private var inputBar: some View {
-        HStack(alignment: .center, spacing: 10) {
-            // Plus button
-            Button(action: {}) {
-                Image(systemName: "plus.circle")
-                    .font(.system(size: 20))
-                    .foregroundStyle(Color.gray)
+        VStack(spacing: 0) {
+            // Pending attachments chips
+            if !pendingAttachments.isEmpty {
+                pendingAttachmentsBar
             }
-            .buttonStyle(.plain)
 
-            // Text field
-            TextField("", text: $inputText, prompt: Text("Tape un message ou une commande...").foregroundColor(MochiTheme.textPlaceholder), axis: .vertical)
-                .font(.body)
-                .foregroundStyle(MochiTheme.textLight)
-                .lineLimit(1...6)
-                .textFieldStyle(.plain)
-                .focused($isInputFocused)
-                .onSubmit { sendIfReady() }
-                .onChange(of: inputText) { _, newValue in
-                    showSlashMenu = newValue.hasPrefix("/") && !newValue.contains(" ")
+            // Transcription feedback
+            if appState.isRecordingVoice {
+                transcriptionBar
+            }
+
+            HStack(alignment: .center, spacing: 10) {
+                // Plus button — file upload
+                Button(action: openFilePanel) {
+                    Image(systemName: "plus.circle")
+                        .font(.system(size: 20))
+                        .foregroundStyle(Color.gray)
                 }
+                .buttonStyle(.plain)
 
-            // Microphone button
-            Button(action: {}) {
-                Image(systemName: "mic")
-                    .font(.system(size: 16))
-                    .foregroundStyle(Color.gray)
-            }
-            .buttonStyle(.plain)
+                // Text field
+                TextField("", text: $inputText, prompt: Text("Tape un message ou une commande...").foregroundColor(MochiTheme.textPlaceholder), axis: .vertical)
+                    .font(.body)
+                    .foregroundStyle(MochiTheme.textLight)
+                    .lineLimit(1...6)
+                    .textFieldStyle(.plain)
+                    .focused($isInputFocused)
+                    .onSubmit { sendIfReady() }
+                    .onChange(of: inputText) { _, newValue in
+                        showSlashMenu = newValue.hasPrefix("/") && !newValue.contains(" ")
+                    }
 
-            // Send button
-            Button(action: sendMessage) {
-                Image(systemName: "paperplane.fill")
-                    .font(.system(size: 14))
-                    .foregroundStyle(.white)
-                    .frame(width: 34, height: 34)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                                  ? MochiTheme.primary.opacity(0.4)
-                                  : MochiTheme.primary)
-                    )
-                    .shadow(color: MochiTheme.primary.opacity(0.3), radius: 4, x: 0, y: 2)
+                // Microphone button
+                Button(action: toggleRecording) {
+                    Image(systemName: appState.isRecordingVoice ? "mic.fill" : "mic")
+                        .font(.system(size: 16))
+                        .foregroundStyle(appState.isRecordingVoice ? MochiTheme.primary : Color.gray)
+                        .scaleEffect(appState.isRecordingVoice ? 1.15 : 1.0)
+                        .animation(
+                            appState.isRecordingVoice
+                                ? .easeInOut(duration: 0.6).repeatForever(autoreverses: true)
+                                : .default,
+                            value: appState.isRecordingVoice
+                        )
+                }
+                .buttonStyle(.plain)
+
+                // Send button
+                Button(action: sendMessage) {
+                    Image(systemName: "paperplane.fill")
+                        .font(.system(size: 14))
+                        .foregroundStyle(.white)
+                        .frame(width: 34, height: 34)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(canSend
+                                      ? MochiTheme.primary
+                                      : MochiTheme.primary.opacity(0.4))
+                        )
+                        .shadow(color: MochiTheme.primary.opacity(0.3), radius: 4, x: 0, y: 2)
+                }
+                .buttonStyle(.plain)
+                .disabled(!canSend)
             }
-            .buttonStyle(.plain)
-            .disabled(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            .padding(16)
         }
-        .padding(16)
         .background(
             RoundedRectangle(cornerRadius: MochiTheme.cornerRadius2XL, style: .continuous)
                 .fill(MochiTheme.backgroundLight)
@@ -552,6 +601,98 @@ struct ChatView: View {
                     .offset(y: -slashMenuHeight)
             }
         }
+    }
+
+    // MARK: - Pending Attachments
+
+    private var pendingAttachmentsBar: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(pendingAttachments) { attachment in
+                    HStack(spacing: 6) {
+                        Image(systemName: attachment.sfSymbolName)
+                            .font(.system(size: 12))
+                            .foregroundStyle(MochiTheme.primary)
+
+                        Text(attachment.fileName)
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(MochiTheme.textLight)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                            .frame(maxWidth: 120)
+
+                        Button {
+                            pendingAttachments.removeAll { $0.id == attachment.id }
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.system(size: 12))
+                                .foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(
+                        Capsule()
+                            .fill(MochiTheme.primary.opacity(0.1))
+                            .overlay(
+                                Capsule()
+                                    .stroke(MochiTheme.primary.opacity(0.2), lineWidth: 1)
+                            )
+                    )
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 10)
+            .padding(.bottom, 4)
+        }
+    }
+
+    // MARK: - Transcription Feedback
+
+    private var transcriptionBar: some View {
+        HStack(spacing: 8) {
+            Circle()
+                .fill(Color.red)
+                .frame(width: 8, height: 8)
+
+            Text(appState.voiceTranscription.isEmpty
+                 ? "Ecoute en cours..."
+                 : appState.voiceTranscription)
+                .font(.system(size: 13))
+                .foregroundStyle(MochiTheme.textLight.opacity(0.7))
+                .lineLimit(2)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+    }
+
+    // MARK: - Attachment Chip (in bubbles)
+
+    private func attachmentChip(_ attachment: Attachment, light: Bool) -> some View {
+        Button {
+            let fullPath = appState.memoryService.storage.baseDirectory
+                .appendingPathComponent(attachment.filePath)
+            NSWorkspace.shared.open(fullPath)
+        } label: {
+            HStack(spacing: 5) {
+                Image(systemName: attachment.sfSymbolName)
+                    .font(.system(size: 11))
+                Text(attachment.fileName)
+                    .font(.system(size: 11, weight: .medium))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(
+                Capsule()
+                    .fill(light ? Color.white.opacity(0.2) : MochiTheme.primary.opacity(0.1))
+            )
+            .foregroundStyle(light ? .white : MochiTheme.textLight)
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Slash Command Menu
@@ -625,19 +766,91 @@ struct ChatView: View {
     // MARK: - Actions
 
     private func sendIfReady() {
-        let trimmed = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
+        guard canSend else { return }
         sendMessage()
     }
 
     private func sendMessage() {
         let text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty else { return }
+        guard !text.isEmpty || !pendingAttachments.isEmpty else { return }
+        let attachments = pendingAttachments
         inputText = ""
+        pendingAttachments = []
         showSlashMenu = false
 
+        // Stop recording if active
+        if appState.isRecordingVoice {
+            appState.speechService.stopRecording()
+        }
+
         Task {
-            await appState.sendMessage(text)
+            await appState.sendMessage(text, attachments: attachments)
+        }
+    }
+
+    private func openFilePanel() {
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = true
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.allowedContentTypes = [
+            .pdf, .plainText, .image, .rtf, .spreadsheet,
+            .json, .yaml, .xml, .html, .shellScript,
+            .sourceCode, .swiftSource, .pythonScript,
+        ]
+        panel.message = "Choisis des fichiers a joindre au message"
+
+        guard panel.runModal() == .OK else { return }
+
+        let storage = appState.memoryService.storage
+        for url in panel.urls {
+            do {
+                let fileSize = try FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int64 ?? 0
+                let fileType = UTType(filenameExtension: url.pathExtension)?.identifier ?? "public.data"
+                let attachmentId = UUID()
+                let destName = "\(attachmentId.uuidString)_\(url.lastPathComponent)"
+                let destRelative = "attachments/\(destName)"
+                let destURL = storage.baseDirectory.appendingPathComponent(destRelative)
+
+                // Ensure attachments directory exists
+                try FileManager.default.createDirectory(
+                    at: storage.baseDirectory.appendingPathComponent("attachments"),
+                    withIntermediateDirectories: true
+                )
+                try FileManager.default.copyItem(at: url, to: destURL)
+
+                let attachment = Attachment(
+                    id: attachmentId,
+                    fileName: url.lastPathComponent,
+                    fileType: fileType,
+                    filePath: destRelative,
+                    fileSize: fileSize
+                )
+                pendingAttachments.append(attachment)
+            } catch {
+                // Silently skip files that can't be copied
+            }
+        }
+    }
+
+    private func toggleRecording() {
+        if appState.isRecordingVoice {
+            appState.speechService.stopRecording()
+            // Insert transcribed text into input
+            let transcribed = appState.voiceTranscription
+            if !transcribed.isEmpty {
+                if inputText.isEmpty {
+                    inputText = transcribed
+                } else {
+                    inputText += " " + transcribed
+                }
+            }
+        } else {
+            Task {
+                let granted = await appState.speechService.requestPermissions()
+                guard granted else { return }
+                try? await appState.speechService.startRecording()
+            }
         }
     }
 
