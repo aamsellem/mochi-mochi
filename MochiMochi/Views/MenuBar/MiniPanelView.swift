@@ -202,4 +202,12 @@ struct MiniPanelView: View {
         formatter.unitsStyle = .abbreviated
         return formatter.localizedString(for: date, relativeTo: Date())
     }
+
+    private func addQuickTask() {
+        let text = quickTaskText.trimmingCharacters(in: .whitespaces)
+        guard !text.isEmpty else { return }
+        let task = MochiTask(title: text)
+        appState.addTask(task)
+        quickTaskText = ""
+    }
 }

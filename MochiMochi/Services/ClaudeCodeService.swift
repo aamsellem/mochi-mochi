@@ -73,7 +73,7 @@ final class ClaudeCodeService: @unchecked Sendable {
             var hasResumed = false
             let resumeLock = NSLock()
 
-            func safeResume(with result: Result<String, Error>) {
+            @Sendable func safeResume(with result: Result<String, Error>) {
                 resumeLock.lock()
                 defer { resumeLock.unlock() }
                 guard !hasResumed else { return }
