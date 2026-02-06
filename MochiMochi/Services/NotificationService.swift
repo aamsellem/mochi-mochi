@@ -17,10 +17,37 @@ enum NotificationError: LocalizedError {
     }
 }
 
+// MARK: - Notification Delegate
+
+final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
+    /// Afficher les notifications meme quand l'app est au premier plan
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.banner, .sound])
+    }
+
+    /// Gerer le tap sur une notification
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        completionHandler()
+    }
+}
+
 // MARK: - Notification Service
 
 final class NotificationService {
     private let center = UNUserNotificationCenter.current()
+    private let delegate = NotificationDelegate()
+
+    init() {
+        center.delegate = delegate
+    }
 
     // MARK: - Permission
 
@@ -30,6 +57,24 @@ final class NotificationService {
         } catch {
             return false
         }
+    }
+
+    // MARK: - Test
+
+    func sendTestNotification(personality: Personality) {
+        let content = UNMutableNotificationContent()
+        content.title = "\(personality.emoji) \(personality.displayName)"
+        content.body = personality.idleMessages.randomElement() ?? "Test de notification"
+        content.sound = .default
+
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 3, repeats: false)
+        let request = UNNotificationRequest(
+            identifier: "test-\(Date().timeIntervalSince1970)",
+            content: content,
+            trigger: trigger
+        )
+
+        center.add(request)
     }
 
     // MARK: - Task Reminders
@@ -151,7 +196,7 @@ final class NotificationService {
         case .pote: return "Eh, t'as pas oublie \"\(task.title)\" quand meme ?"
         case .butler: return "Monsieur, puis-je vous rappeler la tache \"\(task.title)\" ?"
         case .coach: return "ALLEZ ! La tache \"\(task.title)\" t'attend, on y va !"
-        case .sage: return "Une tache inachevee pese sur l'esprit : \"\(task.title)\"."
+        case .voyante: return "Les cartes me revelent une tache en suspens : \"\(task.title)\"..."
         case .chat: return "Je daigne te rappeler : \"\(task.title)\". De rien."
         case .heroique: return "Une quete reste inachevee : \"\(task.title)\" !"
         }
@@ -164,7 +209,7 @@ final class NotificationService {
         case .pote: return "Deadline demain pour \"\(task.title)\". Tu geres ou je stresse ?"
         case .butler: return "La deadline pour \"\(task.title)\" est demain, Monsieur."
         case .coach: return "DEADLINE DEMAIN pour \"\(task.title)\" ! On sprint !"
-        case .sage: return "Le temps presse pour \"\(task.title)\". L'urgence n'attend pas."
+        case .voyante: return "Les astres m'avertissent : la deadline pour \"\(task.title)\" approche a grands pas..."
         case .chat: return "Ta deadline pour \"\(task.title)\" est demain. Pas mon probleme."
         case .heroique: return "Le temps est compte pour la quete \"\(task.title)\" ! L'aube approche !"
         }
@@ -177,7 +222,7 @@ final class NotificationService {
         case .pote: return "Il te reste 2h pour garder ton streak de \(streakDays) jours !"
         case .butler: return "Votre streak de \(streakDays) jours risque de s'interrompre, Monsieur."
         case .coach: return "STREAK DE \(streakDays) JOURS EN DANGER ! Une tache et c'est bon, GO !"
-        case .sage: return "La constance est une vertu. Ton streak de \(streakDays) jours merite d'etre preservee."
+        case .voyante: return "Les energies cosmiques tremblent ! Ton streak de \(streakDays) jours risque de s'eteindre..."
         case .chat: return "\(streakDays) jours de streak. Ca serait dommage. Enfin, pour toi."
         case .heroique: return "Le heros risque de perdre sa serie de \(streakDays) victoires ! Agis vite !"
         }
@@ -190,7 +235,7 @@ final class NotificationService {
         case .pote: return "Salut ! On regarde ce qu'on a aujourd'hui ?"
         case .butler: return "Bonjour Monsieur. Votre programme du jour vous attend."
         case .coach: return "DEBOUT ! C'est l'heure de tout defoncer aujourd'hui !"
-        case .sage: return "Un nouveau jour se leve. Voyons ce qu'il nous reserve."
+        case .voyante: return "Les astres annoncent une journee riche en revelations. Viens decouvrir ton destin..."
         case .chat: return "Tu es reveille ? Bon. Viens voir tes taches."
         case .heroique: return "L'aube se leve sur un nouveau chapitre ! Tes quetes t'attendent !"
         }

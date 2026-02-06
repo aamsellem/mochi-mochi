@@ -103,8 +103,8 @@ enum CommandEngine {
             confirmation = "Bien note, Monsieur. \"\(title)\" a ete ajoute a votre liste."
         case .coach:
             confirmation = "NOUVELLE TACHE : \"\(title)\" ! On va la DETRUIRE !"
-        case .sage:
-            confirmation = "La tache \"\(title)\" rejoint ton chemin. Un pas apres l'autre."
+        case .voyante:
+            confirmation = "Les cartes annoncent une nouvelle mission : \"\(title)\". Le destin est en marche..."
         case .chat:
             confirmation = "\"\(title)\", ajoute. J'espere que tu la feras, cette fois."
         case .heroique:
@@ -152,7 +152,7 @@ enum CommandEngine {
         case .pote: message = "Ok, mode focus. Je te laisse tranquille. Fais du bon boulot."
         case .butler: message = "Mode concentration active, Monsieur. Je ne vous derangerai plus."
         case .coach: message = "MODE FOCUS ! ZERO DISTRACTION ! DONNE TOUT !"
-        case .sage: message = "Le silence est l'allie de la concentration. Mode focus active."
+        case .voyante: message = "Les astres s'alignent pour la concentration... Mode focus active. Les energies sont avec toi."
         case .chat: message = "Enfin tu te concentres. Je vais faire une sieste en attendant."
         case .heroique: message = "Le heros entre en meditation profonde ! Aucune distraction ne passera !"
         }
@@ -172,7 +172,7 @@ enum CommandEngine {
         case .pote: message = "Pause ! Va prendre un cafe ou un truc."
         case .butler: message = "Bien, Monsieur. Je suspends le suivi. A votre retour."
         case .coach: message = "PAUSE ! Hydrate-toi, etire-toi, et on repart !"
-        case .sage: message = "Meme le plus grand guerrier a besoin de repos."
+        case .voyante: message = "Les etoiles te conseillent une pause. Recharge tes energies cosmiques."
         case .chat: message = "Pause ? Moi aussi, tiens."
         case .heroique: message = "Le heros fait halte au campement. Les quetes attendront son retour !"
         }
@@ -358,7 +358,7 @@ enum CommandEngine {
         case .pote: message = "C'est enregistre. A plus !"
         case .butler: message = "Session sauvegardee, Monsieur. Au plaisir de vous revoir."
         case .coach: message = "BONNE SESSION ! Tout est sauvegarde. A demain pour tout donner !"
-        case .sage: message = "Le chapitre du jour se referme. Tout est consigne."
+        case .voyante: message = "La seance est terminee. Les astres ont note chaque instant. A bientot..."
         case .chat: message = "Bon, c'est fini ? J'ai sauvegarde. Salut."
         case .heroique: message = "Le chroniqueur consigne les exploits du jour. A la prochaine aventure !"
         }

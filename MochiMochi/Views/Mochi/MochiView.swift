@@ -488,14 +488,16 @@ struct MochiView: View {
                     bounceOffset = -4
                 }
             }
-        case .sage:
-            // Respiration lente et calme
-            withAnimation(.easeInOut(duration: 1.2)) {
-                emotionScale = 1.05
+        case .voyante:
+            // Pulsation mystique lente
+            withAnimation(.easeInOut(duration: 1.0)) {
+                emotionScale = 1.08
+                thinkingWobble = 3
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-                withAnimation(.easeInOut(duration: 1.2)) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                withAnimation(.easeInOut(duration: 1.0)) {
                     emotionScale = 1.0
+                    thinkingWobble = 0
                 }
             }
         case .butler:

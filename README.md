@@ -140,7 +140,7 @@ Configurez des jours off (week-ends) qui ne cassent pas le streak.
 | 🍻 **Mochi Pote** | Décontracté, sarcastique gentil | *"Eh bro, cette tâche traîne depuis 4 jours. On en parle ?"* |
 | 🎩 **Mochi Butler** | Poli, british, pince-sans-rire | *"Monsieur a 7 tâches en retard. Dois-je préparer vos excuses en PDF ?"* |
 | 🏈 **Mochi Coach** | Motivateur, énergie max | *"ALLEZ ON LÂCHE RIEN ! 2 tâches et c'est fini, LET'S GO !"* |
-| 🧙 **Mochi Sage** | Philosophe, réfléchi | *"Ce qui est urgent est rarement important…"* |
+| 🔮 **Mochi Voyante** | Mystique, énigmatique, lit dans les astres | *"Les cartes me révèlent que cette tâche est cruciale... Les astres s'alignent."* |
 | 🐱 **Mochi Chat** | Capricieux, condescendant | *"Je daigne te rappeler ta deadline. Mais c'est bien parce que tu me nourris."* |
 | ⚔️ **Mochi Héroïque** | Narrateur épique | *"Le valeureux héros fait face à 4 tâches au donjon !"* |
 

@@ -176,7 +176,7 @@ L'utilisateur choisit une personnalité à l'onboarding et peut en changer à to
 | 🍻 **Mochi Pote** | Décontracté, sarcastique gentil, loyal | "Eh bro, cette tâche traîne depuis 4 jours. Tu veux qu'on en parle ou tu fais l'autruche ?" |
 | 🎩 **Mochi Butler** | Poli, british, pince-sans-rire | "Monsieur a 7 tâches en retard. Dois-je préparer vos excuses en format PDF ?" |
 | 🏈 **Mochi Coach** | Motivateur, énergie maximale | "ALLEZ ON LÂCHE RIEN ! 2 tâches et on a fini la matinée, LET'S GO !" |
-| 🧙 **Mochi Sage** | Philosophe, réfléchi, prend du recul | "Encore une urgence. Le sage sait que ce qui est urgent est rarement important…" |
+| 🔮 **Mochi Voyante** | Mystique, énigmatique, lit dans les astres | "Les cartes me révèlent une tâche en suspens... Les astres s'alignent en ta faveur." |
 | 🐱 **Mochi Chat** | Capricieux, indépendant, condescendant | "Je daigne te rappeler ta deadline. Mais c'est bien parce que tu me nourris." |
 | ⚔️ **Mochi Héroïque** | Narrateur épique, transforme le quotidien en aventure | "Le valeureux héros fait face à sa quête du jour : 4 tâches l'attendent au donjon !" |
 

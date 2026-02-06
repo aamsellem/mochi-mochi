@@ -295,7 +295,7 @@ struct OnboardingView: View {
             .background(cardBackground)
 
             ScrollView {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 260))], spacing: 8) {
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
                     ForEach(Personality.allCases, id: \.self) { personality in
                         personalityCard(personality)
                     }
@@ -445,29 +445,48 @@ struct OnboardingView: View {
     private func personalityCard(_ personality: Personality) -> some View {
         let isSelected = selectedPersonality == personality
 
-        return HStack(alignment: .top, spacing: 10) {
-            Text(personality.emoji)
-                .font(.title2)
-                .frame(width: 32)
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Text(personality.emoji)
+                    .font(.title2)
+                    .frame(width: 32)
 
-            VStack(alignment: .leading, spacing: 3) {
-                Text(personality.displayName)
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(isSelected ? MochiTheme.primary : MochiTheme.textLight)
-                Text(personality.description)
-                    .font(.system(size: 11))
-                    .foregroundStyle(MochiTheme.textLight.opacity(0.5))
-                    .fixedSize(horizontal: false, vertical: true)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(personality.displayName)
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(isSelected ? MochiTheme.primary : MochiTheme.textLight)
+                    Text(personality.description)
+                        .font(.system(size: 11))
+                        .foregroundStyle(MochiTheme.textLight.opacity(0.5))
+                        .lineLimit(1)
+                }
+
+                Spacer()
+
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(MochiTheme.primary)
+                }
             }
 
-            Spacer()
+            // Example quote
+            HStack(spacing: 0) {
+                RoundedRectangle(cornerRadius: 1)
+                    .fill(isSelected ? MochiTheme.primary.opacity(0.4) : MochiTheme.textLight.opacity(0.15))
+                    .frame(width: 2)
 
-            if isSelected {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(MochiTheme.primary)
+                Text(personality.exampleQuote)
+                    .font(.system(size: 11, design: .rounded))
+                    .italic()
+                    .foregroundStyle(isSelected ? MochiTheme.primary.opacity(0.8) : MochiTheme.textLight.opacity(0.45))
+                    .lineLimit(2)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.leading, 8)
             }
+            .fixedSize(horizontal: false, vertical: true)
         }
         .padding(12)
+        .frame(maxWidth: .infinity, minHeight: 100, alignment: .topLeading)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(isSelected ? MochiTheme.primary.opacity(0.06) : MochiTheme.surfaceLight)
@@ -536,7 +555,7 @@ struct OnboardingView: View {
         case .pote: return .idle
         case .butler: return .proud
         case .coach: return .excited
-        case .sage: return .idle
+        case .voyante: return .idle
         case .chat: return .sleeping
         case .heroique: return .proud
         }
