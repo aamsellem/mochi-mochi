@@ -259,9 +259,9 @@ struct TodaysFocusView: View {
 
     private func categoryLabel(for priority: TaskPriority) -> String {
         switch priority {
-        case .high: return "Deep Work"
-        case .normal: return "Meeting"
-        case .low: return "Planning"
+        case .high: return "Urgent"
+        case .normal: return "A faire"
+        case .low: return "Plus tard"
         }
     }
 
