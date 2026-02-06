@@ -8,20 +8,45 @@ struct MochiAvatarView: View {
 
     var body: some View {
         ZStack {
-            // Soft background circle for contrast
+            // 1. Soft background circle for contrast
             Circle()
                 .fill(bodyColor.opacity(0.15))
                 .frame(width: size * 1.1, height: size * 1.1)
 
-            // Body
+            // 2. Cape (si equipee) — DERRIERE le corps
+            if hasEquipped("cape") {
+                capeAccessory
+            }
+
+            // 3. Body
             mochiBody
 
-            // Face
+            // 4. Echarpe (si equipee) — SUR le corps
+            if hasEquipped("echarpe") {
+                scarfAccessory
+            }
+
+            // 5. Face
             mochiFace
                 .offset(y: -size * 0.05)
 
-            // Equipped accessories overlay
-            equippedAccessories
+            // 6. Lunettes (si equipees) — SUR le visage
+            if hasEquipped("lunettes") {
+                glassesAccessory
+            }
+
+            // 7. Noeud papillon (si equipe) — SOUS le visage
+            if hasEquipped("noeud") {
+                bowTieAccessory
+            }
+
+            // 8. Chapeau (si equipe) — AU-DESSUS de tout
+            equippedHat
+
+            // 9. Ailes (si equipees) — DE CHAQUE COTE
+            if hasEquipped("ailes") {
+                wingsAccessory
+            }
         }
         .frame(width: size, height: size)
     }
@@ -334,46 +359,426 @@ struct MochiAvatarView: View {
         }
     }
 
-    // MARK: - Equipped Items
+    // MARK: - Equipped Items Helpers
+
+    private func hasEquipped(_ keyword: String) -> Bool {
+        equippedItems.contains { $0.name.lowercased().contains(keyword) }
+    }
+
+    // MARK: - Hat
 
     @ViewBuilder
-    private var equippedAccessories: some View {
-        let hats = equippedItems.filter { $0.category == .hat }
-        let accessories = equippedItems.filter { $0.category == .accessory }
-
-        if let hat = hats.first {
-            Text(hatEmoji(for: hat.name))
-                .font(.system(size: size * 0.2))
-                .offset(y: -size * 0.35)
-        }
-
-        if let accessory = accessories.first {
-            Text(accessoryEmoji(for: accessory.name))
-                .font(.system(size: size * 0.12))
-                .offset(x: size * 0.3, y: -size * 0.05)
-        }
-    }
-
-    private func hatEmoji(for name: String) -> String {
-        switch name.lowercased() {
-        case let n where n.contains("couronne"): return "👑"
-        case let n where n.contains("beret"): return "🎨"
-        case let n where n.contains("sorcier"): return "🧙"
-        case let n where n.contains("ninja"): return "🥷"
-        case let n where n.contains("casquette"): return "🧢"
-        default: return "🎩"
+    private var equippedHat: some View {
+        if let hat = equippedItems.first(where: { $0.category == .hat }) {
+            let name = hat.name.lowercased()
+            if name.contains("beret") {
+                beretHat
+            } else if name.contains("couronne") {
+                crownHat
+            } else if name.contains("casquette") {
+                capHat
+            } else if name.contains("sorcier") {
+                wizardHat
+            } else if name.contains("ninja") || name.contains("bandeau") {
+                ninjaBand
+            }
         }
     }
 
-    private func accessoryEmoji(for name: String) -> String {
-        switch name.lowercased() {
-        case let n where n.contains("lunettes"): return "🤓"
-        case let n where n.contains("echarpe"): return "🧣"
-        case let n where n.contains("cape"): return "🦸"
-        case let n where n.contains("ailes"): return "🪽"
-        case let n where n.contains("noeud"): return "🎀"
-        default: return "✨"
+    // MARK: - Beret
+
+    private var beretHat: some View {
+        ZStack {
+            // Corps du beret
+            Ellipse()
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 0.72, green: 0.15, blue: 0.18),
+                            Color(red: 0.55, green: 0.1, blue: 0.13),
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(width: size * 0.4, height: size * 0.15)
+                .rotationEffect(.degrees(-8))
+            // Tige sur le dessus
+            Circle()
+                .fill(Color(red: 0.55, green: 0.1, blue: 0.13))
+                .frame(width: size * 0.04, height: size * 0.04)
+                .offset(y: -size * 0.07)
         }
+        .offset(y: -size * 0.33)
+    }
+
+    // MARK: - Couronne
+
+    private var crownHat: some View {
+        ZStack {
+            // Base de la couronne
+            CrownShape()
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 1.0, green: 0.84, blue: 0.0),
+                            Color(red: 0.85, green: 0.65, blue: 0.0),
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .frame(width: size * 0.35, height: size * 0.18)
+            // Joyaux sur les pointes
+            HStack(spacing: size * 0.06) {
+                Circle()
+                    .fill(Color.red.opacity(0.8))
+                    .frame(width: size * 0.03)
+                    .offset(y: -size * 0.02)
+                Circle()
+                    .fill(Color.blue.opacity(0.8))
+                    .frame(width: size * 0.03)
+                    .offset(y: -size * 0.06)
+                Circle()
+                    .fill(Color.red.opacity(0.8))
+                    .frame(width: size * 0.03)
+                    .offset(y: -size * 0.02)
+            }
+        }
+        .offset(y: -size * 0.35)
+    }
+
+    // MARK: - Casquette
+
+    private var capHat: some View {
+        ZStack {
+            // Dome de la casquette
+            HalfCircleShape()
+                .rotation(.degrees(180))
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 0.3, green: 0.5, blue: 0.8),
+                            Color(red: 0.2, green: 0.38, blue: 0.65),
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .frame(width: size * 0.35, height: size * 0.14)
+            // Visiere
+            Ellipse()
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 0.22, green: 0.4, blue: 0.68),
+                            Color(red: 0.18, green: 0.32, blue: 0.55),
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .frame(width: size * 0.22, height: size * 0.06)
+                .offset(x: size * 0.15, y: size * 0.04)
+        }
+        .offset(y: -size * 0.32)
+    }
+
+    // MARK: - Chapeau Sorcier
+
+    private var wizardHat: some View {
+        ZStack {
+            // Cone du chapeau
+            WizardHatShape()
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 0.3, green: 0.15, blue: 0.5),
+                            Color(red: 0.45, green: 0.2, blue: 0.7),
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .frame(width: size * 0.3, height: size * 0.35)
+            // Bord du chapeau
+            Ellipse()
+                .fill(Color(red: 0.35, green: 0.18, blue: 0.55))
+                .frame(width: size * 0.4, height: size * 0.06)
+                .offset(y: size * 0.14)
+            // Etoiles decoratives
+            Image(systemName: "star.fill")
+                .font(.system(size: size * 0.04))
+                .foregroundStyle(Color.yellow.opacity(0.9))
+                .offset(x: -size * 0.04, y: -size * 0.02)
+            Image(systemName: "star.fill")
+                .font(.system(size: size * 0.03))
+                .foregroundStyle(Color.yellow.opacity(0.7))
+                .offset(x: size * 0.06, y: size * 0.06)
+        }
+        .rotationEffect(.degrees(-5))
+        .offset(y: -size * 0.42)
+    }
+
+    // MARK: - Bandeau Ninja (style Naruto)
+
+    private var ninjaBand: some View {
+        let clothColor = Color(red: 0.15, green: 0.2, blue: 0.45)
+        let clothColor2 = Color(red: 0.1, green: 0.15, blue: 0.35)
+        let metalLight = Color(red: 0.78, green: 0.78, blue: 0.82)
+        let metalDark = Color(red: 0.5, green: 0.5, blue: 0.55)
+
+        return ZStack {
+            // Bandeau tissu principal (bleu fonce)
+            RoundedRectangle(cornerRadius: size * 0.015)
+                .fill(LinearGradient(colors: [clothColor, clothColor2], startPoint: .top, endPoint: .bottom))
+                .frame(width: size * 0.55, height: size * 0.07)
+
+            // Bandes qui flottent a droite (2 longues bandes)
+            RoundedRectangle(cornerRadius: size * 0.008)
+                .fill(LinearGradient(colors: [clothColor, clothColor2.opacity(0.7)], startPoint: .leading, endPoint: .trailing))
+                .frame(width: size * 0.2, height: size * 0.04)
+                .rotationEffect(.degrees(25))
+                .offset(x: size * 0.35, y: size * 0.06)
+
+            RoundedRectangle(cornerRadius: size * 0.008)
+                .fill(LinearGradient(colors: [clothColor, clothColor2.opacity(0.6)], startPoint: .leading, endPoint: .trailing))
+                .frame(width: size * 0.17, height: size * 0.035)
+                .rotationEffect(.degrees(35))
+                .offset(x: size * 0.32, y: size * 0.1)
+
+            // Plaque metallique au centre (plus grande, style Naruto)
+            RoundedRectangle(cornerRadius: size * 0.012)
+                .fill(LinearGradient(colors: [metalLight, metalDark], startPoint: .topLeading, endPoint: .bottomTrailing))
+                .frame(width: size * 0.1, height: size * 0.065)
+                .overlay(
+                    RoundedRectangle(cornerRadius: size * 0.012)
+                        .stroke(metalDark, lineWidth: size * 0.005)
+                )
+
+            // Symbole sur la plaque (spirale simplifiee)
+            Circle()
+                .stroke(metalDark, lineWidth: size * 0.006)
+                .frame(width: size * 0.035, height: size * 0.035)
+            Circle()
+                .fill(metalDark)
+                .frame(width: size * 0.012, height: size * 0.012)
+
+            // Vis de la plaque
+            Circle()
+                .fill(metalDark.opacity(0.6))
+                .frame(width: size * 0.008, height: size * 0.008)
+                .offset(x: -size * 0.035, y: 0)
+            Circle()
+                .fill(metalDark.opacity(0.6))
+                .frame(width: size * 0.008, height: size * 0.008)
+                .offset(x: size * 0.035, y: 0)
+        }
+        .offset(y: -size * 0.2)
+    }
+
+    // MARK: - Lunettes de soleil
+
+    private var glassesAccessory: some View {
+        let frameColor = Color(red: 0.1, green: 0.1, blue: 0.12)
+        let lensColor = LinearGradient(
+            colors: [Color(red: 0.15, green: 0.15, blue: 0.2), Color(red: 0.25, green: 0.2, blue: 0.15)],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+        let lensW = size * 0.16
+        let lensH = size * 0.11
+        let eyeSpacing = size * 0.075
+
+        return ZStack {
+            // Verre gauche - opaque fonce
+            RoundedRectangle(cornerRadius: lensH * 0.45)
+                .fill(lensColor)
+                .frame(width: lensW, height: lensH)
+                .overlay(
+                    RoundedRectangle(cornerRadius: lensH * 0.45)
+                        .stroke(frameColor, lineWidth: size * 0.01)
+                )
+                .overlay(
+                    // Reflet
+                    Ellipse()
+                        .fill(Color.white.opacity(0.15))
+                        .frame(width: lensW * 0.4, height: lensH * 0.3)
+                        .offset(x: -lensW * 0.15, y: -lensH * 0.15)
+                )
+                .offset(x: -eyeSpacing)
+            // Verre droit
+            RoundedRectangle(cornerRadius: lensH * 0.45)
+                .fill(lensColor)
+                .frame(width: lensW, height: lensH)
+                .overlay(
+                    RoundedRectangle(cornerRadius: lensH * 0.45)
+                        .stroke(frameColor, lineWidth: size * 0.01)
+                )
+                .overlay(
+                    Ellipse()
+                        .fill(Color.white.opacity(0.15))
+                        .frame(width: lensW * 0.4, height: lensH * 0.3)
+                        .offset(x: -lensW * 0.15, y: -lensH * 0.15)
+                )
+                .offset(x: eyeSpacing)
+            // Pont central
+            RoundedRectangle(cornerRadius: size * 0.005)
+                .fill(frameColor)
+                .frame(width: eyeSpacing * 0.35, height: size * 0.015)
+        }
+        .offset(y: -size * 0.07)
+    }
+
+    // MARK: - Echarpe
+
+    private var scarfAccessory: some View {
+        let scarfColor1 = Color(red: 0.85, green: 0.2, blue: 0.2)
+        let scarfColor2 = Color(red: 0.65, green: 0.12, blue: 0.12)
+
+        return ZStack {
+            // Bande principale - enroule autour du bas du Mochi
+            RoundedRectangle(cornerRadius: size * 0.03)
+                .fill(
+                    LinearGradient(colors: [scarfColor1, scarfColor2], startPoint: .leading, endPoint: .trailing)
+                )
+                .frame(width: size * 0.65, height: size * 0.08)
+                .offset(y: size * 0.18)
+
+            // Rayures decoratives
+            HStack(spacing: size * 0.08) {
+                ForEach(0..<3, id: \.self) { _ in
+                    RoundedRectangle(cornerRadius: 1)
+                        .fill(Color.white.opacity(0.2))
+                        .frame(width: size * 0.01, height: size * 0.06)
+                }
+            }
+            .offset(y: size * 0.18)
+
+            // Bout gauche qui pend
+            RoundedRectangle(cornerRadius: size * 0.015)
+                .fill(
+                    LinearGradient(colors: [scarfColor1, scarfColor2], startPoint: .top, endPoint: .bottom)
+                )
+                .frame(width: size * 0.08, height: size * 0.18)
+                .rotationEffect(.degrees(-12))
+                .offset(x: -size * 0.28, y: size * 0.28)
+
+            // Bout droit plus court
+            RoundedRectangle(cornerRadius: size * 0.015)
+                .fill(
+                    LinearGradient(colors: [scarfColor1, scarfColor2.opacity(0.8)], startPoint: .top, endPoint: .bottom)
+                )
+                .frame(width: size * 0.07, height: size * 0.12)
+                .rotationEffect(.degrees(8))
+                .offset(x: -size * 0.2, y: size * 0.32)
+
+            // Franges bout gauche
+            HStack(spacing: size * 0.008) {
+                ForEach(0..<4, id: \.self) { _ in
+                    RoundedRectangle(cornerRadius: size * 0.003)
+                        .fill(scarfColor2)
+                        .frame(width: size * 0.012, height: size * 0.025)
+                }
+            }
+            .rotationEffect(.degrees(-12))
+            .offset(x: -size * 0.28, y: size * 0.38)
+        }
+    }
+
+    // MARK: - Noeud Papillon
+
+    private var bowTieAccessory: some View {
+        let bowColor1 = Color(red: 0.85, green: 0.15, blue: 0.2)
+        let bowColor2 = Color(red: 0.65, green: 0.08, blue: 0.12)
+        let wingW = size * 0.13
+        let wingH = size * 0.09
+
+        return ZStack {
+            // Aile gauche
+            BowTieWingShape()
+                .fill(LinearGradient(colors: [bowColor1, bowColor2], startPoint: .top, endPoint: .bottom))
+                .frame(width: wingW, height: wingH)
+                .offset(x: -wingW * 0.45)
+            // Aile droite (miroir)
+            BowTieWingShape()
+                .fill(LinearGradient(colors: [bowColor1, bowColor2], startPoint: .top, endPoint: .bottom))
+                .frame(width: wingW, height: wingH)
+                .scaleEffect(x: -1, y: 1)
+                .offset(x: wingW * 0.45)
+            // Noeud central
+            Circle()
+                .fill(bowColor2)
+                .frame(width: size * 0.04, height: size * 0.04)
+        }
+        .offset(y: size * 0.16)
+    }
+
+    // MARK: - Cape
+
+    private var capeAccessory: some View {
+        CapeShape()
+            .fill(
+                LinearGradient(
+                    colors: [
+                        Color(red: 0.35, green: 0.15, blue: 0.6),
+                        Color(red: 0.25, green: 0.1, blue: 0.45),
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            .frame(width: size * 0.95, height: size * 0.8)
+            .overlay(
+                CapeShape()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color(red: 0.55, green: 0.2, blue: 0.8).opacity(0.3),
+                                .clear,
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: size * 0.95, height: size * 0.8)
+            )
+            .offset(y: size * 0.08)
+    }
+
+    // MARK: - Ailes
+
+    private var wingsAccessory: some View {
+        HStack(spacing: size * 0.55) {
+            // Aile gauche
+            WingShape()
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(0.7),
+                            Color(red: 0.85, green: 0.9, blue: 1.0).opacity(0.4),
+                        ],
+                        startPoint: .trailing,
+                        endPoint: .leading
+                    )
+                )
+                .frame(width: size * 0.2, height: size * 0.3)
+                .scaleEffect(x: -1, y: 1)
+            // Aile droite
+            WingShape()
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(0.7),
+                            Color(red: 0.85, green: 0.9, blue: 1.0).opacity(0.4),
+                        ],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .frame(width: size * 0.2, height: size * 0.3)
+        }
+        .offset(y: -size * 0.02)
     }
 }
 
@@ -407,6 +812,158 @@ struct WavyLineShape: Shape {
             control1: CGPoint(x: rect.width * 0.75, y: rect.minY),
             control2: CGPoint(x: rect.width * 0.75, y: rect.maxY)
         )
+        return path
+    }
+}
+
+// MARK: - Crown Shape
+
+struct CrownShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let w = rect.width
+        let h = rect.height
+        // Base
+        path.move(to: CGPoint(x: 0, y: h))
+        // Montee vers la premiere pointe
+        path.addLine(to: CGPoint(x: w * 0.1, y: h * 0.3))
+        // Creux entre pointes
+        path.addLine(to: CGPoint(x: w * 0.25, y: h * 0.55))
+        // Pointe centrale (la plus haute)
+        path.addLine(to: CGPoint(x: w * 0.5, y: 0))
+        // Creux
+        path.addLine(to: CGPoint(x: w * 0.75, y: h * 0.55))
+        // Derniere pointe
+        path.addLine(to: CGPoint(x: w * 0.9, y: h * 0.3))
+        // Retour a la base
+        path.addLine(to: CGPoint(x: w, y: h))
+        path.closeSubpath()
+        return path
+    }
+}
+
+// MARK: - Wizard Hat Shape
+
+struct WizardHatShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let w = rect.width
+        let h = rect.height
+        // Pointe du chapeau (legerement decalee pour effet penche)
+        path.move(to: CGPoint(x: w * 0.45, y: 0))
+        // Cote gauche avec courbe
+        path.addQuadCurve(
+            to: CGPoint(x: 0, y: h),
+            control: CGPoint(x: w * 0.15, y: h * 0.5)
+        )
+        // Base
+        path.addLine(to: CGPoint(x: w, y: h))
+        // Cote droit avec courbe
+        path.addQuadCurve(
+            to: CGPoint(x: w * 0.45, y: 0),
+            control: CGPoint(x: w * 0.8, y: h * 0.5)
+        )
+        path.closeSubpath()
+        return path
+    }
+}
+
+// MARK: - Bow Tie Wing Shape
+
+struct BowTieWingShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let w = rect.width
+        let h = rect.height
+        // Commence au centre (noeud)
+        path.move(to: CGPoint(x: 0, y: h * 0.4))
+        // Courbe vers le haut puis l'extremite
+        path.addQuadCurve(
+            to: CGPoint(x: w, y: 0),
+            control: CGPoint(x: w * 0.5, y: -h * 0.2)
+        )
+        // Extremite vers le bas
+        path.addQuadCurve(
+            to: CGPoint(x: w, y: h),
+            control: CGPoint(x: w * 1.1, y: h * 0.5)
+        )
+        // Retour au centre par le bas
+        path.addQuadCurve(
+            to: CGPoint(x: 0, y: h * 0.6),
+            control: CGPoint(x: w * 0.5, y: h * 1.2)
+        )
+        path.closeSubpath()
+        return path
+    }
+}
+
+// MARK: - Cape Shape
+
+struct CapeShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let w = rect.width
+        let h = rect.height
+        // Haut de la cape (attache aux epaules)
+        path.move(to: CGPoint(x: w * 0.2, y: 0))
+        path.addLine(to: CGPoint(x: w * 0.8, y: 0))
+        // Cote droit qui descend avec courbe
+        path.addQuadCurve(
+            to: CGPoint(x: w * 0.85, y: h * 0.9),
+            control: CGPoint(x: w * 1.0, y: h * 0.4)
+        )
+        // Bord inferieur ondule
+        path.addQuadCurve(
+            to: CGPoint(x: w * 0.5, y: h),
+            control: CGPoint(x: w * 0.7, y: h * 0.8)
+        )
+        path.addQuadCurve(
+            to: CGPoint(x: w * 0.15, y: h * 0.9),
+            control: CGPoint(x: w * 0.3, y: h * 0.8)
+        )
+        // Cote gauche qui remonte
+        path.addQuadCurve(
+            to: CGPoint(x: w * 0.2, y: 0),
+            control: CGPoint(x: 0, y: h * 0.4)
+        )
+        path.closeSubpath()
+        return path
+    }
+}
+
+// MARK: - Wing Shape
+
+struct WingShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let w = rect.width
+        let h = rect.height
+        // Base de l'aile (attachee au corps)
+        path.move(to: CGPoint(x: 0, y: h * 0.3))
+        // Partie superieure de l'aile
+        path.addQuadCurve(
+            to: CGPoint(x: w * 0.7, y: h * 0.1),
+            control: CGPoint(x: w * 0.3, y: -h * 0.1)
+        )
+        // Pointe de l'aile
+        path.addQuadCurve(
+            to: CGPoint(x: w, y: h * 0.35),
+            control: CGPoint(x: w * 1.0, y: h * 0.05)
+        )
+        // Bord inferieur avec ondulations (3 plumes)
+        path.addQuadCurve(
+            to: CGPoint(x: w * 0.7, y: h * 0.55),
+            control: CGPoint(x: w * 0.9, y: h * 0.5)
+        )
+        path.addQuadCurve(
+            to: CGPoint(x: w * 0.4, y: h * 0.7),
+            control: CGPoint(x: w * 0.6, y: h * 0.7)
+        )
+        path.addQuadCurve(
+            to: CGPoint(x: 0, y: h * 0.7),
+            control: CGPoint(x: w * 0.2, y: h * 0.8)
+        )
+        path.closeSubpath()
         return path
     }
 }

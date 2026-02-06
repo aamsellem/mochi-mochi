@@ -4,6 +4,7 @@ struct ChatView: View {
     @EnvironmentObject var appState: AppState
     @State private var inputText = ""
     @State private var showSlashMenu = false
+    @State private var thinkingBounce = false
     @FocusState private var isInputFocused: Bool
 
     var body: some View {
@@ -13,7 +14,7 @@ struct ChatView: View {
             messagesArea
             inputBar
         }
-        .background(Color.white)
+        .background(MochiTheme.surfaceLight)
         .clipShape(RoundedRectangle(cornerRadius: MochiTheme.cornerRadiusXL, style: .continuous))
     }
 
@@ -22,7 +23,7 @@ struct ChatView: View {
     private var chatHeader: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
-                Text("Mochi Chat")
+                Text("Chat")
                     .font(.title2)
                     .fontWeight(.bold)
                     .foregroundStyle(MochiTheme.textLight)
@@ -40,7 +41,7 @@ struct ChatView: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 14)
-        .background(Color.white)
+        .background(MochiTheme.surfaceLight)
     }
 
     private func headerButton(icon: String) -> some View {
@@ -106,33 +107,45 @@ struct ChatView: View {
 
     private var loadingIndicator: some View {
         HStack(spacing: 8) {
-            // Mochi badge
+            // Mochi badge avec animation de pulse
             Text("M")
                 .font(.system(size: 11, weight: .bold))
                 .foregroundStyle(.white)
                 .frame(width: 28, height: 28)
                 .background(Circle().fill(MochiTheme.secondary))
+                .scaleEffect(thinkingBounce ? 1.15 : 0.95)
+                .animation(
+                    .easeInOut(duration: 0.6).repeatForever(autoreverses: true),
+                    value: thinkingBounce
+                )
 
-            HStack(spacing: 4) {
+            HStack(spacing: 5) {
                 ForEach(0..<3, id: \.self) { index in
                     Circle()
                         .fill(MochiTheme.secondary)
-                        .frame(width: 6, height: 6)
-                        .opacity(0.4)
+                        .frame(width: 7, height: 7)
+                        .offset(y: thinkingBounce ? -4 : 4)
                         .animation(
-                            .easeInOut(duration: 0.6)
-                            .repeatForever()
-                            .delay(Double(index) * 0.2),
-                            value: appState.isLoading
+                            .easeInOut(duration: 0.45)
+                            .repeatForever(autoreverses: true)
+                            .delay(Double(index) * 0.15),
+                            value: thinkingBounce
                         )
                 }
                 Text("\(appState.mochi.name) reflechit...")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .opacity(thinkingBounce ? 1.0 : 0.5)
+                    .animation(
+                        .easeInOut(duration: 1.0).repeatForever(autoreverses: true),
+                        value: thinkingBounce
+                    )
             }
         }
         .padding(.vertical, 8)
         .frame(maxWidth: .infinity, alignment: .leading)
+        .onAppear { thinkingBounce = true }
+        .onDisappear { thinkingBounce = false }
     }
 
     // MARK: - Chat Bubble
@@ -197,7 +210,7 @@ struct ChatView: View {
 
     private func assistantBubbleContent(_ message: Message) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Mochi")
+            Text(appState.mochi.name)
                 .font(.subheadline)
                 .fontWeight(.bold)
                 .foregroundStyle(MochiTheme.primary)
@@ -237,12 +250,12 @@ struct ChatView: View {
                 if block.isCode {
                     Text(block.text)
                         .font(.system(size: 12, design: .monospaced))
-                        .foregroundStyle(Color(hex: "E0E0E0"))
+                        .foregroundStyle(MochiTheme.codeText)
                         .padding(10)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(
                             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .fill(Color(hex: "2D2D2D"))
+                                .fill(MochiTheme.codeBackground)
                         )
                 } else {
                     Text(block.text)
@@ -293,7 +306,7 @@ struct ChatView: View {
             .buttonStyle(.plain)
 
             // Text field
-            TextField("Tape un message ou une commande...", text: $inputText, axis: .vertical)
+            TextField("", text: $inputText, prompt: Text("Tape un message ou une commande...").foregroundColor(MochiTheme.textPlaceholder), axis: .vertical)
                 .font(.body)
                 .foregroundStyle(MochiTheme.textLight)
                 .lineLimit(1...6)

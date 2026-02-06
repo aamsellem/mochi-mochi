@@ -10,6 +10,9 @@ struct MochiMochiApp: App {
             ContentView()
                 .environmentObject(appState)
                 .frame(minWidth: 800, minHeight: 600)
+                .task {
+                    await appState.setupNotifications()
+                }
         }
         .windowStyle(.titleBar)
         .defaultSize(width: 1000, height: 700)

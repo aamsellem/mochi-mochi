@@ -24,21 +24,34 @@ struct InventoryView: View {
         HStack {
             Text("Inventaire")
                 .font(.title2.bold())
+                .foregroundStyle(MochiTheme.textLight)
             Spacer()
             Text("\(allOwnedItems.count) items")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(MochiTheme.textSecondary)
         }
         .padding()
     }
 
     private var categoryPicker: some View {
-        Picker("Categorie", selection: $selectedCategory) {
+        HStack(spacing: 6) {
             ForEach(ItemCategory.allCases, id: \.self) { category in
-                Text(category.displayName).tag(category)
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) { selectedCategory = category }
+                } label: {
+                    Text(category.displayName)
+                        .font(.system(size: 12, weight: .semibold))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 7)
+                        .background(
+                            Capsule().fill(selectedCategory == category ? MochiTheme.primary : Color.gray.opacity(0.08))
+                        )
+                        .foregroundStyle(selectedCategory == category ? .white : MochiTheme.textLight.opacity(0.7))
+                }
+                .buttonStyle(.plain)
             }
+            Spacer()
         }
-        .pickerStyle(.segmented)
         .padding(.horizontal)
     }
 
@@ -49,10 +62,10 @@ struct InventoryView: View {
                 .font(.system(size: 40))
                 .foregroundStyle(.secondary)
             Text("Aucun item dans cette categorie")
-                .foregroundStyle(.secondary)
+                .foregroundStyle(MochiTheme.textSecondary)
             Text("Visite la boutique pour debloquer des items !")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(MochiTheme.textSecondary)
             Spacer()
         }
         .frame(maxWidth: .infinity)
@@ -101,12 +114,14 @@ struct InventoryItemRow: View {
                 Circle()
                     .fill(colorPreview(for: item.name))
                     .frame(width: 36, height: 36)
+            } else if item.category == .hat || item.category == .accessory {
+                MochiAvatarView(emotion: .idle, color: .pink, equippedItems: [item], size: 36)
             } else {
                 RoundedRectangle(cornerRadius: 6)
                     .fill(Color.secondary.opacity(0.1))
                     .frame(width: 44, height: 44)
                     .overlay {
-                        Text(categoryEmoji)
+                        Text(backgroundEmoji)
                             .font(.title3)
                     }
             }
@@ -138,12 +153,13 @@ struct InventoryItemRow: View {
         .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 
-    private var categoryEmoji: String {
-        switch item.category {
-        case .color: return "🎨"
-        case .hat: return "🎩"
-        case .accessory: return "👓"
-        case .background: return "🏞️"
+    private var backgroundEmoji: String {
+        switch item.name {
+        case "Jardin zen": return "🪷"
+        case "Bureau cosy": return "🛋️"
+        case "Espace": return "🚀"
+        case "Foret de bambous": return "🎋"
+        default: return "🏞️"
         }
     }
 

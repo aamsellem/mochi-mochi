@@ -34,6 +34,23 @@ enum MochiColor: String, Codable, CaseIterable {
         case .golden: return "Dore"
         }
     }
+
+    /// Niveau requis pour debloquer cette couleur
+    var requiredLevel: Int {
+        switch self {
+        case .pink: return 1
+        case .teal: return 1
+        case .white: return 3
+        case .matcha: return 5
+        case .skyBlue: return 8
+        case .golden: return 12
+        }
+    }
+
+    /// Verifie si la couleur est debloquee pour un niveau donne
+    func isUnlocked(at level: Int) -> Bool {
+        level >= requiredLevel
+    }
 }
 
 // MARK: - Mochi Character

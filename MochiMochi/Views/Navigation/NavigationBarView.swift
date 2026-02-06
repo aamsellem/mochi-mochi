@@ -93,6 +93,9 @@ struct NavigationBarView: View {
 
     private var notificationButton: some View {
         Button {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                selectedTab = .settings
+            }
         } label: {
             Circle()
                 .fill(MochiTheme.surfaceLight)

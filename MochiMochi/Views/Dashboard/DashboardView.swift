@@ -14,7 +14,7 @@ struct DashboardView: View {
             .padding()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(nsColor: .windowBackgroundColor))
+        .background(MochiTheme.backgroundLight)
     }
 
     // MARK: - Mochi Section
@@ -40,8 +40,11 @@ struct DashboardView: View {
                     }
 
                     HStack(spacing: 16) {
-                        Label("\(appState.gamification.riceGrains) 🍙", systemImage: "leaf.fill")
-                            .foregroundStyle(.orange)
+                        HStack(spacing: 2) {
+                            Text("🍙")
+                            Text("\(appState.gamification.riceGrains)")
+                        }
+                        .foregroundStyle(.orange)
                         Label("\(appState.gamification.streakDays)j", systemImage: "flame.fill")
                             .foregroundStyle(.red)
                         Text(emotionLabel)

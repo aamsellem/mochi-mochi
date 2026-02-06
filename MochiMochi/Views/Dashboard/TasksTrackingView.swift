@@ -208,9 +208,9 @@ struct TasksTrackingView: View {
 
     private func priorityColor(_ priority: TaskPriority) -> Color {
         switch priority {
-        case .high: return Color(hex: "EF4444")
-        case .normal: return MochiTheme.secondary
-        case .low: return Color(hex: "F4A261")
+        case .high: return MochiTheme.errorRed
+        case .normal: return MochiTheme.priorityNormal
+        case .low: return MochiTheme.priorityLow
         }
     }
 
@@ -244,7 +244,7 @@ struct TasksTrackingView: View {
                 .font(.system(size: 18))
                 .foregroundStyle(MochiTheme.primary.opacity(0.6))
 
-            TextField("Ajouter une tâche...", text: $newTaskTitle)
+            TextField("", text: $newTaskTitle, prompt: Text("Ajouter une tâche...").foregroundColor(MochiTheme.textPlaceholder))
                 .font(.system(size: 14))
                 .foregroundStyle(MochiTheme.textLight)
                 .textFieldStyle(.plain)
@@ -338,7 +338,7 @@ struct TasksTrackingView: View {
     private var statsCards: some View {
         VStack(spacing: 10) {
             miniStatRow(icon: "flame.fill", color: .orange, label: "Streak", value: "\(appState.gamification.streakDays) jours")
-            miniStatRow(icon: "leaf.fill", color: .orange, label: "Grains de riz", value: "\(appState.gamification.riceGrains) 🍙")
+            miniStatRow(emoji: "🍙", color: .orange, label: "Grains de riz", value: "\(appState.gamification.riceGrains)")
             miniStatRow(icon: "star.fill", color: MochiTheme.primary, label: "Niveau", value: "\(appState.gamification.level)")
         }
         .padding(16)
@@ -353,13 +353,20 @@ struct TasksTrackingView: View {
         )
     }
 
-    private func miniStatRow(icon: String, color: Color, label: String, value: String) -> some View {
+    private func miniStatRow(icon: String? = nil, emoji: String? = nil, color: Color, label: String, value: String) -> some View {
         HStack(spacing: 10) {
-            Image(systemName: icon)
-                .font(.system(size: 13))
-                .foregroundStyle(color)
-                .frame(width: 28, height: 28)
-                .background(Circle().fill(color.opacity(0.12)))
+            Group {
+                if let emoji = emoji {
+                    Text(emoji)
+                        .font(.system(size: 14))
+                } else if let icon = icon {
+                    Image(systemName: icon)
+                        .font(.system(size: 13))
+                        .foregroundStyle(color)
+                }
+            }
+            .frame(width: 28, height: 28)
+            .background(Circle().fill(color.opacity(0.12)))
 
             Text(label)
                 .font(.system(size: 12))

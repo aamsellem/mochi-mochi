@@ -6,6 +6,7 @@ struct MochiView: View {
     @State private var bounceOffset: CGFloat = 0
     @State private var isAnimating = false
     @State private var emotionScale: CGFloat = 1.0
+    @State private var showCustomize = false
 
     var body: some View {
         ScrollView {
@@ -29,9 +30,16 @@ struct MochiView: View {
                     .font(.headline.bold())
                     .foregroundStyle(MochiTheme.textLight)
                 Spacer()
-                Image(systemName: "star.fill")
-                    .foregroundStyle(MochiTheme.primary.opacity(0.5))
-                    .font(.caption)
+                Button {
+                    showCustomize.toggle()
+                } label: {
+                    Image(systemName: "paintbrush.fill")
+                        .font(.system(size: 12))
+                        .foregroundStyle(MochiTheme.primary)
+                        .frame(width: 28, height: 28)
+                        .background(Circle().fill(MochiTheme.primary.opacity(0.12)))
+                }
+                .buttonStyle(.plain)
             }
 
             // Avatar
@@ -58,6 +66,12 @@ struct MochiView: View {
             Text("Niveau \(appState.gamification.level) \u{2022} \(emotionLabel(appState.mochi.emotion))")
                 .font(.subheadline)
                 .foregroundStyle(MochiTheme.textLight.opacity(0.6))
+
+            // Customize sheet
+            .sheet(isPresented: $showCustomize) {
+                MochiCustomizeSheet()
+                    .environmentObject(appState)
+            }
 
             // XP Progress Bar
             VStack(spacing: 4) {
@@ -108,7 +122,7 @@ struct MochiView: View {
     private var statsGrid: some View {
         HStack(spacing: 12) {
             statCard(
-                icon: "leaf.fill",
+                emoji: "🍙",
                 iconColor: .orange,
                 value: "\(appState.gamification.riceGrains)",
                 label: "GRAINS DE RIZ"
@@ -122,15 +136,20 @@ struct MochiView: View {
         }
     }
 
-    private func statCard(icon: String, iconColor: Color, value: String, label: String) -> some View {
+    private func statCard(icon: String? = nil, emoji: String? = nil, iconColor: Color, value: String, label: String) -> some View {
         VStack(spacing: 8) {
             ZStack {
                 Circle()
                     .fill(iconColor.opacity(0.15))
                     .frame(width: 36, height: 36)
-                Image(systemName: icon)
-                    .font(.system(size: 16))
-                    .foregroundStyle(iconColor)
+                if let emoji = emoji {
+                    Text(emoji)
+                        .font(.system(size: 18))
+                } else if let icon = icon {
+                    Image(systemName: icon)
+                        .font(.system(size: 16))
+                        .foregroundStyle(iconColor)
+                }
             }
 
             Text(value)
@@ -226,7 +245,7 @@ struct MochiView: View {
             Button {
                 appState.toggleInProgress(task)
             } label: {
-                Text(task.isInProgress ? "Actif" : "Activer")
+                Text(task.isInProgress ? "En cours" : "Je suis dessus")
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundStyle(task.isInProgress ? .white : MochiTheme.primary)
                     .padding(.horizontal, 8)
@@ -242,9 +261,9 @@ struct MochiView: View {
 
     private func backlogDotColor(_ priority: TaskPriority) -> Color {
         switch priority {
-        case .high: return Color(hex: "EF4444")
-        case .normal: return MochiTheme.secondary
-        case .low: return Color(hex: "F4A261")
+        case .high: return MochiTheme.errorRed
+        case .normal: return MochiTheme.priorityNormal
+        case .low: return MochiTheme.priorityLow
         }
     }
 

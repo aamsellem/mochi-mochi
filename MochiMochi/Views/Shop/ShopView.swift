@@ -2,9 +2,8 @@ import SwiftUI
 
 struct ShopView: View {
     @EnvironmentObject var appState: AppState
-    @State private var selectedCategory: ItemCategory = .color
-    @State private var showEquipAlert = false
-    @State private var lastPurchasedColorName: String?
+    @State private var selectedCategory: ItemCategory = .hat
+    private let shopCategories: [ItemCategory] = [.hat, .accessory, .background]
 
     var body: some View {
         VStack(spacing: 0) {
@@ -49,16 +48,6 @@ struct ShopView: View {
             RoundedRectangle(cornerRadius: MochiTheme.cornerRadiusXL, style: .continuous)
                 .stroke(Color.gray.opacity(0.1), lineWidth: 1)
         )
-        .alert("Couleur achetee !", isPresented: $showEquipAlert) {
-            Button("Equiper maintenant") {
-                if let name = lastPurchasedColorName {
-                    appState.equipColor(name)
-                }
-            }
-            Button("Plus tard", role: .cancel) {}
-        } message: {
-            Text("Veux-tu equiper cette couleur maintenant ?")
-        }
     }
 
     private var shopHeader: some View {
@@ -67,21 +56,50 @@ struct ShopView: View {
                 .font(.title2.bold())
                 .foregroundStyle(MochiTheme.textLight)
             Spacer()
-            Label("\(appState.gamification.riceGrains) 🍙", systemImage: "leaf.fill")
-                .font(.headline)
-                .foregroundStyle(.orange)
+            HStack(spacing: 4) {
+                Text("🍙")
+                    .font(.headline)
+                Text("\(appState.gamification.riceGrains)")
+                    .font(.headline.bold())
+                    .foregroundStyle(.orange)
+            }
         }
         .padding()
     }
 
     private var categoryPicker: some View {
-        Picker("Categorie", selection: $selectedCategory) {
-            ForEach(ItemCategory.allCases, id: \.self) { category in
-                Text(category.displayName).tag(category)
+        HStack(spacing: 6) {
+            ForEach(shopCategories, id: \.self) { category in
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) { selectedCategory = category }
+                } label: {
+                    HStack(spacing: 4) {
+                        Text(categoryIcon(category))
+                            .font(.system(size: 12))
+                        Text(category.displayName)
+                            .font(.system(size: 12, weight: .semibold))
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 7)
+                    .background(
+                        Capsule().fill(selectedCategory == category ? MochiTheme.primary : Color.gray.opacity(0.08))
+                    )
+                    .foregroundStyle(selectedCategory == category ? .white : MochiTheme.textLight.opacity(0.7))
+                }
+                .buttonStyle(.plain)
             }
+            Spacer()
         }
-        .pickerStyle(.segmented)
         .padding(.horizontal)
+    }
+
+    private func categoryIcon(_ category: ItemCategory) -> String {
+        switch category {
+        case .color: return "🎨"
+        case .hat: return "🎩"
+        case .accessory: return "✨"
+        case .background: return "🏞️"
+        }
     }
 
     private var filteredItems: [ShopItem] {
@@ -97,10 +115,6 @@ struct ShopView: View {
 
     private func purchaseItem(_ item: ShopItem) {
         appState.purchaseItem(item)
-        if item.category == .color {
-            lastPurchasedColorName = item.name
-            showEquipAlert = true
-        }
     }
 }
 
@@ -114,13 +128,15 @@ struct ShopItemCard: View {
     @EnvironmentObject var appState: AppState
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 6) {
             itemPreview
             itemTitle
+            Spacer(minLength: 0)
             itemStatus
             levelBadge
             purchaseButton
         }
+        .frame(height: 200)
         .padding(12)
         .background(cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: 10))
@@ -135,20 +151,24 @@ struct ShopItemCard: View {
                 .frame(width: 50, height: 50)
                 .shadow(color: colorPreview(for: item.name).opacity(0.4), radius: 4)
                 .padding(.vertical, 15)
+        } else if item.category == .hat || item.category == .accessory {
+            MochiAvatarView(emotion: .idle, color: .pink, equippedItems: [item], size: 60)
+                .padding(.vertical, 10)
         } else {
             RoundedRectangle(cornerRadius: 8)
                 .fill(Color.secondary.opacity(0.1))
                 .frame(height: 80)
                 .overlay {
-                    Text(categoryEmoji)
-                        .font(.system(size: 32))
+                    Text(backgroundEmoji)
+                        .font(.system(size: 36))
                 }
         }
     }
 
     private var itemTitle: some View {
         Text(item.name)
-            .font(.subheadline.bold())
+            .font(.system(size: 14, weight: .bold))
+            .foregroundStyle(MochiTheme.textLight)
             .lineLimit(1)
     }
 
@@ -156,20 +176,20 @@ struct ShopItemCard: View {
     private var itemStatus: some View {
         if isOwned {
             if isEquipped {
-                Text("Equipe")
-                    .font(.caption.bold())
-                    .foregroundStyle(.green)
+                Text("Équipé")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(MochiTheme.successGreen)
             } else {
-                Text("Possede")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                Text("Possédé")
+                    .font(.system(size: 11))
+                    .foregroundStyle(MochiTheme.textLight.opacity(0.5))
             }
         } else {
             HStack(spacing: 4) {
                 Text("\(item.price)")
-                    .font(.caption.bold())
+                    .font(.system(size: 12, weight: .bold))
                 Text("🍙")
-                    .font(.caption)
+                    .font(.system(size: 12))
             }
             .foregroundStyle(.orange)
         }
@@ -178,38 +198,49 @@ struct ShopItemCard: View {
     @ViewBuilder
     private var levelBadge: some View {
         if item.requiredLevel > 1 {
-            let color: Color = hasLevel ? .secondary : .red
             Text("Niv. \(item.requiredLevel)+")
-                .font(.caption2)
-                .foregroundStyle(color)
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(hasLevel ? MochiTheme.textLight.opacity(0.4) : .red)
         }
     }
 
     @ViewBuilder
     private var purchaseButton: some View {
         if isOwned {
-            Button("Achete") {}
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-                .disabled(true)
+            Text("Acheté")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(MochiTheme.textLight.opacity(0.3))
+                .padding(.horizontal, 14)
+                .padding(.vertical, 6)
+                .background(Capsule().fill(Color.gray.opacity(0.08)))
         } else {
-            Button("Acheter") {
+            Button {
                 onPurchase()
+            } label: {
+                Text("Acheter")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 6)
+                    .background(
+                        Capsule().fill(
+                            (!canAfford || !hasLevel) ? MochiTheme.primary.opacity(0.4) : MochiTheme.primary
+                        )
+                    )
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.small)
+            .buttonStyle(.plain)
             .disabled(!canAfford || !hasLevel)
         }
     }
 
     private var cardBackground: some View {
-        let bgColor = isOwned ? Color.green.opacity(0.03) : Color.secondary.opacity(0.05)
+        let bgColor = isOwned ? MochiTheme.successGreen.opacity(0.05) : MochiTheme.backgroundLight.opacity(0.6)
         return Rectangle().fill(bgColor)
     }
 
     private var cardBorder: some View {
-        let strokeColor = isEquipped ? Color.green.opacity(0.5) : Color.clear
-        return RoundedRectangle(cornerRadius: 10).stroke(strokeColor, lineWidth: 2)
+        let strokeColor = isEquipped ? MochiTheme.successGreen.opacity(0.5) : Color.gray.opacity(0.1)
+        return RoundedRectangle(cornerRadius: 10).stroke(strokeColor, lineWidth: isEquipped ? 2 : 1)
     }
 
     private var canAfford: Bool {
@@ -220,12 +251,13 @@ struct ShopItemCard: View {
         appState.gamification.level >= item.requiredLevel
     }
 
-    private var categoryEmoji: String {
-        switch item.category {
-        case .color: return "🎨"
-        case .hat: return "🎩"
-        case .accessory: return "👓"
-        case .background: return "🏞️"
+    private var backgroundEmoji: String {
+        switch item.name {
+        case "Jardin zen": return "🪷"
+        case "Bureau cosy": return "🛋️"
+        case "Espace": return "🚀"
+        case "Foret de bambous": return "🎋"
+        default: return "🏞️"
         }
     }
 
@@ -245,12 +277,6 @@ struct ShopItemCard: View {
 // MARK: - Shop Catalog
 
 let shopCatalog: [ShopItem] = [
-    // Colors (matching the level/price table)
-    ShopItem(name: "Blanc", category: .color, price: 15, requiredLevel: 3),
-    ShopItem(name: "Matcha", category: .color, price: 25, requiredLevel: 5),
-    ShopItem(name: "Bleu ciel", category: .color, price: 35, requiredLevel: 8),
-    ShopItem(name: "Dore", category: .color, price: 50, requiredLevel: 12),
-
     // Hats
     ShopItem(name: "Beret", category: .hat, price: 20),
     ShopItem(name: "Couronne", category: .hat, price: 50, requiredLevel: 10),

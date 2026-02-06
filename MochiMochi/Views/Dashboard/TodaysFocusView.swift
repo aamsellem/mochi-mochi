@@ -169,9 +169,9 @@ struct TodaysFocusView: View {
 
     private func dotColor(for priority: TaskPriority) -> Color {
         switch priority {
-        case .high: return MochiTheme.primary
-        case .normal: return Color(hex: "4ADE80")
-        case .low: return Color(hex: "F4A261")
+        case .high: return MochiTheme.priorityHigh
+        case .normal: return MochiTheme.priorityNormal
+        case .low: return MochiTheme.priorityLow
         }
     }
 
@@ -403,17 +403,18 @@ struct TaskFormSheet: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Titre")
                         .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(.secondary)
-                    TextField("Ex: Revoir la maquette", text: $title)
+                        .foregroundStyle(MochiTheme.textLight.opacity(0.5))
+                    TextField("", text: $title, prompt: Text("Ex: Revoir la maquette").foregroundColor(MochiTheme.textPlaceholder))
                         .font(.system(size: 14))
+                        .foregroundStyle(MochiTheme.textLight)
                         .textFieldStyle(.plain)
                         .padding(10)
                         .background(
                             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .fill(MochiTheme.backgroundLight)
+                                .fill(Color.white)
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                        .stroke(Color.gray.opacity(0.15), lineWidth: 1)
+                                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
                                 )
                         )
                 }
@@ -422,18 +423,19 @@ struct TaskFormSheet: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Description (optionnel)")
                         .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(.secondary)
-                    TextField("Ajouter des détails...", text: $description, axis: .vertical)
+                        .foregroundStyle(MochiTheme.textLight.opacity(0.5))
+                    TextField("", text: $description, prompt: Text("Ajouter des détails...").foregroundColor(MochiTheme.textPlaceholder), axis: .vertical)
                         .font(.system(size: 13))
+                        .foregroundStyle(MochiTheme.textLight)
                         .lineLimit(2...4)
                         .textFieldStyle(.plain)
                         .padding(10)
                         .background(
                             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .fill(MochiTheme.backgroundLight)
+                                .fill(Color.white)
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                        .stroke(Color.gray.opacity(0.15), lineWidth: 1)
+                                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
                                 )
                         )
                 }
@@ -442,7 +444,7 @@ struct TaskFormSheet: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Priorité")
                         .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(MochiTheme.textLight.opacity(0.5))
                     HStack(spacing: 8) {
                         ForEach(TaskPriority.allCases, id: \.self) { p in
                             priorityButton(p)
@@ -455,7 +457,7 @@ struct TaskFormSheet: View {
                     Toggle(isOn: $hasDeadline) {
                         Text("Deadline")
                             .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(MochiTheme.textLight.opacity(0.5))
                     }
                     .toggleStyle(.switch)
                     .tint(MochiTheme.primary)
@@ -500,9 +502,9 @@ struct TaskFormSheet: View {
 
     private func priorityButtonColor(_ p: TaskPriority) -> Color {
         switch p {
-        case .high: return Color(hex: "EF4444")
+        case .high: return MochiTheme.errorRed
         case .normal: return MochiTheme.secondary
-        case .low: return Color(hex: "F4A261")
+        case .low: return MochiTheme.priorityLow
         }
     }
 

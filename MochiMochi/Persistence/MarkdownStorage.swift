@@ -8,6 +8,9 @@ struct AppConfig {
     var mochiColor: MochiColor
     var isOnboardingComplete: Bool
     var notificationFrequency: String
+    var morningBriefingEnabled: Bool
+    var morningBriefingHour: Int
+    var weekendsProtected: Bool
     var globalShortcut: String
     var daysOff: [Int] // weekday numbers (1=Sunday, 7=Saturday)
 
@@ -17,6 +20,9 @@ struct AppConfig {
         mochiColor: MochiColor = .white,
         isOnboardingComplete: Bool = false,
         notificationFrequency: String = "normal",
+        morningBriefingEnabled: Bool = true,
+        morningBriefingHour: Int = 9,
+        weekendsProtected: Bool = false,
         globalShortcut: String = "⌘⇧M",
         daysOff: [Int] = []
     ) {
@@ -25,6 +31,9 @@ struct AppConfig {
         self.mochiColor = mochiColor
         self.isOnboardingComplete = isOnboardingComplete
         self.notificationFrequency = notificationFrequency
+        self.morningBriefingEnabled = morningBriefingEnabled
+        self.morningBriefingHour = morningBriefingHour
+        self.weekendsProtected = weekendsProtected
         self.globalShortcut = globalShortcut
         self.daysOff = daysOff
     }
@@ -188,6 +197,12 @@ final class MarkdownStorage {
                 config.isOnboardingComplete = value == "true"
             case "notifications":
                 config.notificationFrequency = value
+            case "briefing_actif":
+                config.morningBriefingEnabled = value == "true"
+            case "briefing_heure":
+                if let h = Int(value) { config.morningBriefingHour = h }
+            case "weekends_proteges":
+                config.weekendsProtected = value == "true"
             case "raccourci":
                 config.globalShortcut = value
             case "jours_off":
@@ -207,6 +222,9 @@ final class MarkdownStorage {
         lines.append("- couleur: \(config.mochiColor.rawValue)")
         lines.append("- onboarding: \(config.isOnboardingComplete)")
         lines.append("- notifications: \(config.notificationFrequency)")
+        lines.append("- briefing_actif: \(config.morningBriefingEnabled)")
+        lines.append("- briefing_heure: \(config.morningBriefingHour)")
+        lines.append("- weekends_proteges: \(config.weekendsProtected)")
         lines.append("- raccourci: \(config.globalShortcut)")
         if !config.daysOff.isEmpty {
             lines.append("- jours_off: \(config.daysOff.map(String.init).joined(separator: ", "))")

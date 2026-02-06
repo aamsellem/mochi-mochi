@@ -47,9 +47,12 @@ struct MiniPanelView: View {
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                 Spacer()
-                Label("\(appState.gamification.riceGrains)", systemImage: "leaf.fill")
-                    .font(.caption)
-                    .foregroundStyle(.orange)
+                HStack(spacing: 2) {
+                    Text("🍙")
+                    Text("\(appState.gamification.riceGrains)")
+                }
+                .font(.caption)
+                .foregroundStyle(.orange)
             }
         }
         .padding(12)

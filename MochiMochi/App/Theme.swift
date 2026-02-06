@@ -15,11 +15,27 @@ enum MochiTheme {
     // MARK: - Texte
     static let textLight = Color(hex: "4A4A4A")
     static let textDark = Color(hex: "E0E0E0")
+    static let textSecondary = textLight.opacity(0.6)
+    static let textPlaceholder = textLight.opacity(0.45)
+    static let textDisabled = textLight.opacity(0.35)
 
     // MARK: - Pastels
     static let pastelYellow = Color(hex: "FFDFBA")
     static let pastelBlue = Color(hex: "BAE1FF")
     static let pastelGreen = Color(hex: "BAFFC9")
+
+    // MARK: - Priorites
+    static let priorityHigh = primary
+    static let priorityNormal = Color(hex: "4ADE80")
+    static let priorityLow = Color(hex: "F4A261")
+
+    // MARK: - Semantiques
+    static let successGreen = Color(hex: "22C55E")
+    static let errorRed = Color(hex: "EF4444")
+
+    // MARK: - Code Blocks
+    static let codeBackground = Color(hex: "2D2D2D")
+    static let codeText = Color(hex: "E0E0E0")
 
     // MARK: - Dimensions
     static let cornerRadius: CGFloat = 16

@@ -14,6 +14,10 @@ final class AppState: ObservableObject {
     @Published var inventory: [ShopItem] = []
     @Published var isLoading: Bool = false
     @Published var selectedTab: AppTab = .dashboard
+    @Published var notificationFrequency: String = "normal"
+    @Published var morningBriefingEnabled: Bool = true
+    @Published var morningBriefingHour: Int = 9
+    @Published var weekendsProtected: Bool = false
 
     // MARK: - Services
 
@@ -44,6 +48,10 @@ final class AppState: ObservableObject {
             self.isOnboardingComplete = config.isOnboardingComplete
             self.mochi.name = config.mochiName
             self.mochi.color = config.mochiColor
+            self.notificationFrequency = config.notificationFrequency
+            self.morningBriefingEnabled = config.morningBriefingEnabled
+            self.morningBriefingHour = config.morningBriefingHour
+            self.weekendsProtected = config.weekendsProtected
         }
 
         if let mochiState = memoryService.loadMochiState() {
@@ -60,7 +68,11 @@ final class AppState: ObservableObject {
             mochiName: mochi.name,
             personality: currentPersonality,
             mochiColor: mochi.color,
-            isOnboardingComplete: isOnboardingComplete
+            isOnboardingComplete: isOnboardingComplete,
+            notificationFrequency: notificationFrequency,
+            morningBriefingEnabled: morningBriefingEnabled,
+            morningBriefingHour: morningBriefingHour,
+            weekendsProtected: weekendsProtected
         )
         memoryService.saveConfig(config)
     }
@@ -70,6 +82,49 @@ final class AppState: ObservableObject {
         memoryService.saveMochiState(gamification)
         memoryService.saveTasks(tasks)
         memoryService.saveInventory(inventory)
+    }
+
+    // MARK: - Notifications
+
+    func setupNotifications() async {
+        let granted = await notificationService.requestPermission()
+        guard granted else { return }
+        rescheduleAllNotifications()
+    }
+
+    func rescheduleAllNotifications() {
+        notificationService.cancelAll()
+
+        // Morning briefing
+        if morningBriefingEnabled {
+            notificationService.scheduleMorningBriefing(
+                at: morningBriefingHour,
+                personality: currentPersonality
+            )
+        }
+
+        // Streak warning (si streak active)
+        if gamification.streakDays > 0 {
+            notificationService.scheduleStreakWarning(
+                streakDays: gamification.streakDays,
+                personality: currentPersonality
+            )
+        }
+
+        // Re-schedule reminders pour les taches en cours
+        let activeTasks = tasks.filter { !$0.isCompleted }
+        for task in activeTasks {
+            if notificationFrequency != "zen" {
+                notificationService.scheduleTaskReminder(
+                    for: task,
+                    personality: currentPersonality
+                )
+            }
+            notificationService.scheduleDeadlineWarning(
+                for: task,
+                personality: currentPersonality
+            )
+        }
     }
 
     // MARK: - Chat
@@ -85,10 +140,21 @@ final class AppState: ObservableObject {
             let result = SlashCommandParser.parse(text)
             isLoading = false
             await CommandEngine.execute(result, appState: self)
-            // React to the command response
             if let lastMessage = messages.last, lastMessage.role == .assistant {
                 setReactiveEmotion(from: lastMessage.content)
             }
+            saveState()
+            return
+        }
+
+        // Detect natural language task creation
+        if let taskTitle = extractTaskFromNaturalLanguage(text) {
+            isLoading = false
+            let task = MochiTask(title: taskTitle)
+            addTask(task)
+            let confirmation = "C'est note ! J'ai ajoute la tache \"\(taskTitle)\" a ta liste."
+            messages.append(Message(role: .assistant, content: confirmation))
+            setTemporaryEmotion(.happy, duration: 3)
             saveState()
             return
         }
@@ -157,6 +223,10 @@ final class AppState: ObservableObject {
         tasks[index].isCompleted = true
         tasks[index].completedAt = Date()
 
+        // Annuler les notifications de cette tache
+        notificationService.cancelNotification(identifier: "task-reminder-\(task.id.uuidString)")
+        notificationService.cancelNotification(identifier: "deadline-\(task.id.uuidString)")
+
         let rewards = gamification.rewardForTask(task)
         let leveledUp = gamification.applyRewards(rewards)
 
@@ -171,6 +241,19 @@ final class AppState: ObservableObject {
 
     func addTask(_ task: MochiTask) {
         tasks.append(task)
+
+        // Schedule notifications pour la nouvelle tache
+        if notificationFrequency != "zen" {
+            notificationService.scheduleTaskReminder(
+                for: task,
+                personality: currentPersonality
+            )
+        }
+        notificationService.scheduleDeadlineWarning(
+            for: task,
+            personality: currentPersonality
+        )
+
         saveState()
     }
 
@@ -184,6 +267,8 @@ final class AppState: ObservableObject {
     }
 
     func deleteTask(_ task: MochiTask) {
+        notificationService.cancelNotification(identifier: "task-reminder-\(task.id.uuidString)")
+        notificationService.cancelNotification(identifier: "deadline-\(task.id.uuidString)")
         tasks.removeAll { $0.id == task.id }
         saveState()
     }
@@ -210,13 +295,30 @@ final class AppState: ObservableObject {
 
     func equipColor(_ colorName: String) {
         guard let mochiColor = MochiColor.allCases.first(where: { $0.displayName == colorName }) else { return }
+        guard mochiColor.isUnlocked(at: gamification.level) else { return }
         mochi.color = mochiColor
-        // Mark color as equipped in inventory, unequip others of same category
+        saveState()
+    }
+
+    func equipItem(_ item: ShopItem) {
+        // Unequip all items of same category, then equip this one
         for i in inventory.indices {
-            if inventory[i].category == .color {
-                inventory[i].isEquipped = (inventory[i].name == colorName)
+            if inventory[i].category == item.category {
+                inventory[i].isEquipped = (inventory[i].name == item.name)
             }
         }
+        // Update equipped items on mochi
+        mochi.equippedItems = inventory.filter { $0.isEquipped && $0.category != .color }
+        saveState()
+    }
+
+    func unequipItem(_ item: ShopItem) {
+        for i in inventory.indices {
+            if inventory[i].name == item.name && inventory[i].category == item.category {
+                inventory[i].isEquipped = false
+            }
+        }
+        mochi.equippedItems = inventory.filter { $0.isEquipped && $0.category != .color }
         saveState()
     }
 
@@ -259,6 +361,40 @@ final class AppState: ObservableObject {
 
         let cleanText = cleanLines.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
         return (cleanText, tasks)
+    }
+
+    /// Detect natural language task creation like "ajoute la tache faire les courses"
+    private func extractTaskFromNaturalLanguage(_ text: String) -> String? {
+        let lower = text.lowercased().trimmingCharacters(in: .whitespaces)
+        let prefixes = [
+            "ajoute la tache ",
+            "ajoute une tache ",
+            "ajoute tache ",
+            "ajoute ",
+            "ajouter ",
+            "nouvelle tache ",
+            "nouvelle tache: ",
+            "note ",
+            "note: ",
+            "cree la tache ",
+            "cree une tache ",
+            "creer ",
+            "tache: ",
+            "tache : ",
+            "task: ",
+            "task ",
+            "todo ",
+            "todo: ",
+        ]
+        for prefix in prefixes {
+            if lower.hasPrefix(prefix) {
+                let title = String(text.dropFirst(prefix.count)).trimmingCharacters(in: .whitespaces)
+                if !title.isEmpty && title.count >= 3 {
+                    return title
+                }
+            }
+        }
+        return nil
     }
 
     // MARK: - Helpers

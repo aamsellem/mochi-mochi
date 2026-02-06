@@ -16,6 +16,7 @@
 		349E4EC9815FD56E5C140CE4 /* KeyboardShortcutService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE9AEDDB99F9624BAE2E9697 /* KeyboardShortcutService.swift */; };
 		35EC7E48C923D8DB2C1D9C8C /* Personality.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B90D1A0246AE377AD3CEE28 /* Personality.swift */; };
 		3D37F160DB11B15374D2C117 /* ShopItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = B85C47B8B5AE0F7CE5571B90 /* ShopItem.swift */; };
+		3F53A81E4D484B27B0220026 /* MochiCustomizeSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BBA0C1BA518F003D39D110C /* MochiCustomizeSheet.swift */; };
 		3FB3FD1BEFB9BB571EA9E262 /* MarkdownStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F4D9B561403758FB54A58DA /* MarkdownStorage.swift */; };
 		57C6850AC5F20D48D3405FF4 /* TodaysFocusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 449F1E33878B5D7A1A4D0E7D /* TodaysFocusView.swift */; };
 		598ABA465508A6F284755E34 /* TasksTrackingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AECDC1B92B28D2C418D37307 /* TasksTrackingView.swift */; };
@@ -62,6 +63,7 @@
 		2E02D40C8E17B5E0A168F4E0 /* MochiMochiTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MochiMochiTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3667DD83AC857A1F64951CE2 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		3B068B9BC6F530BCEF9B0DBD /* CommandEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandEngine.swift; sourceTree = "<group>"; };
+		3BBA0C1BA518F003D39D110C /* MochiCustomizeSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MochiCustomizeSheet.swift; sourceTree = "<group>"; };
 		3EEC43619F3A2F7B2AEE0D93 /* MochiMochiApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MochiMochiApp.swift; sourceTree = "<group>"; };
 		449F1E33878B5D7A1A4D0E7D /* TodaysFocusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodaysFocusView.swift; sourceTree = "<group>"; };
 		4631B739C9C44DF637EB5066 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
@@ -249,6 +251,7 @@
 			isa = PBXGroup;
 			children = (
 				021408C2C68AEA67B66EEBDC /* MochiAvatarView.swift */,
+				3BBA0C1BA518F003D39D110C /* MochiCustomizeSheet.swift */,
 				B555B86C8B5673A52128050D /* MochiView.swift */,
 			);
 			path = Mochi;
@@ -373,6 +376,7 @@
 				A0D344B188A77723A604ABE1 /* MiniPanelView.swift in Sources */,
 				DA6C1F771F9267FA0B70B555 /* MochiAvatarView.swift in Sources */,
 				CC4EB0B383AC651F0CB7595E /* MochiCharacter.swift in Sources */,
+				3F53A81E4D484B27B0220026 /* MochiCustomizeSheet.swift in Sources */,
 				6A4A635C3AA88FBB8107EF61 /* MochiMochiApp.swift in Sources */,
 				E2349302083D99EE281B7A42 /* MochiTask.swift in Sources */,
 				9584934852E53BE8C46D2727 /* MochiView.swift in Sources */,
