@@ -18,17 +18,6 @@ struct OnboardingView: View {
     @State private var notificationsEnabled = false
     private let totalSteps = 8
 
-    private let occupations = [
-        ("💻", "Developpeur"),
-        ("🎨", "Designer"),
-        ("📊", "Chef de projet"),
-        ("🎓", "Etudiant"),
-        ("✍️", "Freelance"),
-        ("📈", "Entrepreneur"),
-        ("🔬", "Chercheur"),
-        ("🎯", "Autre"),
-    ]
-
     private let goals = [
         ("🎯", "Mieux m'organiser", "Suivre mes taches et deadlines"),
         ("🚀", "Etre plus productif", "Optimiser mon temps et mon energie"),
@@ -150,17 +139,31 @@ struct OnboardingView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Qu'est-ce que tu fais ?")
+                    Text("Decris ton activite")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(MochiTheme.textLight)
 
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 140))], spacing: 8) {
-                        ForEach(occupations, id: \.1) { emoji, label in
-                            chipButton(emoji: emoji, label: label, isSelected: userOccupation == label) {
-                                withAnimation(.easeInOut(duration: 0.2)) { userOccupation = label }
-                            }
+                    ZStack(alignment: .leading) {
+                        if userOccupation.isEmpty {
+                            Text("Ex: Developpeur front-end chez Acme")
+                                .font(.system(size: 15))
+                                .foregroundStyle(MochiTheme.textLight.opacity(0.3))
+                                .padding(.leading, 12)
                         }
+                        TextField("", text: $userOccupation)
+                            .font(.system(size: 15))
+                            .foregroundStyle(MochiTheme.textLight)
+                            .textFieldStyle(.plain)
+                            .padding(12)
                     }
+                    .background(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(MochiTheme.surfaceLight)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .stroke(MochiTheme.primary.opacity(userOccupation.isEmpty ? 0.15 : 0.4), lineWidth: 1.5)
+                            )
+                    )
                 }
             }
             .padding(20)

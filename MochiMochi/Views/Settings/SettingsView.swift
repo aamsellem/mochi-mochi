@@ -173,11 +173,6 @@ struct GeneralSettingsTab: View {
     @State private var userOccupation: String = ""
     @State private var userGoal: String = ""
 
-    private let occupations = [
-        "Developpeur", "Designer", "Chef de projet", "Etudiant",
-        "Freelance", "Entrepreneur", "Chercheur", "Autre",
-    ]
-
     private let goals = [
         "Mieux m'organiser", "Etre plus productif", "Apprendre des choses",
         "Reduire mon stress", "Atteindre mes objectifs", "Avoir un compagnon",
@@ -194,11 +189,7 @@ struct GeneralSettingsTab: View {
                     }
 
                     SettingsRow("Activite", icon: "briefcase.fill", iconColor: .orange) {
-                        settingsMenu(
-                            value: userOccupation,
-                            placeholder: "Choisir",
-                            options: occupations
-                        ) { userOccupation = $0 }
+                        settingsTextField("Ton activite", text: $userOccupation, width: .infinity)
                     }
 
                     SettingsRow("Objectif", icon: "target", iconColor: .green, showDivider: false) {
@@ -298,11 +289,9 @@ struct GeneralSettingsTab: View {
         }
     }
 
-    private func settingsTextField(_ placeholder: String, text: Binding<String>) -> some View {
-        TextField(placeholder, text: text)
-            .textFieldStyle(.plain)
-            .font(.system(size: 13))
-            .foregroundStyle(MochiTheme.textLight)
+    private func settingsTextField(_ placeholder: String, text: Binding<String>, width: CGFloat = 160) -> some View {
+        MochiTextField(placeholder, text: text, fontSize: 13)
+            .frame(height: 20)
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
             .background(
@@ -313,7 +302,7 @@ struct GeneralSettingsTab: View {
                             .stroke(Color.gray.opacity(0.18), lineWidth: 1)
                     )
             )
-            .frame(width: 160)
+            .frame(maxWidth: width)
     }
 
     private func settingsMenu(value: String, placeholder: String, options: [String], onSelect: @escaping (String) -> Void) -> some View {

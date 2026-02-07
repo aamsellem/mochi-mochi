@@ -678,6 +678,10 @@ L'intégration Notion utilise l'API REST officielle Notion avec authentification
 - Refresh automatique du statut de notification à l'ouverture des réglages
 - Chevron directionnel pour le toggle du panneau Mochi (remplace l'emoji)
 
+### Phase 2.9 — Profil libre (v0.2.9) ✅
+- Champ activité en texte libre : remplacement du choix parmi 8 options prédéfinies par un champ texte libre dans l'onboarding et les réglages
+- Sélection rose dans les réglages : les champs texte des réglages (Prénom, Activité, Nom du Mochi) utilisent désormais `MochiTextField` avec sélection rose et curseur rose
+
 ### Phase 3 — Intégrations (v0.3)
 - Synchronisation bidirectionnelle Notion
 - Raccourcis clavier globaux

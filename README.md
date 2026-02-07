@@ -302,6 +302,7 @@ MochiMochi/
 - [x] **Phase 2.5 — Chat enrichi (v0.2.5)** : Upload de documents (PDF, texte, code), dictée vocale (fr_FR), pièces jointes dans les messages
 - [x] **Phase 2.7 — Notes & suivi (v0.2.7)** : Onglet Notes avec extraction de tâches IA, panneau Mochi rétractable, suivi de tâches (tracked) avec relances répétées, refonte TodaysFocus
 - [x] **Phase 2.8 — Polish UX (v0.2.8)** : Auto-greeting au lancement, date picker graphique pour les tâches, étape notifications dans l'onboarding, sélection de texte rose personnalisée, nettoyage interface chat
+- [x] **Phase 2.9 — Profil libre (v0.2.9)** : Champ activité/métier en texte libre (onboarding + réglages), sélection rose dans les réglages via MochiTextField
 - [ ] **Phase 3 — Intégrations (v0.3)** : Sync Notion, raccourcis globaux, mode focus
 - [ ] **Phase 4 — Polish (v1.0)** : Onboarding complet, toutes les personnalités, distribution DMG
 
