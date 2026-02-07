@@ -20,6 +20,10 @@
   <a href="#-intégration-notion">Notion</a>
 </p>
 
+<p align="center">
+  <img src="screen.png" alt="Mochi Mochi — Interface principale" width="800">
+</p>
+
 ---
 
 ## Le problème
