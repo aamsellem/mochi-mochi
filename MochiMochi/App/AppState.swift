@@ -15,6 +15,8 @@ final class AppState: ObservableObject {
     @Published var inventory: [ShopItem] = []
     @Published var isLoading: Bool = false
     @Published var selectedTab: AppTab = .dashboard
+    @Published var selectedSettingsTab: Int = 0
+    @Published var notificationsBlocked: Bool = false
     @Published var userName: String = ""
     @Published var userOccupation: String = ""
     @Published var userGoal: String = ""
@@ -58,6 +60,19 @@ final class AppState: ObservableObject {
         speechService.$transcribedText
             .receive(on: RunLoop.main)
             .assign(to: &$voiceTranscription)
+
+        // Mochi reacts to voice recording
+        speechService.$isRecording
+            .receive(on: RunLoop.main)
+            .sink { [weak self] isRecording in
+                guard let self else { return }
+                if isRecording {
+                    self.mochi.emotion = .listening
+                } else if self.mochi.emotion == .listening {
+                    self.mochi.updateEmotion(from: self.gamification, tasks: self.tasks)
+                }
+            }
+            .store(in: &speechCancellables)
 
         loadState()
     }
@@ -133,9 +148,37 @@ final class AppState: ObservableObject {
     // MARK: - Notifications
 
     func setupNotifications() async {
-        let granted = await notificationService.requestPermission()
-        guard granted else { return }
-        rescheduleAllNotifications()
+        let status = await notificationService.checkCurrentStatus()
+
+        if status == .notDetermined {
+            // First time: try requesting permission
+            let granted = await notificationService.requestPermission()
+            if granted {
+                NSLog("[Mochi] Notification permission granted")
+                rescheduleAllNotifications()
+                notificationService.sendTestNotification(personality: currentPersonality)
+                return
+            }
+        }
+
+        if status == .authorized || status == .provisional {
+            NSLog("[Mochi] Notifications already authorized")
+            rescheduleAllNotifications()
+            return
+        }
+
+        // Permission denied or not determined after request — open System Settings
+        NSLog("[Mochi] Notification permission denied (status: %d) — opening System Settings", status.rawValue)
+        notificationsBlocked = true
+    }
+
+    func refreshNotificationStatus() async {
+        let status = await notificationService.checkCurrentStatus()
+        notificationsBlocked = (status != .authorized && status != .provisional)
+        if !notificationsBlocked {
+            NSLog("[Mochi] Notifications now authorized — rescheduling")
+            rescheduleAllNotifications()
+        }
     }
 
     func rescheduleAllNotifications() {
@@ -183,13 +226,31 @@ final class AppState: ObservableObject {
         }
     }
 
+    // MARK: - Auto Greeting
+
+    @Published var hasGreetedThisSession: Bool = false
+
+    func sendSilentGreeting() async {
+        guard !hasGreetedThisSession else { return }
+        hasGreetedThisSession = true
+        isLoading = true
+        setTemporaryEmotion(.happy)
+
+        let result = SlashCommandParser.parse("/bonjour")
+        await CommandEngine.execute(result, appState: self)
+        isLoading = false
+        if let lastMessage = messages.last, lastMessage.role == .assistant {
+            setReactiveEmotion(from: lastMessage.content)
+        }
+    }
+
     // MARK: - Chat
 
     func sendMessage(_ text: String, attachments: [Attachment] = []) async {
         let userMessage = Message(role: .user, content: text, attachments: attachments)
         messages.append(userMessage)
         isLoading = true
-        setTemporaryEmotion(.thinking)
+        setTemporaryEmotion(.writing)
 
         // Check for slash commands
         if text.hasPrefix("/") {

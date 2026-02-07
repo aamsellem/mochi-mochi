@@ -3,6 +3,8 @@ import SwiftUI
 struct TasksTrackingView: View {
     @EnvironmentObject var appState: AppState
     @State private var newTaskTitle = ""
+    @State private var newTaskDeadline: Date? = nil
+    @State private var showDatePicker = false
     @State private var selectedFilter: TaskFilter = .all
 
     enum TaskFilter: String, CaseIterable {
@@ -255,7 +257,59 @@ struct TasksTrackingView: View {
                     .font(.system(size: 14))
                     .foregroundStyle(MochiTheme.textLight)
                     .textFieldStyle(.plain)
+                    .tint(MochiTheme.primary)
                     .onSubmit { addTask() }
+            }
+
+            // Date picker button
+            Button {
+                showDatePicker.toggle()
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "calendar")
+                        .font(.system(size: 13))
+                    if let deadline = newTaskDeadline {
+                        Text(deadline, style: .date)
+                            .font(.system(size: 11))
+                    }
+                }
+                .foregroundStyle(newTaskDeadline != nil ? MochiTheme.primary : Color.gray.opacity(0.6))
+            }
+            .buttonStyle(.plain)
+            .popover(isPresented: $showDatePicker) {
+                VStack(spacing: 12) {
+                    DatePicker(
+                        "Deadline",
+                        selection: Binding(
+                            get: { newTaskDeadline ?? Calendar.current.date(byAdding: .day, value: 1, to: Date())! },
+                            set: { newTaskDeadline = $0 }
+                        ),
+                        in: Date()...,
+                        displayedComponents: [.date]
+                    )
+                    .datePickerStyle(.graphical)
+                    .labelsHidden()
+                    .tint(MochiTheme.primary)
+
+                    HStack {
+                        if newTaskDeadline != nil {
+                            Button("Retirer") {
+                                newTaskDeadline = nil
+                                showDatePicker = false
+                            }
+                            .font(.system(size: 12))
+                            .foregroundStyle(.red.opacity(0.7))
+                        }
+                        Spacer()
+                        Button("OK") {
+                            showDatePicker = false
+                        }
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(MochiTheme.primary)
+                    }
+                }
+                .padding(16)
+                .frame(width: 280)
             }
 
             Button(action: addTask) {
@@ -463,9 +517,11 @@ struct TasksTrackingView: View {
     private func addTask() {
         let title = newTaskTitle.trimmingCharacters(in: .whitespaces)
         guard !title.isEmpty else { return }
-        let task = MochiTask(title: title)
+        var task = MochiTask(title: title)
+        task.deadline = newTaskDeadline
         appState.addTask(task)
         newTaskTitle = ""
+        newTaskDeadline = nil
     }
 }
 

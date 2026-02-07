@@ -15,7 +15,8 @@ struct OnboardingView: View {
     @State private var existingConfigFound = false
     @State private var avatarBounce: CGFloat = 0
 
-    private let totalSteps = 7
+    @State private var notificationsEnabled = false
+    private let totalSteps = 8
 
     private let occupations = [
         ("💻", "Developpeur"),
@@ -53,7 +54,8 @@ struct OnboardingView: View {
                 case 3: mochiNameStep
                 case 4: colorStep
                 case 5: personalityStep
-                case 6: summaryStep
+                case 6: notificationStep
+                case 7: summaryStep
                 default: EmptyView()
                 }
             }
@@ -304,7 +306,68 @@ struct OnboardingView: View {
         }
     }
 
-    // MARK: - Step 6: Summary
+    // MARK: - Step 6: Notifications
+
+    private var notificationStep: some View {
+        VStack(spacing: 24) {
+            Spacer()
+
+            stepHeader(icon: "bell.fill", title: "Notifications")
+
+            Image(systemName: notificationsEnabled ? "bell.badge.fill" : "bell.slash.fill")
+                .font(.system(size: 56))
+                .foregroundStyle(notificationsEnabled ? MochiTheme.primary : MochiTheme.textLight.opacity(0.3))
+                .animation(.spring(response: 0.4), value: notificationsEnabled)
+
+            VStack(spacing: 8) {
+                Text(notificationsEnabled ? "Notifications activees !" : "Reste connecte avec ton Mochi")
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .foregroundStyle(MochiTheme.textLight)
+
+                Text("Ton Mochi te rappellera tes taches, deadlines et gardera ton streak en vie.")
+                    .font(.system(size: 13))
+                    .foregroundStyle(MochiTheme.textLight.opacity(0.6))
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 360)
+            }
+
+            if !notificationsEnabled {
+                Button {
+                    Task {
+                        let granted = await appState.notificationService.requestPermission()
+                        notificationsEnabled = granted
+                    }
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "bell.fill")
+                            .font(.system(size: 14))
+                        Text("Activer les notifications")
+                            .font(.system(size: 14, weight: .semibold))
+                    }
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 12)
+                    .background(
+                        Capsule().fill(MochiTheme.primary)
+                            .shadow(color: MochiTheme.primary.opacity(0.3), radius: 6, y: 2)
+                    )
+                }
+                .buttonStyle(.plain)
+            } else {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 32))
+                    .foregroundStyle(MochiTheme.pastelGreen)
+            }
+
+            Text("Tu pourras modifier ca dans les reglages")
+                .font(.system(size: 12))
+                .foregroundStyle(MochiTheme.textLight.opacity(0.4))
+
+            Spacer()
+        }
+    }
+
+    // MARK: - Step 7: Summary
 
     private var summaryStep: some View {
         VStack(spacing: 24) {
@@ -344,6 +407,8 @@ struct OnboardingView: View {
                 summaryRow(icon: "theatermasks.fill", label: "Personnalite", value: "\(selectedPersonality.emoji) \(selectedPersonality.displayName)")
                 Divider().padding(.horizontal, 16)
                 summaryRow(icon: "paintpalette.fill", label: "Couleur", value: selectedColor.displayName)
+                Divider().padding(.horizontal, 16)
+                summaryRow(icon: "bell.fill", label: "Notifications", value: notificationsEnabled ? "Activees" : "Desactivees")
                 if !claudeCodeInstalled {
                     Divider().padding(.horizontal, 16)
                     summaryRow(icon: "exclamationmark.triangle.fill", label: "Claude Code", value: "Non detecte")
@@ -663,6 +728,13 @@ struct OnboardingView: View {
         appState.currentPersonality = selectedPersonality
         appState.isOnboardingComplete = true
         appState.saveState()
+
+        // Setup notifications if user enabled them during onboarding
+        if notificationsEnabled {
+            Task {
+                await appState.setupNotifications()
+            }
+        }
     }
 
     private func chooseStorageFolder() {

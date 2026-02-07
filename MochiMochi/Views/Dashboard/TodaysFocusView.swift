@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 // MARK: - Task Filter
 
@@ -297,6 +298,7 @@ struct TaskFormSheet: View {
     @State private var priority: TaskPriority = .normal
     @State private var hasDeadline: Bool = false
     @State private var deadline: Date = Date().addingTimeInterval(3600)
+    @State private var showDeadlinePicker: Bool = false
 
     private var editingTask: MochiTask? {
         if case .edit(let task) = mode { return task }
@@ -313,7 +315,7 @@ struct TaskFormSheet: View {
             Divider().opacity(0.3)
             sheetFooter
         }
-        .frame(width: 380, height: hasDeadline ? 380 : 340)
+        .frame(width: 420, height: 530)
         .background(Color.white)
         .onAppear {
             if let task = editingTask {
@@ -336,10 +338,10 @@ struct TaskFormSheet: View {
                 dismiss()
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.secondary)
-                    .frame(width: 24, height: 24)
-                    .background(Circle().fill(Color.gray.opacity(0.1)))
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(MochiTheme.textLight.opacity(0.6))
+                    .frame(width: 28, height: 28)
+                    .background(Circle().fill(Color.gray.opacity(0.15)))
             }
             .buttonStyle(.plain)
         }
@@ -348,81 +350,146 @@ struct TaskFormSheet: View {
     }
 
     private var formContent: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                // Title
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Titre")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(MochiTheme.textLight.opacity(0.5))
-                    TextField("", text: $title, prompt: Text("Ex: Revoir la maquette").foregroundColor(MochiTheme.textPlaceholder))
-                        .font(.system(size: 14))
-                        .foregroundStyle(MochiTheme.textLight)
-                        .textFieldStyle(.plain)
-                        .padding(10)
-                        .background(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .fill(Color.white)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-                                )
-                        )
-                }
+        VStack(alignment: .leading, spacing: 16) {
+            // Title
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Titre")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(MochiTheme.textLight.opacity(0.5))
+                MochiTextField("Ex: Revoir la maquette", text: $title, fontSize: 14)
+                    .frame(height: 20)
+                    .padding(10)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(Color.white)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                            )
+                    )
+            }
 
-                // Description
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Description (optionnel)")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(MochiTheme.textLight.opacity(0.5))
-                    TextField("", text: $description, prompt: Text("Ajouter des details...").foregroundColor(MochiTheme.textPlaceholder), axis: .vertical)
-                        .font(.system(size: 13))
-                        .foregroundStyle(MochiTheme.textLight)
-                        .lineLimit(2...4)
-                        .textFieldStyle(.plain)
-                        .padding(10)
-                        .background(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .fill(Color.white)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-                                )
-                        )
-                }
+            // Description
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Description (optionnel)")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(MochiTheme.textLight.opacity(0.5))
+                MochiTextField("Ajouter des details...", text: $description, fontSize: 13)
+                    .frame(height: 20)
+                    .padding(10)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(Color.white)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                            )
+                    )
+            }
 
-                // Priority
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Priorite")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(MochiTheme.textLight.opacity(0.5))
-                    HStack(spacing: 8) {
-                        ForEach(TaskPriority.allCases, id: \.self) { p in
-                            priorityButton(p)
-                        }
-                    }
-                }
-
-                // Deadline toggle + picker
-                VStack(alignment: .leading, spacing: 6) {
-                    Toggle(isOn: $hasDeadline) {
-                        Text("Deadline")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(MochiTheme.textLight.opacity(0.5))
-                    }
-                    .toggleStyle(.switch)
-                    .tint(MochiTheme.primary)
-
-                    if hasDeadline {
-                        DatePicker("", selection: $deadline, displayedComponents: [.date, .hourAndMinute])
-                            .labelsHidden()
-                            .datePickerStyle(.compact)
+            // Priority
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Priorite")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(MochiTheme.textLight.opacity(0.5))
+                HStack(spacing: 8) {
+                    ForEach(TaskPriority.allCases, id: \.self) { p in
+                        priorityButton(p)
                     }
                 }
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 12)
+
+            // Deadline
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Deadline")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(MochiTheme.textLight.opacity(0.5))
+
+                HStack(spacing: 10) {
+                    // Calendar button
+                    Button {
+                        if hasDeadline {
+                            hasDeadline = false
+                        } else {
+                            hasDeadline = true
+                            showDeadlinePicker = true
+                        }
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: hasDeadline ? "calendar.badge.checkmark" : "calendar.badge.plus")
+                                .font(.system(size: 14))
+
+                            if hasDeadline {
+                                Text(deadline, format: .dateTime.day().month(.wide).year())
+                                    .font(.system(size: 12, weight: .medium))
+                            } else {
+                                Text("Ajouter une date")
+                                    .font(.system(size: 12, weight: .medium))
+                            }
+                        }
+                        .foregroundStyle(hasDeadline ? MochiTheme.primary : MochiTheme.textLight.opacity(0.5))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .fill(hasDeadline ? MochiTheme.primary.opacity(0.08) : Color.gray.opacity(0.06))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                        .stroke(hasDeadline ? MochiTheme.primary.opacity(0.25) : Color.gray.opacity(0.15), lineWidth: 1)
+                                )
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .popover(isPresented: $showDeadlinePicker) {
+                        VStack(spacing: 12) {
+                            DatePicker(
+                                "Deadline",
+                                selection: $deadline,
+                                in: Date()...,
+                                displayedComponents: [.date]
+                            )
+                            .datePickerStyle(.graphical)
+                            .labelsHidden()
+                            .tint(MochiTheme.primary)
+
+                            HStack {
+                                Button("Retirer") {
+                                    hasDeadline = false
+                                    showDeadlinePicker = false
+                                }
+                                .font(.system(size: 12))
+                                .foregroundStyle(.red.opacity(0.7))
+
+                                Spacer()
+
+                                Button("OK") {
+                                    showDeadlinePicker = false
+                                }
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(MochiTheme.primary)
+                            }
+                        }
+                        .padding(16)
+                        .frame(width: 280)
+                    }
+
+                    // Edit date if already set
+                    if hasDeadline {
+                        Button {
+                            showDeadlinePicker = true
+                        } label: {
+                            Text("Modifier")
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundStyle(MochiTheme.primary.opacity(0.7))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
         }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 14)
+        .frame(maxHeight: .infinity)
     }
 
     private func priorityButton(_ p: TaskPriority) -> some View {
@@ -534,6 +601,103 @@ struct TaskFormSheet: View {
             onSave(task)
         }
         dismiss()
+    }
+}
+
+// MARK: - MochiTextField (NSTextView direct)
+
+struct MochiTextField: NSViewRepresentable {
+    @Binding var text: String
+    var placeholder: String
+    var fontSize: CGFloat
+
+    init(_ placeholder: String = "", text: Binding<String>, fontSize: CGFloat = 14) {
+        self.placeholder = placeholder
+        self._text = text
+        self.fontSize = fontSize
+    }
+
+    func makeNSView(context: Context) -> NSView {
+        let container = NSView()
+
+        let textView = MochiNSTextView()
+        textView.string = text
+        textView.font = .systemFont(ofSize: fontSize)
+        textView.textColor = NSColor(MochiTheme.textLight)
+        textView.drawsBackground = false
+        textView.isRichText = false
+        textView.isEditable = true
+        textView.isSelectable = true
+        textView.isVerticallyResizable = false
+        textView.isHorizontallyResizable = false
+        textView.textContainer?.widthTracksTextView = true
+        textView.textContainer?.lineFragmentPadding = 0
+        textView.textContainerInset = .zero
+        textView.isAutomaticQuoteSubstitutionEnabled = false
+        textView.isAutomaticDashSubstitutionEnabled = false
+        textView.selectedTextAttributes = [
+            .backgroundColor: NSColor(red: 1.0, green: 0.62, blue: 0.67, alpha: 0.4)
+        ]
+        textView.insertionPointColor = NSColor(MochiTheme.primary)
+        textView.delegate = context.coordinator
+        textView.translatesAutoresizingMaskIntoConstraints = false
+
+        // Placeholder label
+        let placeholderLabel = NSTextField(labelWithString: placeholder)
+        placeholderLabel.font = .systemFont(ofSize: fontSize)
+        placeholderLabel.textColor = NSColor(MochiTheme.textPlaceholder)
+        placeholderLabel.translatesAutoresizingMaskIntoConstraints = false
+        placeholderLabel.isHidden = !text.isEmpty
+        placeholderLabel.tag = 999
+
+        container.addSubview(textView)
+        container.addSubview(placeholderLabel)
+
+        NSLayoutConstraint.activate([
+            textView.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            textView.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            textView.topAnchor.constraint(equalTo: container.topAnchor),
+            textView.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+            placeholderLabel.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 2),
+            placeholderLabel.centerYAnchor.constraint(equalTo: container.centerYAnchor),
+        ])
+
+        return container
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        guard let textView = nsView.subviews.compactMap({ $0 as? NSTextView }).first else { return }
+        if textView.string != text {
+            textView.string = text
+        }
+        if let label = nsView.viewWithTag(999) as? NSTextField {
+            label.isHidden = !text.isEmpty
+        }
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    class Coordinator: NSObject, NSTextViewDelegate {
+        var parent: MochiTextField
+        init(_ parent: MochiTextField) { self.parent = parent }
+
+        func textDidChange(_ notification: Notification) {
+            guard let tv = notification.object as? NSTextView else { return }
+            parent.text = tv.string
+            // Update placeholder visibility
+            if let container = tv.superview,
+               let label = container.viewWithTag(999) as? NSTextField {
+                label.isHidden = !tv.string.isEmpty
+            }
+        }
+    }
+}
+
+// Single-line NSTextView that blocks Return key
+class MochiNSTextView: NSTextView {
+    override func keyDown(with event: NSEvent) {
+        if event.keyCode == 36 { return } // Block Return
+        super.keyDown(with: event)
     }
 }
 

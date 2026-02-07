@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @State private var selectedSettingsTab = 0
+    @EnvironmentObject var appState: AppState
 
     private let tabs: [(String, String)] = [
         ("Général", "gear"),
@@ -33,7 +33,7 @@ struct SettingsView: View {
 
             // Content
             Group {
-                switch selectedSettingsTab {
+                switch appState.selectedSettingsTab {
                 case 0: GeneralSettingsTab()
                 case 1: PersonalitySettingsTab()
                 case 2: NotificationSettingsTab()
@@ -54,9 +54,9 @@ struct SettingsView: View {
     }
 
     private func sidebarRow(_ title: String, icon: String, index: Int) -> some View {
-        let isSelected = selectedSettingsTab == index
+        let isSelected = appState.selectedSettingsTab == index
         return Button {
-            withAnimation(.easeInOut(duration: 0.15)) { selectedSettingsTab = index }
+            withAnimation(.easeInOut(duration: 0.15)) { appState.selectedSettingsTab = index }
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: icon)
@@ -509,6 +509,10 @@ struct NotificationSettingsTab: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
+                if appState.notificationsBlocked {
+                    notificationsBlockedBanner
+                }
+
                 settingsSectionHeader("Fréquence des relances")
 
                 HStack(spacing: 10) {
@@ -603,6 +607,52 @@ struct NotificationSettingsTab: View {
                 appState.saveConfig()
             }
         }
+        .task {
+            await appState.refreshNotificationStatus()
+        }
+    }
+
+    private var notificationsBlockedBanner: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 18))
+                .foregroundStyle(.orange)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Notifications desactivees")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(MochiTheme.textLight)
+                Text("Activez les notifications pour Mochi Mochi dans les Reglages Systeme.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(MochiTheme.textLight.opacity(0.6))
+            }
+
+            Spacer()
+
+            Button {
+                // Open System Settings > Notifications for this app
+                if let url = URL(string: "x-apple.systempreferences:com.apple.Notifications-Settings.extension") {
+                    NSWorkspace.shared.open(url)
+                }
+            } label: {
+                Text("Ouvrir")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 6)
+                    .background(Capsule().fill(MochiTheme.primary))
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.orange.opacity(0.08))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(Color.orange.opacity(0.2), lineWidth: 1)
+                )
+        )
     }
 
     private func frequencyCard(_ value: String, label: String, icon: String, description: String) -> some View {

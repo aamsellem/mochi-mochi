@@ -52,32 +52,10 @@ struct ChatView: View {
             }
 
             Spacer()
-
-            HStack(spacing: 8) {
-                headerButton(icon: "clock.arrow.circlepath")
-                headerButton(icon: "ellipsis")
-            }
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 14)
         .background(MochiTheme.surfaceLight)
-    }
-
-    private func headerButton(icon: String) -> some View {
-        Button(action: {}) {
-            Image(systemName: icon)
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(MochiTheme.textLight)
-                .frame(width: 32, height: 32)
-                .background(
-                    Circle()
-                        .fill(Color.gray.opacity(0.08))
-                )
-        }
-        .buttonStyle(.plain)
-        .onHover { hovering in
-            // hover effect handled via NSCursor if needed
-        }
     }
 
     // MARK: - Messages Area
@@ -963,15 +941,7 @@ struct ChatView: View {
     private func toggleRecording() {
         if appState.isRecordingVoice {
             appState.speechService.stopRecording()
-            // Insert transcribed text into input
-            let transcribed = appState.voiceTranscription
-            if !transcribed.isEmpty {
-                if inputText.isEmpty {
-                    inputText = transcribed
-                } else {
-                    inputText += " " + transcribed
-                }
-            }
+            // Text insertion is handled by .onChange(of: appState.isRecordingVoice)
         } else {
             Task {
                 let granted = await appState.speechService.requestPermissions()

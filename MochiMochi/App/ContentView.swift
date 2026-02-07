@@ -35,6 +35,9 @@ struct ContentView: View {
             .padding(16)
         }
         .background(MochiTheme.backgroundLight)
+        .task {
+            await appState.sendSilentGreeting()
+        }
     }
 
     // MARK: - Dashboard Layout
@@ -81,24 +84,16 @@ struct ContentView: View {
                                 : MochiTheme.textLight.opacity(0.25)
                         )
                 } else {
-                    VStack(spacing: 6) {
-                        Text("\u{1F361}")
-                            .font(.system(size: 18))
-                            .scaleEffect(mochiToggleHovered ? 1.2 : 1.0)
-                            .animation(
-                                mochiToggleHovered
-                                    ? .easeInOut(duration: 0.6).repeatForever(autoreverses: true)
-                                    : .default,
-                                value: mochiToggleHovered
-                            )
-
-                        Image(systemName: "chevron.compact.left")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(MochiTheme.primary.opacity(0.5))
-                    }
+                    Image(systemName: "chevron.compact.left")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundStyle(
+                            mochiToggleHovered
+                                ? MochiTheme.primary
+                                : MochiTheme.textLight.opacity(0.25)
+                        )
                 }
             }
-            .frame(width: 28, height: showMochiPanel ? 52 : 68)
+            .frame(width: 28, height: 52)
             .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
                     .fill(

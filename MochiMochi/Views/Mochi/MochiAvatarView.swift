@@ -194,6 +194,10 @@ struct MochiAvatarView: View {
             proudFace
         case .thinking:
             thinkingFace
+        case .listening:
+            listeningFace
+        case .writing:
+            writingFace
         }
     }
 
@@ -352,6 +356,117 @@ struct MochiAvatarView: View {
             thinkingDotsAnimate = false
             thinkingIconTimer?.invalidate()
             thinkingIconTimer = nil
+        }
+    }
+
+    // MARK: - Listening Face
+
+    @State private var listeningPulse = false
+
+    private var listeningFace: some View {
+        VStack(spacing: size * 0.04) {
+            HStack(spacing: size * 0.15) {
+                mochiEye
+                mochiEye
+            }
+            // Small "O" mouth
+            Circle()
+                .fill(faceColor)
+                .frame(width: size * 0.05, height: size * 0.05)
+        }
+        .overlay(
+            // Sound wave bars
+            HStack(spacing: size * 0.012) {
+                ForEach(0..<4, id: \.self) { index in
+                    RoundedRectangle(cornerRadius: size * 0.005)
+                        .fill(MochiTheme.primary.opacity(0.6))
+                        .frame(
+                            width: size * 0.015,
+                            height: listeningPulse
+                                ? size * CGFloat([0.06, 0.1, 0.08, 0.05][index])
+                                : size * CGFloat([0.03, 0.05, 0.04, 0.03][index])
+                        )
+                        .animation(
+                            .easeInOut(duration: 0.4)
+                            .repeatForever(autoreverses: true)
+                            .delay(Double(index) * 0.1),
+                            value: listeningPulse
+                        )
+                }
+            }
+            .offset(x: size * 0.28, y: -size * 0.02)
+        )
+        .overlay(
+            // Mic icon
+            Image(systemName: "mic.fill")
+                .font(.system(size: size * 0.07))
+                .foregroundStyle(MochiTheme.primary.opacity(0.5))
+                .offset(x: -size * 0.28, y: -size * 0.05)
+        )
+        .onAppear { listeningPulse = true }
+        .onDisappear { listeningPulse = false }
+    }
+
+    // MARK: - Writing Face
+
+    @State private var writingDotsIndex = 0
+    @State private var writingTimer: Timer? = nil
+
+    private var writingFace: some View {
+        VStack(spacing: size * 0.04) {
+            HStack(spacing: size * 0.15) {
+                determinedEye(left: true)
+                determinedEye(left: false)
+            }
+            mochiMouth(smile: false, flat: true)
+        }
+        .overlay(
+            // Pencil writing indicator
+            ZStack {
+                // Small connector dots
+                Circle()
+                    .fill(Color.white.opacity(0.7))
+                    .frame(width: size * 0.03)
+                    .offset(x: size * 0.13, y: -size * 0.05)
+
+                Circle()
+                    .fill(Color.white.opacity(0.8))
+                    .frame(width: size * 0.045)
+                    .offset(x: size * 0.18, y: -size * 0.09)
+
+                // Writing bubble
+                ZStack {
+                    RoundedRectangle(cornerRadius: size * 0.04)
+                        .fill(Color.white.opacity(0.92))
+                        .shadow(color: .black.opacity(0.08), radius: 3, y: 1)
+                        .frame(width: size * 0.22, height: size * 0.15)
+
+                    // Animated writing dots
+                    HStack(spacing: size * 0.02) {
+                        ForEach(0..<3, id: \.self) { index in
+                            Circle()
+                                .fill(MochiTheme.primary.opacity(writingDotsIndex == index ? 1.0 : 0.3))
+                                .frame(width: size * 0.025, height: size * 0.025)
+                                .animation(.easeInOut(duration: 0.2), value: writingDotsIndex)
+                        }
+                    }
+                }
+                .offset(x: size * 0.27, y: -size * 0.18)
+            }
+        )
+        .onAppear { startWritingDots() }
+        .onDisappear {
+            writingTimer?.invalidate()
+            writingTimer = nil
+        }
+    }
+
+    private func startWritingDots() {
+        writingTimer?.invalidate()
+        writingTimer = Timer.scheduledTimer(withTimeInterval: 0.35, repeats: true) { _ in
+            Task { @MainActor in
+                writingDotsIndex = (writingDotsIndex + 1) % 3
+            }
         }
     }
 

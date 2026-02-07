@@ -12,6 +12,8 @@ enum MochiEmotion: String, Codable, CaseIterable {
     case sad
     case proud
     case thinking
+    case listening
+    case writing
 }
 
 // MARK: - Mochi Color

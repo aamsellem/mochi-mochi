@@ -169,10 +169,10 @@ struct MochiView: View {
                 label: "GRAINS DE RIZ"
             )
             statCard(
-                icon: "bolt.fill",
-                iconColor: .blue,
-                value: "\(energyPercent)%",
-                label: "ENERGIE"
+                icon: "checkmark.circle.fill",
+                iconColor: MochiTheme.pastelGreen,
+                value: "\(completedTodayCount)",
+                label: "TÂCHES DU JOUR"
             )
         }
     }
@@ -217,9 +217,13 @@ struct MochiView: View {
 
     // MARK: - Computed Properties
 
-    private var energyPercent: Int {
-        min(100, appState.gamification.streakDays * 10)
+    private var completedTodayCount: Int {
+        appState.tasks.filter {
+            guard let completedAt = $0.completedAt else { return false }
+            return Calendar.current.isDateInToday(completedAt)
+        }.count
     }
+
 
     private func emotionLabel(_ emotion: MochiEmotion) -> String {
         switch emotion {
@@ -232,6 +236,8 @@ struct MochiView: View {
         case .sad: return "Triste"
         case .proud: return "Fier"
         case .thinking: return "Reflechit"
+        case .listening: return "Ecoute"
+        case .writing: return "Ecrit"
         }
     }
 
@@ -299,13 +305,13 @@ struct MochiView: View {
         idleTimer?.invalidate()
         idleTimer = Timer.scheduledTimer(withTimeInterval: Double.random(in: 8...15), repeats: true) { _ in
             Task { @MainActor in
-                guard appState.mochi.emotion == .idle, !appState.isLoading else { return }
+                guard appState.mochi.emotion == .idle, !appState.isLoading, !appState.isRecordingVoice else { return }
                 showRandomIdleAction()
                 // Reschedule with random interval for natural feel
                 idleTimer?.invalidate()
                 idleTimer = Timer.scheduledTimer(withTimeInterval: Double.random(in: 8...15), repeats: true) { _ in
                     Task { @MainActor in
-                        guard appState.mochi.emotion == .idle, !appState.isLoading else { return }
+                        guard appState.mochi.emotion == .idle, !appState.isLoading, !appState.isRecordingVoice else { return }
                         showRandomIdleAction()
                     }
                 }
@@ -439,8 +445,22 @@ struct MochiView: View {
     }
 
     private func reactToEmotion(_ emotion: MochiEmotion) {
-        if emotion == .thinking {
+        if emotion == .thinking || emotion == .writing {
             startThinkingAnimation()
+            return
+        }
+
+        if emotion == .listening {
+            // Gentle pulse for listening
+            isThinking = false
+            thinkingWobble = 0
+            thinkingScale = 1.0
+            withAnimation(
+                .easeInOut(duration: 1.0)
+                .repeatForever(autoreverses: true)
+            ) {
+                emotionScale = 1.05
+            }
             return
         }
 

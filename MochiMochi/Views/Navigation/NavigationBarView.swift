@@ -95,9 +95,12 @@ struct NavigationBarView: View {
 
     // MARK: - Notification
 
+    @EnvironmentObject var appState: AppState
+
     private var notificationButton: some View {
         Button {
             withAnimation(.easeInOut(duration: 0.2)) {
+                appState.selectedSettingsTab = 2
                 selectedTab = .settings
             }
         } label: {

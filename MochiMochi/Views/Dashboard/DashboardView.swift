@@ -104,6 +104,8 @@ struct DashboardView: View {
         case .sad: return "Triste"
         case .proud: return "Fier"
         case .thinking: return "Reflechit"
+        case .listening: return "Ecoute"
+        case .writing: return "Ecrit"
         }
     }
 
@@ -118,6 +120,8 @@ struct DashboardView: View {
         case .sad: return .purple
         case .proud: return .yellow
         case .thinking: return .cyan
+        case .listening: return MochiTheme.primary
+        case .writing: return .teal
         }
     }
 

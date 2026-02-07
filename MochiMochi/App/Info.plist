@@ -28,5 +28,7 @@
     <string>Mochi Mochi utilise la reconnaissance vocale pour la dictée dans le chat.</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>Mochi Mochi a besoin du micro pour la dictée vocale.</string>
+    <key>NSAccentColorName</key>
+    <string>AccentColor</string>
 </dict>
 </plist>

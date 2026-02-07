@@ -131,8 +131,8 @@ Au premier lancement, l'utilisateur est guidé à travers un assistant de config
 3. **Nom du Mochi** : l'utilisateur choisit un nom pour son compagnon (nom par défaut : "Mochi")
 4. **Choix de personnalité** : sélection parmi les personnalités disponibles avec aperçu du ton
 5. **Personnalisation visuelle** : choix de la couleur initiale du Mochi
-6. **Intégration Notion** (optionnel) : connexion au workspace Notion
-7. **Raccourci clavier** : configuration du raccourci global (défaut : `⌘⇧M`)
+6. **Notifications** : demande de permission pour les notifications macOS avec explication des relances intelligentes
+7. **Intégration Notion** (optionnel) : connexion au workspace Notion
 8. **Premier briefing** : le Mochi se présente avec la personnalité choisie et propose de créer les premières tâches
 
 **Règles de gestion** :
@@ -668,6 +668,15 @@ L'intégration Notion utilise l'API REST officielle Notion avec authentification
 - Suivi de tâches (tracked) : propriété `isTracked` sur `MochiTask` avec relances répétées par notification (fréquences zen/normal/intense)
 - Refonte de TodaysFocusView : simplification et réorganisation de la sidebar gauche
 - Persistance des notes en JSON dans `~/.mochi-mochi/content/notes/quick-notes.json`
+
+### Phase 2.8 — Polish UX (v0.2.8) ✅
+- Auto-greeting : le Mochi exécute automatiquement `/bonjour` au lancement (message silencieux, pas de bulle utilisateur)
+- Date picker graphique : ajout de deadlines lors de la création et l'édition de tâches via un popover avec calendrier graphique
+- Étape notifications dans l'onboarding : demande de permission pour les notifications macOS (étape 6/8)
+- Sélection de texte rose : composant `MochiTextField` (NSTextView via NSViewRepresentable) avec `selectedTextAttributes` pour une sélection rose cohérente
+- Nettoyage interface chat : suppression des boutons inutiles dans le header (historique, menu)
+- Refresh automatique du statut de notification à l'ouverture des réglages
+- Chevron directionnel pour le toggle du panneau Mochi (remplace l'emoji)
 
 ### Phase 3 — Intégrations (v0.3)
 - Synchronisation bidirectionnelle Notion

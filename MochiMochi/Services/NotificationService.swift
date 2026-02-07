@@ -53,10 +53,21 @@ final class NotificationService {
 
     func requestPermission() async -> Bool {
         do {
-            return try await center.requestAuthorization(options: [.alert, .sound, .badge])
+            let granted = try await center.requestAuthorization(options: [.alert, .sound, .badge])
+            let settings = await center.notificationSettings()
+            NSLog("[Mochi Notifications] Permission granted: \(granted)")
+            NSLog("[Mochi Notifications] Authorization status: \(settings.authorizationStatus.rawValue)")
+            NSLog("[Mochi Notifications] Alert setting: \(settings.alertSetting.rawValue)")
+            return granted
         } catch {
+            NSLog("[Mochi Notifications] Permission error: \(error)")
             return false
         }
+    }
+
+    func checkCurrentStatus() async -> UNAuthorizationStatus {
+        let settings = await center.notificationSettings()
+        return settings.authorizationStatus
     }
 
     // MARK: - Test
@@ -74,7 +85,13 @@ final class NotificationService {
             trigger: trigger
         )
 
-        center.add(request)
+        center.add(request) { error in
+            if let error {
+                NSLog("[Mochi Notifications] Test notification FAILED: \(error)")
+            } else {
+                NSLog("[Mochi Notifications] Test notification scheduled OK (3s)")
+            }
+        }
     }
 
     // MARK: - Task Reminders
