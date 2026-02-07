@@ -429,6 +429,9 @@ struct PersonalitySettingsTab: View {
             .frame(maxWidth: 500)
             .padding(24)
             .frame(maxWidth: .infinity, alignment: .leading)
+            .onChange(of: appState.currentPersonality) {
+                appState.rescheduleAllNotifications()
+            }
         }
     }
 
