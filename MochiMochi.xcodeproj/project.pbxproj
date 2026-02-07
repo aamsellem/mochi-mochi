@@ -11,6 +11,7 @@
 		1C058A89BC8D53776BE5F5F1 /* MemoryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2508228670C1BC3C8B85CFAC /* MemoryService.swift */; };
 		2129143083C62BA5254FBBAD /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83EF9E4F2B98F4BBBDC7E344 /* AppState.swift */; };
 		243321986D0018E963470888 /* CommandEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B068B9BC6F530BCEF9B0DBD /* CommandEngine.swift */; };
+		28CC98CCBAF9144E74879CBD /* MeetingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5B1004079D4F21806D8F2BD /* MeetingsView.swift */; };
 		28F22E07AE269A66A2BAA2D5 /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274E2097BADDA02D9C381335 /* Message.swift */; };
 		34836866FD96A405E588CC2E /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4631B739C9C44DF637EB5066 /* NotificationService.swift */; };
 		349E4EC9815FD56E5C140CE4 /* KeyboardShortcutService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE9AEDDB99F9624BAE2E9697 /* KeyboardShortcutService.swift */; };
@@ -18,10 +19,12 @@
 		3D37F160DB11B15374D2C117 /* ShopItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = B85C47B8B5AE0F7CE5571B90 /* ShopItem.swift */; };
 		3F53A81E4D484B27B0220026 /* MochiCustomizeSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BBA0C1BA518F003D39D110C /* MochiCustomizeSheet.swift */; };
 		3FB3FD1BEFB9BB571EA9E262 /* MarkdownStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F4D9B561403758FB54A58DA /* MarkdownStorage.swift */; };
+		49946D779A2D76E58B2ECA2A /* MeetingProposalDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EAEE8F3FC45D65C542A5F67 /* MeetingProposalDetailView.swift */; };
 		57C6850AC5F20D48D3405FF4 /* TodaysFocusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 449F1E33878B5D7A1A4D0E7D /* TodaysFocusView.swift */; };
 		598ABA465508A6F284755E34 /* TasksTrackingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AECDC1B92B28D2C418D37307 /* TasksTrackingView.swift */; };
 		5C818B83416BB09828A075DE /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE56D0A8E3C2C587BF5C5DEE /* Theme.swift */; };
 		5FD499057FA66320CCE603DF /* NavigationBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49BD912EA38C8139C8F95648 /* NavigationBarView.swift */; };
+		60299241A77CE830287FAB4B /* MeetingProposal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37CAF19CE4E8080525D15F1D /* MeetingProposal.swift */; };
 		6359FA6AD9318280D445DBAC /* NotionSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93F2A97D4A854D8AEF03DC75 /* NotionSyncService.swift */; };
 		6A4A635C3AA88FBB8107EF61 /* MochiMochiApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EEC43619F3A2F7B2AEE0D93 /* MochiMochiApp.swift */; };
 		6C7CA7589D6F4CABA02B2BC6 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3667DD83AC857A1F64951CE2 /* SettingsView.swift */; };
@@ -64,12 +67,14 @@
 		274E2097BADDA02D9C381335 /* Message.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Message.swift; sourceTree = "<group>"; };
 		2E02D40C8E17B5E0A168F4E0 /* MochiMochiTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MochiMochiTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3667DD83AC857A1F64951CE2 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		37CAF19CE4E8080525D15F1D /* MeetingProposal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeetingProposal.swift; sourceTree = "<group>"; };
 		3B068B9BC6F530BCEF9B0DBD /* CommandEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandEngine.swift; sourceTree = "<group>"; };
 		3BBA0C1BA518F003D39D110C /* MochiCustomizeSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MochiCustomizeSheet.swift; sourceTree = "<group>"; };
 		3EEC43619F3A2F7B2AEE0D93 /* MochiMochiApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MochiMochiApp.swift; sourceTree = "<group>"; };
 		449F1E33878B5D7A1A4D0E7D /* TodaysFocusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodaysFocusView.swift; sourceTree = "<group>"; };
 		4631B739C9C44DF637EB5066 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 		49BD912EA38C8139C8F95648 /* NavigationBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationBarView.swift; sourceTree = "<group>"; };
+		4EAEE8F3FC45D65C542A5F67 /* MeetingProposalDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeetingProposalDetailView.swift; sourceTree = "<group>"; };
 		64B52DB21E0DCB97DC1FF7BC /* MochiTask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MochiTask.swift; sourceTree = "<group>"; };
 		6B90D1A0246AE377AD3CEE28 /* Personality.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Personality.swift; sourceTree = "<group>"; };
 		7C2ED744C9199CA5D7C9ABBD /* ClaudeCodeContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeCodeContext.swift; sourceTree = "<group>"; };
@@ -97,6 +102,7 @@
 		F0E87403BED2AEC9D14C6F06 /* MiniPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniPanelView.swift; sourceTree = "<group>"; };
 		F18AFE577A4E2CE012100CA9 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
 		F243FB1AF9B7EF8D5540198B /* SpeechService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechService.swift; sourceTree = "<group>"; };
+		F5B1004079D4F21806D8F2BD /* MeetingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeetingsView.swift; sourceTree = "<group>"; };
 		FEF8ACFF88B913D0AC1CC094 /* NotesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -160,6 +166,7 @@
 			children = (
 				8DD61645EF6F7034B5CE09B0 /* Chat */,
 				8F3D445715D70EF278B6B962 /* Dashboard */,
+				CF0D2B304AD75C389B7A504B /* Meetings */,
 				1E5E6AAFC19E732267627388 /* MenuBar */,
 				C59576F9928F1720312BD3CF /* Mochi */,
 				20112C1AE27FCB478F19D482 /* Navigation */,
@@ -278,11 +285,21 @@
 			path = MochiMochiTests;
 			sourceTree = "<group>";
 		};
+		CF0D2B304AD75C389B7A504B /* Meetings */ = {
+			isa = PBXGroup;
+			children = (
+				4EAEE8F3FC45D65C542A5F67 /* MeetingProposalDetailView.swift */,
+				F5B1004079D4F21806D8F2BD /* MeetingsView.swift */,
+			);
+			path = Meetings;
+			sourceTree = "<group>";
+		};
 		FA5EFB2073DB539FE8FF2DDC /* Models */ = {
 			isa = PBXGroup;
 			children = (
 				7C2ED744C9199CA5D7C9ABBD /* ClaudeCodeContext.swift */,
 				1A118D86137E506228517AD4 /* GamificationState.swift */,
+				37CAF19CE4E8080525D15F1D /* MeetingProposal.swift */,
 				274E2097BADDA02D9C381335 /* Message.swift */,
 				8070F23D9FD94996FBE40055 /* MochiCharacter.swift */,
 				64B52DB21E0DCB97DC1FF7BC /* MochiTask.swift */,
@@ -395,6 +412,9 @@
 				349E4EC9815FD56E5C140CE4 /* KeyboardShortcutService.swift in Sources */,
 				79A8D4E173ECB6AD647E664D /* KeychainHelper.swift in Sources */,
 				3FB3FD1BEFB9BB571EA9E262 /* MarkdownStorage.swift in Sources */,
+				60299241A77CE830287FAB4B /* MeetingProposal.swift in Sources */,
+				49946D779A2D76E58B2ECA2A /* MeetingProposalDetailView.swift in Sources */,
+				28CC98CCBAF9144E74879CBD /* MeetingsView.swift in Sources */,
 				1C058A89BC8D53776BE5F5F1 /* MemoryService.swift in Sources */,
 				28F22E07AE269A66A2BAA2D5 /* Message.swift in Sources */,
 				A91F10E2EC8C755A21120DA6 /* MessageBubbleView.swift in Sources */,

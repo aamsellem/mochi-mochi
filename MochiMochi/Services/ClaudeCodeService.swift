@@ -65,6 +65,24 @@ final class ClaudeCodeService: @unchecked Sendable {
         currentSessionId = nil
     }
 
+    /// Quick one-shot generation (no session, no interference with chat)
+    func generateQuick(prompt: String, workingDirectory: URL? = nil) async throws -> String {
+        guard isClaudeCodeInstalled() else {
+            throw ClaudeCodeError.notInstalled
+        }
+        let args = ["-p", prompt, "--output-format", "json"]
+        let dir = workingDirectory ?? URL(fileURLWithPath: NSHomeDirectory())
+        let rawOutput = try await executeClaudeCode(arguments: args, workingDirectory: dir)
+        guard let data = rawOutput.data(using: .utf8) else {
+            throw ClaudeCodeError.invalidResponse
+        }
+        let response = try JSONDecoder().decode(ClaudeCodeResponse.self, from: data)
+        if response.is_error == true {
+            throw ClaudeCodeError.processError(response.result)
+        }
+        return response.result
+    }
+
     // MARK: - Private
 
     private func claudeCodePath() -> String? {

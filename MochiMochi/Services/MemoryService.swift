@@ -65,6 +65,18 @@ final class MemoryService {
         try? storage.write(file: "state/mochi.md", content: markdown)
     }
 
+    // MARK: - Meeting Proposals
+
+    func loadMeetingProposals() -> [MeetingProposal] {
+        guard let content = storage.read(file: "state/meetings.md") else { return [] }
+        return storage.parseMeetingProposalsFromMarkdown(content)
+    }
+
+    func saveMeetingProposals(_ proposals: [MeetingProposal]) {
+        let markdown = storage.meetingProposalsToMarkdown(proposals)
+        try? storage.write(file: "state/meetings.md", content: markdown)
+    }
+
     // MARK: - Goals
 
     func loadGoals() -> [String] {

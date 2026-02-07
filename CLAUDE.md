@@ -29,6 +29,7 @@ MochiMochi/
 ├── Models/                     # Modèles de données
 │   ├── MochiCharacter.swift   # État du Mochi (émotion, niveau, accessoires)
 │   ├── MochiTask.swift        # Tâche utilisateur (priorité, deadline, suivi)
+│   ├── MeetingProposal.swift  # Proposition de réunion (SuggestedTask, ProposalStatus)
 │   ├── Personality.swift      # 8 personnalités du Mochi
 │   ├── GamificationState.swift # XP, niveaux, 🍙, streaks
 │   ├── ShopItem.swift         # Items cosmétiques
@@ -49,8 +50,11 @@ MochiMochi/
 │   │   └── MochiAvatarView.swift # Avatar avec 9 émotions
 │   ├── Notes/                 # Prise de notes rapide
 │   │   └── NotesView.swift    # Éditeur de notes + extraction de tâches via IA
+│   ├── Meetings/              # Veille de réunions Notion
+│   │   ├── MeetingsView.swift           # Liste des propositions (recherche, tri, sections)
+│   │   └── MeetingProposalDetailView.swift # Détail et validation des tâches suggérées
 │   ├── MenuBar/               # Icône menubar + mini-panel
-│   ├── Onboarding/            # Assistant 8 étapes
+│   ├── Onboarding/            # Assistant 9 étapes (dont veille réunions)
 │   ├── Shop/                  # Boutique et inventaire
 │   └── Settings/              # Réglages (5 onglets)
 ├── Services/                   # Services métier
@@ -83,11 +87,12 @@ MochiMochi/
 
 ### Navigation (AppTab)
 
-5 onglets via `NavigationBarView` (pilules arrondies) :
+6 onglets via `NavigationBarView` (pilules arrondies) :
 - **Tableau de bord** : layout 3 colonnes (Focus | Chat | Compagnon rétractable)
 - **Tâches** : suivi complet avec filtres, stats, ajout, suivi de tâches (tracked)
 - **Notes** : prise de notes rapide avec extraction de tâches via Claude Code
-- **Boutique** : achat de cosmétiques avec 🍙
+- **Réunions** : veille Notion avec propositions de tâches, recherche, tri par date
+- **Boutique** : achat de cosmétiques avec 🍙 (inventaire intégré)
 - **Réglages** : 5 sous-onglets (Général, Personnalité, Notifications, Notion, Raccourcis)
 
 ### Flux de communication avec Claude Code
@@ -119,6 +124,7 @@ Stockage local dans `~/.mochi-mochi/` :
 | `state/current.md` | Tâches et priorités actuelles |
 | `state/goals.md` | Objectifs long terme |
 | `state/mochi.md` | État du Mochi (niveau, XP, 🍙, streak, items équipés) |
+| `state/meetings.md` | Propositions de réunions détectées via Notion |
 | `content/notes/quick-notes.json` | Notes rapides (JSON) |
 | `sessions/YYYY-MM-DD.md` | Journaux de session quotidiens |
 | `inventory/items.md` | Items cosmétiques débloqués |

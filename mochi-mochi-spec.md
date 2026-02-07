@@ -127,13 +127,14 @@ Les assistants IA actuels (ChatGPT, Claude) souffrent d'un problème fondamental
 Au premier lancement, l'utilisateur est guidé à travers un assistant de configuration :
 
 1. **Écran d'accueil** : présentation de Mochi Mochi avec animation du Mochi
-2. **Vérification de Claude Code** : l'app vérifie que Claude Code est installé et fonctionnel sur la machine. Si absent, afficher les instructions d'installation.
-3. **Nom du Mochi** : l'utilisateur choisit un nom pour son compagnon (nom par défaut : "Mochi")
-4. **Choix de personnalité** : sélection parmi les personnalités disponibles avec aperçu du ton
+2. **À propos de vous** : prénom et activité de l'utilisateur
+3. **Objectifs** : choix de la motivation principale parmi 6 options
+4. **Nom du Mochi** : l'utilisateur choisit un nom pour son compagnon (nom par défaut : "Mochi")
 5. **Personnalisation visuelle** : choix de la couleur initiale du Mochi
-6. **Notifications** : demande de permission pour les notifications macOS avec explication des relances intelligentes
-7. **Intégration Notion** (optionnel) : connexion au workspace Notion
-8. **Premier briefing** : le Mochi se présente avec la personnalité choisie et propose de créer les premières tâches
+6. **Choix de personnalité** : sélection parmi les 8 personnalités disponibles avec aperçu du ton et citation
+7. **Notifications** : demande de permission pour les notifications macOS avec explication des relances intelligentes
+8. **Veille de réunions** : présentation vendeuse de la veille Notion (détection intelligente, suggestions IA, validation en un clic, notifications proactives) avec activation optionnelle
+9. **Résumé** : récapitulatif de toute la configuration choisie
 
 **Règles de gestion** :
 - La vérification de Claude Code est bloquante — l'app ne fonctionne pas sans
@@ -682,7 +683,17 @@ L'intégration Notion utilise l'API REST officielle Notion avec authentification
 - Champ activité en texte libre : remplacement du choix parmi 8 options prédéfinies par un champ texte libre dans l'onboarding et les réglages
 - Sélection rose dans les réglages : les champs texte des réglages (Prénom, Activité, Nom du Mochi) utilisent désormais `MochiTextField` avec sélection rose et curseur rose
 
-### Phase 3 — Intégrations (v0.3)
+### Phase 3.0 — Boutique & Réunions (v0.3.0) ✅
+- Refonte de la boutique avec inventaire intégré : visualisation des items possédés et équipés directement dans la boutique
+- Veille de réunions Notion : détection automatique des réunions via MCP Notion + Claude Code, suggestions de tâches IA, validation unitaire ou groupée, notifications
+- Onglet Réunions : nouveau 6ème onglet avec liste des propositions (en attente / traitées), recherche par titre ou tâche, tri par date, dates relatives
+- Onboarding étendu à 9 étapes : ajout de l'étape "Veille de réunions" avec discours vendeur et activation en un clic
+- Réglages Notion enrichis : toggle veille, sélecteur d'intervalle (15/30/60 min), sélecteur d'historique (3/7/14/30 jours), vérification manuelle avec feedback visuel
+- Nouveau modèle `MeetingProposal` avec `SuggestedTask` et `ProposalStatus`
+- Persistence des propositions dans `state/meetings.md`
+- Connexion Notion via MCP (Claude Code) au lieu de token API direct
+
+### Phase 3.1 — Intégrations (v0.3.1)
 - Synchronisation bidirectionnelle Notion
 - Raccourcis clavier globaux
 - Mode focus

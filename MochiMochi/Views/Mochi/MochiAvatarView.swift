@@ -5,170 +5,172 @@ struct MochiAvatarView: View {
     let color: MochiColor
     let equippedItems: [ShopItem]
     var size: CGFloat = 160
-    @State private var thinkingDotsAnimate = false
+
+    // MARK: - Animation State
+
     @State private var isBlinking = false
-    @State private var blinkTimer: Timer? = nil
+    @State private var blinkTimer: Timer?
+    @State private var breathPhase: CGFloat = 0
+    @State private var pupilOffset: CGPoint = .zero
+    @State private var pupilTimer: Timer?
+    @State private var thinkingDotsAnimate = false
     @State private var thinkingIconIndex: Int = 0
-    @State private var thinkingIconTimer: Timer? = nil
+    @State private var thinkingIconTimer: Timer?
+    @State private var listeningPulse = false
+    @State private var writingDotsIndex = 0
+    @State private var writingTimer: Timer?
 
     private let thinkingIcons = ["magnifyingglass", "book.fill"]
 
-    var body: some View {
-        ZStack {
-            // 1. Soft background circle for contrast
-            Circle()
-                .fill(bodyColor.opacity(color.isDark ? 0.25 : 0.15))
-                .frame(width: size * 1.1, height: size * 1.1)
-
-            // 2. Cape (si equipee) — DERRIERE le corps
-            if hasEquipped("cape") {
-                capeAccessory
-            }
-
-            // 3. Body
-            mochiBody
-
-            // 4. Echarpe (si equipee) — SUR le corps
-            if hasEquipped("echarpe") {
-                scarfAccessory
-            }
-
-            // 5. Face
-            mochiFace
-                .offset(y: -size * 0.05)
-
-            // 6. Lunettes (si equipees) — SUR le visage
-            if hasEquipped("lunettes") {
-                glassesAccessory
-            }
-
-            // 7. Noeud papillon (si equipe) — SOUS le visage
-            if hasEquipped("noeud") {
-                bowTieAccessory
-            }
-
-            // 8. Chapeau (si equipe) — AU-DESSUS de tout
-            equippedHat
-
-            // 9. Ailes (si equipees) — DE CHAQUE COTE
-            if hasEquipped("ailes") {
-                wingsAccessory
-            }
-        }
-        .frame(width: size, height: size)
-        .onAppear { startBlinkTimer() }
-        .onDisappear {
-            blinkTimer?.invalidate()
-            blinkTimer = nil
-        }
-    }
-
-    // MARK: - Blink Timer
-
-    private func startBlinkTimer() {
-        blinkTimer?.invalidate()
-        scheduleNextBlink()
-    }
-
-    private func scheduleNextBlink() {
-        let interval = Double.random(in: 2.5...5.0)
-        blinkTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: false) { _ in
-            Task { @MainActor in
-                // Blink: close eyes
-                withAnimation(.easeIn(duration: 0.08)) {
-                    isBlinking = true
-                }
-                // Open eyes after brief moment
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
-                    withAnimation(.easeOut(duration: 0.1)) {
-                        isBlinking = false
-                    }
-                    // Schedule next blink
-                    scheduleNextBlink()
-                }
-            }
-        }
-    }
-
     // MARK: - Body
 
-    private var mochiBody: some View {
-        Ellipse()
-            .fill(bodyGradient)
-            .frame(width: size * 0.85, height: size * 0.75)
-            .overlay(
-                Ellipse()
-                    .stroke(bodyStrokeColor, lineWidth: size * 0.012)
-                    .frame(width: size * 0.85, height: size * 0.75)
-            )
-            .shadow(color: bodyColor.opacity(0.4), radius: 8, y: 4)
-            .overlay(
-                Ellipse()
-                    .fill(
-                        RadialGradient(
-                            colors: [.white.opacity(color.isDark ? 0.25 : 0.5), .clear],
-                            center: .topLeading,
-                            startRadius: 0,
-                            endRadius: size * 0.5
-                        )
+    var body: some View {
+        ZStack {
+            // Soft radial background glow
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [bodyColor.opacity(color.isDark ? 0.08 : 0.05), .clear],
+                        center: .center,
+                        startRadius: size * 0.25,
+                        endRadius: size * 0.55
                     )
-                    .frame(width: size * 0.45, height: size * 0.3)
-                    .offset(x: -size * 0.1, y: -size * 0.1)
-            )
+                )
+                .frame(width: size * 1.1, height: size * 1.1)
+
+            // Cape (behind body)
+            if hasEquipped("cape") { capeAccessory }
+
+            // Body with breathing (anchored at bottom so it stays grounded)
+            mochiBody
+                .scaleEffect(
+                    x: 1.0 + breathPhase * 0.015,
+                    y: 1.0 + breathPhase * 0.025,
+                    anchor: .bottom
+                )
+
+            // Scarf
+            if hasEquipped("echarpe") { scarfAccessory }
+
+            // Face (centered in the lower dome shape)
+            mochiFace
+                .offset(
+                    x: pupilOffset.x * size * 0.004,
+                    y: size * 0.02 + pupilOffset.y * size * 0.002
+                )
+
+            // Cheek blush
+            cheekBlush
+                .offset(y: size * 0.06)
+
+            // Glasses
+            if hasEquipped("lunettes") { glassesAccessory }
+
+            // Bow tie
+            if hasEquipped("noeud") { bowTieAccessory }
+
+            // Hat
+            equippedHat
+
+            // Wings
+            if hasEquipped("ailes") { wingsAccessory }
+
+            // Emotion particles
+            emotionParticles
+        }
+        .frame(width: size, height: size)
+        .onAppear { startAllAnimations() }
+        .onDisappear { stopAllAnimations() }
     }
 
-    private var bodyStrokeColor: Color {
-        switch color {
-        case .white: return Color(red: 0.82, green: 0.80, blue: 0.77)
-        case .pink: return Color(red: 0.9, green: 0.6, blue: 0.68)
-        case .teal: return Color(red: 0.40, green: 0.68, blue: 0.63)
-        case .matcha: return Color(red: 0.55, green: 0.72, blue: 0.53)
-        case .skyBlue: return Color(red: 0.55, green: 0.7, blue: 0.9)
-        case .golden: return Color(red: 0.9, green: 0.75, blue: 0.35)
-        case .grey: return Color(red: 0.55, green: 0.55, blue: 0.55)
-        case .black: return Color(red: 0.25, green: 0.25, blue: 0.25)
-        case .nightBlue: return Color(red: 0.1, green: 0.12, blue: 0.35)
-        case .violet: return Color(red: 0.55, green: 0.3, blue: 0.7)
-        case .pride: return Color(red: 0.85, green: 0.4, blue: 0.4)
+    // MARK: - Mochi Body (Multi-Layer Organic Rendering)
+
+    private var mochiBody: some View {
+        let bodyW = size * 0.92
+        let bodyH = size * 0.58
+
+        return ZStack {
+            // Layer 1: Soft drop shadow
+            MochiBodyShape()
+                .fill(bodyColor.opacity(0.2))
+                .frame(width: bodyW, height: bodyH)
+                .offset(y: size * 0.02)
+                .blur(radius: size * 0.035)
+
+            // Layer 2: Main body gradient
+            MochiBodyShape()
+                .fill(bodyGradient)
+                .frame(width: bodyW, height: bodyH)
+
+            // Layer 3: Bottom ambient occlusion
+            MochiBodyShape()
+                .fill(
+                    LinearGradient(
+                        stops: [
+                            .init(color: .clear, location: 0),
+                            .init(color: .clear, location: 0.5),
+                            .init(color: Color.black.opacity(color.isDark ? 0.12 : 0.05), location: 1.0),
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .frame(width: bodyW, height: bodyH)
+
+            // Layer 4: Specular highlight (top-left)
+            MochiBodyShape()
+                .fill(
+                    RadialGradient(
+                        colors: [
+                            .white.opacity(color.isDark ? 0.18 : 0.4),
+                            .white.opacity(color.isDark ? 0.03 : 0.08),
+                            .clear,
+                        ],
+                        center: UnitPoint(x: 0.33, y: 0.24),
+                        startRadius: 0,
+                        endRadius: size * 0.3
+                    )
+                )
+                .frame(width: bodyW, height: bodyH)
+
+            // Layer 5: Small bright specular dot
+            Circle()
+                .fill(.white.opacity(color.isDark ? 0.12 : 0.3))
+                .frame(width: size * 0.055, height: size * 0.045)
+                .offset(x: -size * 0.11, y: -size * 0.14)
+                .blur(radius: size * 0.006)
+
+            // Layer 6: Subtle outline
+            MochiBodyShape()
+                .stroke(bodyStrokeColor.opacity(0.35), lineWidth: size * 0.006)
+                .frame(width: bodyW, height: bodyH)
         }
     }
 
-    private var bodyGradient: LinearGradient {
-        if color == .pride {
-            return LinearGradient(
-                colors: [
-                    Color(red: 0.9, green: 0.3, blue: 0.3),   // rouge
-                    Color(red: 0.95, green: 0.6, blue: 0.2),  // orange
-                    Color(red: 0.95, green: 0.9, blue: 0.3),  // jaune
-                    Color(red: 0.3, green: 0.8, blue: 0.4),   // vert
-                    Color(red: 0.3, green: 0.5, blue: 0.9),   // bleu
-                    Color(red: 0.6, green: 0.3, blue: 0.8),   // violet
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        }
-        return LinearGradient(
-            colors: [bodyColor.opacity(0.9), bodyColor],
-            startPoint: .top,
-            endPoint: .bottom
-        )
-    }
+    // MARK: - Cheek Blush
 
-    private var bodyColor: Color {
-        switch color {
-        case .white: return Color(red: 0.95, green: 0.92, blue: 0.86)
-        case .pink: return Color(red: 1.0, green: 0.8, blue: 0.85)
-        case .teal: return Color(red: 0.55, green: 0.83, blue: 0.78)
-        case .matcha: return Color(red: 0.75, green: 0.88, blue: 0.73)
-        case .skyBlue: return Color(red: 0.75, green: 0.87, blue: 1.0)
-        case .golden: return Color(red: 1.0, green: 0.9, blue: 0.6)
-        case .grey: return Color(red: 0.72, green: 0.72, blue: 0.72)
-        case .black: return Color(red: 0.15, green: 0.15, blue: 0.15)
-        case .nightBlue: return Color(red: 0.12, green: 0.15, blue: 0.35)
-        case .violet: return Color(red: 0.7, green: 0.45, blue: 0.85)
-        case .pride: return Color(red: 0.9, green: 0.5, blue: 0.5) // fallback for shadow
+    private var cheekBlush: some View {
+        let blushOpacity: Double = {
+            switch emotion {
+            case .happy, .excited, .proud: return 0.25
+            case .worried, .sad: return 0.08
+            case .sleeping: return 0.2
+            default: return 0.15
+            }
+        }()
+
+        return HStack(spacing: size * 0.2) {
+            Ellipse()
+                .fill(Color(red: 1.0, green: 0.55, blue: 0.6).opacity(blushOpacity))
+                .frame(width: size * 0.1, height: size * 0.055)
+                .blur(radius: size * 0.012)
+
+            Ellipse()
+                .fill(Color(red: 1.0, green: 0.55, blue: 0.6).opacity(blushOpacity))
+                .frame(width: size * 0.1, height: size * 0.055)
+                .blur(radius: size * 0.012)
         }
+        .animation(.easeInOut(duration: 0.5), value: emotion)
     }
 
     // MARK: - Face
@@ -176,150 +178,161 @@ struct MochiAvatarView: View {
     @ViewBuilder
     private var mochiFace: some View {
         switch emotion {
-        case .idle:
-            idleFace
-        case .happy:
-            happyFace
-        case .excited:
-            excitedFace
-        case .focused:
-            focusedFace
-        case .sleeping:
-            sleepingFace
-        case .worried:
-            worriedFace
-        case .sad:
-            sadFace
-        case .proud:
-            proudFace
-        case .thinking:
-            thinkingFace
-        case .listening:
-            listeningFace
-        case .writing:
-            writingFace
+        case .idle: idleFace
+        case .happy: happyFace
+        case .excited: excitedFace
+        case .focused: focusedFace
+        case .sleeping: sleepingFace
+        case .worried: worriedFace
+        case .sad: sadFace
+        case .proud: proudFace
+        case .thinking: thinkingFace
+        case .listening: listeningFace
+        case .writing: writingFace
         }
     }
+
+    // MARK: - Idle Face
 
     private var idleFace: some View {
-        VStack(spacing: size * 0.04) {
-            HStack(spacing: size * 0.15) {
-                mochiEye
-                mochiEye
+        VStack(spacing: size * 0.035) {
+            HStack(spacing: size * 0.14) {
+                kawaiiEye
+                kawaiiEye
             }
-            mochiMouth(smile: true)
+            gentleSmileMouth
         }
     }
+
+    // MARK: - Happy Face
 
     private var happyFace: some View {
-        VStack(spacing: size * 0.04) {
-            HStack(spacing: size * 0.15) {
-                happyEye
-                happyEye
+        VStack(spacing: size * 0.035) {
+            HStack(spacing: size * 0.14) {
+                kawaiiEye
+                kawaiiEye
             }
-            mochiMouth(smile: true, wide: true)
+            wideSmileMouth
         }
     }
+
+    // MARK: - Excited Face
 
     private var excitedFace: some View {
-        VStack(spacing: size * 0.04) {
-            HStack(spacing: size * 0.15) {
+        VStack(spacing: size * 0.035) {
+            HStack(spacing: size * 0.14) {
                 starEye
                 starEye
             }
-            mochiMouth(smile: true, wide: true, open: true)
+            openMouth
         }
     }
 
+    // MARK: - Focused Face
+
     private var focusedFace: some View {
-        VStack(spacing: size * 0.04) {
-            HStack(spacing: size * 0.15) {
+        VStack(spacing: size * 0.035) {
+            HStack(spacing: size * 0.14) {
                 determinedEye(left: true)
                 determinedEye(left: false)
             }
-            mochiMouth(smile: false, flat: true)
+            flatMouth
         }
     }
 
+    // MARK: - Sleeping Face
+
     private var sleepingFace: some View {
-        VStack(spacing: size * 0.04) {
-            HStack(spacing: size * 0.15) {
+        VStack(spacing: size * 0.035) {
+            HStack(spacing: size * 0.14) {
                 closedEye
                 closedEye
             }
             .overlay(
                 Text("Zzz")
-                    .font(.system(size: size * 0.1, weight: .bold))
-                    .foregroundStyle(.secondary)
-                    .offset(x: size * 0.25, y: -size * 0.12)
+                    .font(.system(size: size * 0.09, weight: .bold, design: .rounded))
+                    .foregroundStyle(faceColor.opacity(0.45))
+                    .offset(x: size * 0.24, y: -size * 0.1)
             )
-            mochiMouth(smile: false, flat: true)
+            flatMouth
         }
     }
+
+    // MARK: - Worried Face
 
     private var worriedFace: some View {
-        VStack(spacing: size * 0.04) {
-            HStack(spacing: size * 0.15) {
+        VStack(spacing: size * 0.035) {
+            HStack(spacing: size * 0.14) {
                 worriedEye
                 worriedEye
             }
-            mochiMouth(smile: false, wavy: true)
+            wavyMouth
         }
         .overlay(
-            // Sweat drop
-            Circle()
-                .fill(Color.cyan.opacity(0.5))
-                .frame(width: size * 0.05, height: size * 0.07)
-                .offset(x: size * 0.22, y: -size * 0.08)
+            // Animated sweat drop
+            SweatDropShape()
+                .fill(
+                    LinearGradient(
+                        colors: [Color.cyan.opacity(0.5), Color.cyan.opacity(0.25)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .frame(width: size * 0.04, height: size * 0.06)
+                .offset(x: size * 0.22, y: -size * 0.06)
         )
     }
+
+    // MARK: - Sad Face
 
     private var sadFace: some View {
-        VStack(spacing: size * 0.04) {
-            HStack(spacing: size * 0.15) {
+        VStack(spacing: size * 0.035) {
+            HStack(spacing: size * 0.14) {
                 sadEye
                 sadEye
             }
-            mochiMouth(smile: false, sad: true)
+            sadMouth
         }
         .overlay(
-            // Tear
+            // Tear drop
             Ellipse()
-                .fill(Color.cyan.opacity(0.6))
-                .frame(width: size * 0.03, height: size * 0.06)
-                .offset(x: -size * 0.06, y: size * 0.04)
+                .fill(
+                    LinearGradient(
+                        colors: [Color.cyan.opacity(0.55), Color.cyan.opacity(0.3)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .frame(width: size * 0.025, height: size * 0.05)
+                .offset(x: -size * 0.06, y: size * 0.03)
         )
     }
+
+    // MARK: - Proud Face
 
     private var proudFace: some View {
-        VStack(spacing: size * 0.04) {
-            HStack(spacing: size * 0.15) {
-                happyEye
-                happyEye
+        VStack(spacing: size * 0.035) {
+            HStack(spacing: size * 0.14) {
+                kawaiiEye
+                kawaiiEye
             }
-            mochiMouth(smile: true, wide: true)
+            wideSmileMouth
         }
-        .overlay(
-            // Golden aura
-            Circle()
-                .stroke(Color.yellow.opacity(0.4), lineWidth: 2)
-                .frame(width: size * 0.95, height: size * 0.85)
-        )
     }
 
+    // MARK: - Thinking Face
+
     private var thinkingFace: some View {
-        VStack(spacing: size * 0.04) {
-            HStack(spacing: size * 0.15) {
-                mochiEye
-                mochiEye
+        VStack(spacing: size * 0.035) {
+            HStack(spacing: size * 0.14) {
+                kawaiiEye
+                kawaiiEye
                     .offset(y: -size * 0.02)
             }
-            mochiMouth(smile: false, flat: true)
+            flatMouth
         }
         .overlay(
-            // Thought bubble with activity icon
             ZStack {
-                // Connector circles (thought bubble trail)
                 Circle()
                     .fill(Color.white.opacity(0.7))
                     .frame(width: size * 0.035)
@@ -330,7 +343,6 @@ struct MochiAvatarView: View {
                     .frame(width: size * 0.055)
                     .offset(x: size * 0.18, y: -size * 0.1)
 
-                // Main thought bubble
                 ZStack {
                     Circle()
                         .fill(Color.white.opacity(0.92))
@@ -361,21 +373,17 @@ struct MochiAvatarView: View {
 
     // MARK: - Listening Face
 
-    @State private var listeningPulse = false
-
     private var listeningFace: some View {
-        VStack(spacing: size * 0.04) {
-            HStack(spacing: size * 0.15) {
-                mochiEye
-                mochiEye
+        VStack(spacing: size * 0.035) {
+            HStack(spacing: size * 0.14) {
+                kawaiiEye
+                kawaiiEye
             }
-            // Small "O" mouth
             Circle()
                 .fill(faceColor)
-                .frame(width: size * 0.05, height: size * 0.05)
+                .frame(width: size * 0.045, height: size * 0.045)
         }
         .overlay(
-            // Sound wave bars
             HStack(spacing: size * 0.012) {
                 ForEach(0..<4, id: \.self) { index in
                     RoundedRectangle(cornerRadius: size * 0.005)
@@ -397,7 +405,6 @@ struct MochiAvatarView: View {
             .offset(x: size * 0.28, y: -size * 0.02)
         )
         .overlay(
-            // Mic icon
             Image(systemName: "mic.fill")
                 .font(.system(size: size * 0.07))
                 .foregroundStyle(MochiTheme.primary.opacity(0.5))
@@ -409,21 +416,16 @@ struct MochiAvatarView: View {
 
     // MARK: - Writing Face
 
-    @State private var writingDotsIndex = 0
-    @State private var writingTimer: Timer? = nil
-
     private var writingFace: some View {
-        VStack(spacing: size * 0.04) {
-            HStack(spacing: size * 0.15) {
+        VStack(spacing: size * 0.035) {
+            HStack(spacing: size * 0.14) {
                 determinedEye(left: true)
                 determinedEye(left: false)
             }
-            mochiMouth(smile: false, flat: true)
+            flatMouth
         }
         .overlay(
-            // Pencil writing indicator
             ZStack {
-                // Small connector dots
                 Circle()
                     .fill(Color.white.opacity(0.7))
                     .frame(width: size * 0.03)
@@ -434,14 +436,12 @@ struct MochiAvatarView: View {
                     .frame(width: size * 0.045)
                     .offset(x: size * 0.18, y: -size * 0.09)
 
-                // Writing bubble
                 ZStack {
                     RoundedRectangle(cornerRadius: size * 0.04)
                         .fill(Color.white.opacity(0.92))
                         .shadow(color: .black.opacity(0.08), radius: 3, y: 1)
                         .frame(width: size * 0.22, height: size * 0.15)
 
-                    // Animated writing dots
                     HStack(spacing: size * 0.02) {
                         ForEach(0..<3, id: \.self) { index in
                             Circle()
@@ -461,14 +461,290 @@ struct MochiAvatarView: View {
         }
     }
 
-    private func startWritingDots() {
-        writingTimer?.invalidate()
-        writingTimer = Timer.scheduledTimer(withTimeInterval: 0.35, repeats: true) { _ in
-            Task { @MainActor in
-                writingDotsIndex = (writingDotsIndex + 1) % 3
+    // MARK: - Eye Components
+
+    private var faceColor: Color {
+        color.isDark
+            ? Color(red: 0.92, green: 0.9, blue: 0.85)
+            : Color(red: 0.2, green: 0.15, blue: 0.12)
+    }
+
+    /// Kawaii eye with highlight reflections
+    private var kawaiiEye: some View {
+        ZStack {
+            // Main eye shape
+            Ellipse()
+                .fill(faceColor)
+                .frame(width: size * 0.095, height: isBlinking ? size * 0.012 : size * 0.115)
+
+            // Primary highlight (top-right)
+            if !isBlinking {
+                Circle()
+                    .fill(.white)
+                    .frame(width: size * 0.032, height: size * 0.032)
+                    .offset(x: size * 0.012, y: -size * 0.022)
+
+                // Secondary highlight (bottom-left, smaller)
+                Circle()
+                    .fill(.white.opacity(0.5))
+                    .frame(width: size * 0.016, height: size * 0.016)
+                    .offset(x: -size * 0.015, y: size * 0.016)
             }
         }
     }
+
+    private var happyArcEye: some View {
+        HalfCircleShape()
+            .stroke(faceColor, style: StrokeStyle(lineWidth: size * 0.028, lineCap: .round))
+            .frame(width: size * 0.1, height: size * 0.055)
+    }
+
+    private var starEye: some View {
+        Image(systemName: "star.fill")
+            .font(.system(size: size * 0.1))
+            .foregroundStyle(.yellow)
+            .shadow(color: .yellow.opacity(0.4), radius: size * 0.02)
+    }
+
+    private func determinedEye(left: Bool) -> some View {
+        VStack(spacing: 0) {
+            RoundedRectangle(cornerRadius: size * 0.005)
+                .fill(faceColor)
+                .frame(width: size * 0.09, height: size * 0.018)
+                .rotationEffect(.degrees(left ? -10 : 10))
+            ZStack {
+                Ellipse()
+                    .fill(faceColor)
+                    .frame(width: size * 0.06, height: size * 0.065)
+                // Small highlight
+                if !isBlinking {
+                    Circle()
+                        .fill(.white)
+                        .frame(width: size * 0.02, height: size * 0.02)
+                        .offset(x: size * 0.008, y: -size * 0.01)
+                }
+            }
+        }
+    }
+
+    private var closedEye: some View {
+        HalfCircleShape()
+            .rotation(.degrees(180))
+            .stroke(faceColor, style: StrokeStyle(lineWidth: size * 0.022, lineCap: .round))
+            .frame(width: size * 0.08, height: size * 0.04)
+    }
+
+    private var worriedEye: some View {
+        ZStack {
+            Ellipse()
+                .fill(faceColor)
+                .frame(width: size * 0.08, height: isBlinking ? size * 0.012 : size * 0.095)
+            if !isBlinking {
+                Circle()
+                    .fill(.white)
+                    .frame(width: size * 0.025, height: size * 0.025)
+                    .offset(x: size * 0.01, y: -size * 0.015)
+            }
+        }
+    }
+
+    private var sadEye: some View {
+        VStack(spacing: 1) {
+            RoundedRectangle(cornerRadius: size * 0.005)
+                .fill(faceColor)
+                .frame(width: size * 0.09, height: size * 0.014)
+                .rotationEffect(.degrees(10))
+            ZStack {
+                Ellipse()
+                    .fill(faceColor)
+                    .frame(width: size * 0.055, height: size * 0.065)
+                Circle()
+                    .fill(.white.opacity(0.6))
+                    .frame(width: size * 0.018, height: size * 0.018)
+                    .offset(x: size * 0.008, y: -size * 0.01)
+            }
+        }
+    }
+
+    // MARK: - Mouth Components
+
+    private var gentleSmileMouth: some View {
+        HalfCircleShape()
+            .stroke(faceColor, style: StrokeStyle(lineWidth: size * 0.018, lineCap: .round))
+            .frame(width: size * 0.065, height: size * 0.025)
+    }
+
+    private var wideSmileMouth: some View {
+        HalfCircleShape()
+            .stroke(faceColor, style: StrokeStyle(lineWidth: size * 0.02, lineCap: .round))
+            .frame(width: size * 0.1, height: size * 0.03)
+    }
+
+    private var openMouth: some View {
+        Ellipse()
+            .fill(faceColor)
+            .frame(width: size * 0.055, height: size * 0.045)
+    }
+
+    private var flatMouth: some View {
+        RoundedRectangle(cornerRadius: size * 0.005)
+            .fill(faceColor)
+            .frame(width: size * 0.055, height: size * 0.014)
+    }
+
+    private var wavyMouth: some View {
+        WavyLineShape()
+            .stroke(faceColor, style: StrokeStyle(lineWidth: size * 0.018, lineCap: .round))
+            .frame(width: size * 0.08, height: size * 0.025)
+    }
+
+    private var sadMouth: some View {
+        HalfCircleShape()
+            .rotation(.degrees(180))
+            .stroke(faceColor, style: StrokeStyle(lineWidth: size * 0.018, lineCap: .round))
+            .frame(width: size * 0.065, height: size * 0.025)
+    }
+
+    // MARK: - Emotion Particles
+
+    @ViewBuilder
+    private var emotionParticles: some View {
+        switch emotion {
+        case .excited:
+            excitedSparkles
+        case .proud:
+            proudShimmer
+        default:
+            EmptyView()
+        }
+    }
+
+    private var excitedSparkles: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 20.0)) { timeline in
+            let t = timeline.date.timeIntervalSinceReferenceDate
+            ZStack {
+                ForEach(0..<5, id: \.self) { i in
+                    let angle = t * 0.6 + Double(i) * (2.0 * .pi / 5.0)
+                    let r = size * 0.46
+                    let x = cos(angle) * r
+                    let y = sin(angle) * r * 0.5
+                    let op = 0.35 + 0.3 * sin(t * 2.0 + Double(i) * 1.3)
+                    let sc = 0.6 + 0.35 * sin(t * 1.5 + Double(i))
+
+                    Image(systemName: "sparkle")
+                        .font(.system(size: size * 0.05, weight: .bold))
+                        .foregroundStyle(.yellow)
+                        .offset(x: x, y: y - size * 0.04)
+                        .opacity(op)
+                        .scaleEffect(sc)
+                }
+            }
+        }
+        .allowsHitTesting(false)
+    }
+
+    private var proudShimmer: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 15.0)) { timeline in
+            let t = timeline.date.timeIntervalSinceReferenceDate
+            ZStack {
+                ForEach(0..<4, id: \.self) { i in
+                    let angle = t * 0.4 + Double(i) * (.pi / 2.0)
+                    let r = size * 0.48
+                    let x = cos(angle) * r
+                    let y = sin(angle) * r * 0.45
+                    let op = 0.2 + 0.25 * sin(t * 1.5 + Double(i) * 1.5)
+
+                    Image(systemName: "star.fill")
+                        .font(.system(size: size * 0.035))
+                        .foregroundStyle(Color.yellow.opacity(op))
+                        .offset(x: x, y: y - size * 0.04)
+                }
+            }
+        }
+        .allowsHitTesting(false)
+    }
+
+    // MARK: - Animation Lifecycle
+
+    private func startAllAnimations() {
+        startBlinkTimer()
+        startBreathing()
+        startPupilDrift()
+    }
+
+    private func stopAllAnimations() {
+        blinkTimer?.invalidate()
+        blinkTimer = nil
+        pupilTimer?.invalidate()
+        pupilTimer = nil
+        thinkingIconTimer?.invalidate()
+        thinkingIconTimer = nil
+        writingTimer?.invalidate()
+        writingTimer = nil
+    }
+
+    // MARK: - Breathing
+
+    private func startBreathing() {
+        withAnimation(
+            .easeInOut(duration: 3.0)
+            .repeatForever(autoreverses: true)
+        ) {
+            breathPhase = 1.0
+        }
+    }
+
+    // MARK: - Pupil Drift
+
+    private func startPupilDrift() {
+        schedulePupilMove()
+    }
+
+    private func schedulePupilMove() {
+        let interval = Double.random(in: 2.5...5.0)
+        pupilTimer?.invalidate()
+        pupilTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: false) { _ in
+            Task { @MainActor in
+                let newX = CGFloat.random(in: -1.5...1.5)
+                let newY = CGFloat.random(in: -0.8...0.8)
+                withAnimation(.easeInOut(duration: 0.6)) {
+                    pupilOffset = CGPoint(x: newX, y: newY)
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + Double.random(in: 1.2...2.5)) {
+                    withAnimation(.easeInOut(duration: 0.5)) {
+                        pupilOffset = .zero
+                    }
+                    schedulePupilMove()
+                }
+            }
+        }
+    }
+
+    // MARK: - Blink Timer
+
+    private func startBlinkTimer() {
+        blinkTimer?.invalidate()
+        scheduleNextBlink()
+    }
+
+    private func scheduleNextBlink() {
+        let interval = Double.random(in: 2.5...5.0)
+        blinkTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: false) { _ in
+            Task { @MainActor in
+                withAnimation(.easeIn(duration: 0.07)) {
+                    isBlinking = true
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    withAnimation(.easeOut(duration: 0.09)) {
+                        isBlinking = false
+                    }
+                    scheduleNextBlink()
+                }
+            }
+        }
+    }
+
+    // MARK: - Thinking / Writing Timers
 
     private func startThinkingIconCycle() {
         thinkingIconTimer?.invalidate()
@@ -481,101 +757,11 @@ struct MochiAvatarView: View {
         }
     }
 
-    // MARK: - Eye Components
-
-    private var faceColor: Color {
-        color.isDark
-            ? Color(red: 0.92, green: 0.9, blue: 0.85)
-            : Color(red: 0.2, green: 0.15, blue: 0.12)
-    }
-
-    private var mochiEye: some View {
-        Ellipse()
-            .fill(faceColor)
-            .frame(width: size * 0.09, height: isBlinking ? size * 0.02 : size * 0.11)
-    }
-
-    private var happyEye: some View {
-        HalfCircleShape()
-            .stroke(faceColor, lineWidth: size * 0.03)
-            .frame(width: size * 0.1, height: size * 0.06)
-    }
-
-    private var starEye: some View {
-        Image(systemName: "star.fill")
-            .font(.system(size: size * 0.1))
-            .foregroundStyle(.yellow)
-    }
-
-    private func determinedEye(left: Bool) -> some View {
-        VStack(spacing: 0) {
-            Rectangle()
-                .fill(faceColor)
-                .frame(width: size * 0.09, height: size * 0.02)
-                .rotationEffect(.degrees(left ? -10 : 10))
-            Ellipse()
-                .fill(faceColor)
-                .frame(width: size * 0.06, height: size * 0.07)
-        }
-    }
-
-    private var closedEye: some View {
-        HalfCircleShape()
-            .rotation(.degrees(180))
-            .stroke(faceColor, lineWidth: size * 0.025)
-            .frame(width: size * 0.08, height: size * 0.04)
-    }
-
-    private var worriedEye: some View {
-        Ellipse()
-            .fill(faceColor)
-            .frame(width: size * 0.08, height: isBlinking ? size * 0.02 : size * 0.1)
-    }
-
-    private var sadEye: some View {
-        VStack(spacing: 1) {
-            Rectangle()
-                .fill(faceColor)
-                .frame(width: size * 0.09, height: size * 0.015)
-                .rotationEffect(.degrees(10))
-            Ellipse()
-                .fill(faceColor)
-                .frame(width: size * 0.06, height: size * 0.07)
-        }
-    }
-
-    // MARK: - Mouth Components
-
-    private func mochiMouth(
-        smile: Bool = true,
-        wide: Bool = false,
-        open: Bool = false,
-        flat: Bool = false,
-        wavy: Bool = false,
-        sad: Bool = false
-    ) -> some View {
-        Group {
-            if open {
-                Ellipse()
-                    .fill(faceColor)
-                    .frame(width: size * 0.06, height: size * 0.05)
-            } else if flat {
-                Rectangle()
-                    .fill(faceColor)
-                    .frame(width: size * (wide ? 0.1 : 0.06), height: size * 0.015)
-            } else if wavy {
-                WavyLineShape()
-                    .stroke(faceColor, lineWidth: size * 0.02)
-                    .frame(width: size * 0.08, height: size * 0.03)
-            } else if sad {
-                HalfCircleShape()
-                    .rotation(.degrees(180))
-                    .stroke(faceColor, lineWidth: size * 0.02)
-                    .frame(width: size * 0.07, height: size * 0.03)
-            } else {
-                HalfCircleShape()
-                    .stroke(faceColor, lineWidth: size * 0.02)
-                    .frame(width: size * (wide ? 0.1 : 0.07), height: size * 0.03)
+    private func startWritingDots() {
+        writingTimer?.invalidate()
+        writingTimer = Timer.scheduledTimer(withTimeInterval: 0.35, repeats: true) { _ in
+            Task { @MainActor in
+                writingDotsIndex = (writingDotsIndex + 1) % 3
             }
         }
     }
@@ -584,6 +770,62 @@ struct MochiAvatarView: View {
 
     private func hasEquipped(_ keyword: String) -> Bool {
         equippedItems.contains { $0.name.lowercased().contains(keyword) }
+    }
+
+    // MARK: - Color Properties
+
+    private var bodyStrokeColor: Color {
+        switch color {
+        case .white: return Color(red: 0.82, green: 0.80, blue: 0.77)
+        case .pink: return Color(red: 0.9, green: 0.6, blue: 0.68)
+        case .teal: return Color(red: 0.40, green: 0.68, blue: 0.63)
+        case .matcha: return Color(red: 0.55, green: 0.72, blue: 0.53)
+        case .skyBlue: return Color(red: 0.55, green: 0.7, blue: 0.9)
+        case .golden: return Color(red: 0.9, green: 0.75, blue: 0.35)
+        case .grey: return Color(red: 0.55, green: 0.55, blue: 0.55)
+        case .black: return Color(red: 0.25, green: 0.25, blue: 0.25)
+        case .nightBlue: return Color(red: 0.1, green: 0.12, blue: 0.35)
+        case .violet: return Color(red: 0.55, green: 0.3, blue: 0.7)
+        case .pride: return Color(red: 0.85, green: 0.4, blue: 0.4)
+        }
+    }
+
+    private var bodyGradient: LinearGradient {
+        if color == .pride {
+            return LinearGradient(
+                colors: [
+                    Color(red: 0.9, green: 0.3, blue: 0.3),
+                    Color(red: 0.95, green: 0.6, blue: 0.2),
+                    Color(red: 0.95, green: 0.9, blue: 0.3),
+                    Color(red: 0.3, green: 0.8, blue: 0.4),
+                    Color(red: 0.3, green: 0.5, blue: 0.9),
+                    Color(red: 0.6, green: 0.3, blue: 0.8),
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
+        return LinearGradient(
+            colors: [bodyColor.opacity(0.85), bodyColor],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+    }
+
+    private var bodyColor: Color {
+        switch color {
+        case .white: return Color(red: 0.95, green: 0.92, blue: 0.86)
+        case .pink: return Color(red: 1.0, green: 0.8, blue: 0.85)
+        case .teal: return Color(red: 0.55, green: 0.83, blue: 0.78)
+        case .matcha: return Color(red: 0.75, green: 0.88, blue: 0.73)
+        case .skyBlue: return Color(red: 0.75, green: 0.87, blue: 1.0)
+        case .golden: return Color(red: 1.0, green: 0.9, blue: 0.6)
+        case .grey: return Color(red: 0.72, green: 0.72, blue: 0.72)
+        case .black: return Color(red: 0.15, green: 0.15, blue: 0.15)
+        case .nightBlue: return Color(red: 0.12, green: 0.15, blue: 0.35)
+        case .violet: return Color(red: 0.7, green: 0.45, blue: 0.85)
+        case .pride: return Color(red: 0.9, green: 0.5, blue: 0.5)
+        }
     }
 
     // MARK: - Hat
@@ -610,7 +852,6 @@ struct MochiAvatarView: View {
 
     private var beretHat: some View {
         ZStack {
-            // Corps du beret
             Ellipse()
                 .fill(
                     LinearGradient(
@@ -624,20 +865,18 @@ struct MochiAvatarView: View {
                 )
                 .frame(width: size * 0.4, height: size * 0.15)
                 .rotationEffect(.degrees(-8))
-            // Tige sur le dessus
             Circle()
                 .fill(Color(red: 0.55, green: 0.1, blue: 0.13))
                 .frame(width: size * 0.04, height: size * 0.04)
                 .offset(y: -size * 0.07)
         }
-        .offset(y: -size * 0.33)
+        .offset(y: -size * 0.3)
     }
 
     // MARK: - Couronne
 
     private var crownHat: some View {
         ZStack {
-            // Base de la couronne
             CrownShape()
                 .fill(
                     LinearGradient(
@@ -650,30 +889,22 @@ struct MochiAvatarView: View {
                     )
                 )
                 .frame(width: size * 0.35, height: size * 0.18)
-            // Joyaux sur les pointes
             HStack(spacing: size * 0.06) {
-                Circle()
-                    .fill(Color.red.opacity(0.8))
-                    .frame(width: size * 0.03)
+                Circle().fill(Color.red.opacity(0.8)).frame(width: size * 0.03)
                     .offset(y: -size * 0.02)
-                Circle()
-                    .fill(Color.blue.opacity(0.8))
-                    .frame(width: size * 0.03)
+                Circle().fill(Color.blue.opacity(0.8)).frame(width: size * 0.03)
                     .offset(y: -size * 0.06)
-                Circle()
-                    .fill(Color.red.opacity(0.8))
-                    .frame(width: size * 0.03)
+                Circle().fill(Color.red.opacity(0.8)).frame(width: size * 0.03)
                     .offset(y: -size * 0.02)
             }
         }
-        .offset(y: -size * 0.35)
+        .offset(y: -size * 0.32)
     }
 
     // MARK: - Casquette
 
     private var capHat: some View {
         ZStack {
-            // Dome de la casquette
             HalfCircleShape()
                 .rotation(.degrees(180))
                 .fill(
@@ -687,7 +918,6 @@ struct MochiAvatarView: View {
                     )
                 )
                 .frame(width: size * 0.35, height: size * 0.14)
-            // Visiere
             Ellipse()
                 .fill(
                     LinearGradient(
@@ -702,14 +932,13 @@ struct MochiAvatarView: View {
                 .frame(width: size * 0.22, height: size * 0.06)
                 .offset(x: size * 0.15, y: size * 0.04)
         }
-        .offset(y: -size * 0.32)
+        .offset(y: -size * 0.29)
     }
 
     // MARK: - Chapeau Sorcier
 
     private var wizardHat: some View {
         ZStack {
-            // Cone du chapeau
             WizardHatShape()
                 .fill(
                     LinearGradient(
@@ -722,12 +951,10 @@ struct MochiAvatarView: View {
                     )
                 )
                 .frame(width: size * 0.3, height: size * 0.35)
-            // Bord du chapeau
             Ellipse()
                 .fill(Color(red: 0.35, green: 0.18, blue: 0.55))
                 .frame(width: size * 0.4, height: size * 0.06)
                 .offset(y: size * 0.14)
-            // Etoiles decoratives
             Image(systemName: "star.fill")
                 .font(.system(size: size * 0.04))
                 .foregroundStyle(Color.yellow.opacity(0.9))
@@ -738,10 +965,10 @@ struct MochiAvatarView: View {
                 .offset(x: size * 0.06, y: size * 0.06)
         }
         .rotationEffect(.degrees(-5))
-        .offset(y: -size * 0.42)
+        .offset(y: -size * 0.39)
     }
 
-    // MARK: - Bandeau Ninja (style Naruto)
+    // MARK: - Bandeau Ninja
 
     private var ninjaBand: some View {
         let clothColor = Color(red: 0.15, green: 0.2, blue: 0.45)
@@ -750,12 +977,10 @@ struct MochiAvatarView: View {
         let metalDark = Color(red: 0.5, green: 0.5, blue: 0.55)
 
         return ZStack {
-            // Bandeau tissu principal (bleu fonce)
             RoundedRectangle(cornerRadius: size * 0.015)
                 .fill(LinearGradient(colors: [clothColor, clothColor2], startPoint: .top, endPoint: .bottom))
                 .frame(width: size * 0.55, height: size * 0.07)
 
-            // Bandes qui flottent a droite (2 longues bandes)
             RoundedRectangle(cornerRadius: size * 0.008)
                 .fill(LinearGradient(colors: [clothColor, clothColor2.opacity(0.7)], startPoint: .leading, endPoint: .trailing))
                 .frame(width: size * 0.2, height: size * 0.04)
@@ -768,7 +993,6 @@ struct MochiAvatarView: View {
                 .rotationEffect(.degrees(35))
                 .offset(x: size * 0.32, y: size * 0.1)
 
-            // Plaque metallique au centre (plus grande, style Naruto)
             RoundedRectangle(cornerRadius: size * 0.012)
                 .fill(LinearGradient(colors: [metalLight, metalDark], startPoint: .topLeading, endPoint: .bottomTrailing))
                 .frame(width: size * 0.1, height: size * 0.065)
@@ -777,7 +1001,6 @@ struct MochiAvatarView: View {
                         .stroke(metalDark, lineWidth: size * 0.005)
                 )
 
-            // Symbole sur la plaque (spirale simplifiee)
             Circle()
                 .stroke(metalDark, lineWidth: size * 0.006)
                 .frame(width: size * 0.035, height: size * 0.035)
@@ -785,7 +1008,6 @@ struct MochiAvatarView: View {
                 .fill(metalDark)
                 .frame(width: size * 0.012, height: size * 0.012)
 
-            // Vis de la plaque
             Circle()
                 .fill(metalDark.opacity(0.6))
                 .frame(width: size * 0.008, height: size * 0.008)
@@ -795,7 +1017,7 @@ struct MochiAvatarView: View {
                 .frame(width: size * 0.008, height: size * 0.008)
                 .offset(x: size * 0.035, y: 0)
         }
-        .offset(y: -size * 0.2)
+        .offset(y: -size * 0.18)
     }
 
     // MARK: - Lunettes de soleil
@@ -812,7 +1034,6 @@ struct MochiAvatarView: View {
         let eyeSpacing = size * 0.075
 
         return ZStack {
-            // Verre gauche - opaque fonce
             RoundedRectangle(cornerRadius: lensH * 0.45)
                 .fill(lensColor)
                 .frame(width: lensW, height: lensH)
@@ -821,14 +1042,12 @@ struct MochiAvatarView: View {
                         .stroke(frameColor, lineWidth: size * 0.01)
                 )
                 .overlay(
-                    // Reflet
                     Ellipse()
                         .fill(Color.white.opacity(0.15))
                         .frame(width: lensW * 0.4, height: lensH * 0.3)
                         .offset(x: -lensW * 0.15, y: -lensH * 0.15)
                 )
                 .offset(x: -eyeSpacing)
-            // Verre droit
             RoundedRectangle(cornerRadius: lensH * 0.45)
                 .fill(lensColor)
                 .frame(width: lensW, height: lensH)
@@ -843,12 +1062,11 @@ struct MochiAvatarView: View {
                         .offset(x: -lensW * 0.15, y: -lensH * 0.15)
                 )
                 .offset(x: eyeSpacing)
-            // Pont central
             RoundedRectangle(cornerRadius: size * 0.005)
                 .fill(frameColor)
                 .frame(width: eyeSpacing * 0.35, height: size * 0.015)
         }
-        .offset(y: -size * 0.07)
+        .offset(y: -size * 0.06)
     }
 
     // MARK: - Echarpe
@@ -858,7 +1076,6 @@ struct MochiAvatarView: View {
         let scarfColor2 = Color(red: 0.65, green: 0.12, blue: 0.12)
 
         return ZStack {
-            // Bande principale - enroule autour du bas du Mochi
             RoundedRectangle(cornerRadius: size * 0.03)
                 .fill(
                     LinearGradient(colors: [scarfColor1, scarfColor2], startPoint: .leading, endPoint: .trailing)
@@ -866,7 +1083,6 @@ struct MochiAvatarView: View {
                 .frame(width: size * 0.65, height: size * 0.08)
                 .offset(y: size * 0.18)
 
-            // Rayures decoratives
             HStack(spacing: size * 0.08) {
                 ForEach(0..<3, id: \.self) { _ in
                     RoundedRectangle(cornerRadius: 1)
@@ -876,7 +1092,6 @@ struct MochiAvatarView: View {
             }
             .offset(y: size * 0.18)
 
-            // Bout gauche qui pend
             RoundedRectangle(cornerRadius: size * 0.015)
                 .fill(
                     LinearGradient(colors: [scarfColor1, scarfColor2], startPoint: .top, endPoint: .bottom)
@@ -885,7 +1100,6 @@ struct MochiAvatarView: View {
                 .rotationEffect(.degrees(-12))
                 .offset(x: -size * 0.28, y: size * 0.28)
 
-            // Bout droit plus court
             RoundedRectangle(cornerRadius: size * 0.015)
                 .fill(
                     LinearGradient(colors: [scarfColor1, scarfColor2.opacity(0.8)], startPoint: .top, endPoint: .bottom)
@@ -894,7 +1108,6 @@ struct MochiAvatarView: View {
                 .rotationEffect(.degrees(8))
                 .offset(x: -size * 0.2, y: size * 0.32)
 
-            // Franges bout gauche
             HStack(spacing: size * 0.008) {
                 ForEach(0..<4, id: \.self) { _ in
                     RoundedRectangle(cornerRadius: size * 0.003)
@@ -916,18 +1129,15 @@ struct MochiAvatarView: View {
         let wingH = size * 0.09
 
         return ZStack {
-            // Aile gauche
             BowTieWingShape()
                 .fill(LinearGradient(colors: [bowColor1, bowColor2], startPoint: .top, endPoint: .bottom))
                 .frame(width: wingW, height: wingH)
                 .offset(x: -wingW * 0.45)
-            // Aile droite (miroir)
             BowTieWingShape()
                 .fill(LinearGradient(colors: [bowColor1, bowColor2], startPoint: .top, endPoint: .bottom))
                 .frame(width: wingW, height: wingH)
                 .scaleEffect(x: -1, y: 1)
                 .offset(x: wingW * 0.45)
-            // Noeud central
             Circle()
                 .fill(bowColor2)
                 .frame(width: size * 0.04, height: size * 0.04)
@@ -971,7 +1181,6 @@ struct MochiAvatarView: View {
 
     private var wingsAccessory: some View {
         HStack(spacing: size * 0.55) {
-            // Aile gauche
             WingShape()
                 .fill(
                     LinearGradient(
@@ -985,7 +1194,6 @@ struct MochiAvatarView: View {
                 )
                 .frame(width: size * 0.2, height: size * 0.3)
                 .scaleEffect(x: -1, y: 1)
-            // Aile droite
             WingShape()
                 .fill(
                     LinearGradient(
@@ -1004,6 +1212,82 @@ struct MochiAvatarView: View {
 }
 
 // MARK: - Custom Shapes
+
+/// Organic mochi/daifuku shape — wide low dome, like a real rice cake
+struct MochiBodyShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let w = rect.width
+        let h = rect.height
+
+        // Start at bottom-left
+        path.move(to: CGPoint(x: w * 0.12, y: h * 0.92))
+
+        // Flat bottom with subtle sag
+        path.addQuadCurve(
+            to: CGPoint(x: w * 0.88, y: h * 0.92),
+            control: CGPoint(x: w * 0.5, y: h * 0.96)
+        )
+
+        // Bottom-right corner: smooth curve up to the side
+        path.addCurve(
+            to: CGPoint(x: w * 0.98, y: h * 0.5),
+            control1: CGPoint(x: w * 0.97, y: h * 0.92),
+            control2: CGPoint(x: w * 0.98, y: h * 0.75)
+        )
+
+        // Right to top: wide smooth dome
+        path.addCurve(
+            to: CGPoint(x: w * 0.5, y: h * 0.02),
+            control1: CGPoint(x: w * 0.98, y: h * 0.18),
+            control2: CGPoint(x: w * 0.78, y: h * 0.02)
+        )
+
+        // Top to left: mirror dome
+        path.addCurve(
+            to: CGPoint(x: w * 0.02, y: h * 0.5),
+            control1: CGPoint(x: w * 0.22, y: h * 0.02),
+            control2: CGPoint(x: w * 0.02, y: h * 0.18)
+        )
+
+        // Left down to bottom-left
+        path.addCurve(
+            to: CGPoint(x: w * 0.12, y: h * 0.92),
+            control1: CGPoint(x: w * 0.02, y: h * 0.75),
+            control2: CGPoint(x: w * 0.03, y: h * 0.92)
+        )
+
+        path.closeSubpath()
+        return path
+    }
+}
+
+/// Sweat drop shape for worried emotion
+struct SweatDropShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let w = rect.width
+        let h = rect.height
+
+        // Pointed top
+        path.move(to: CGPoint(x: w * 0.5, y: 0))
+
+        // Right curve down to round bottom
+        path.addQuadCurve(
+            to: CGPoint(x: w * 0.5, y: h),
+            control: CGPoint(x: w * 1.1, y: h * 0.6)
+        )
+
+        // Left curve back up
+        path.addQuadCurve(
+            to: CGPoint(x: w * 0.5, y: 0),
+            control: CGPoint(x: -w * 0.1, y: h * 0.6)
+        )
+
+        path.closeSubpath()
+        return path
+    }
+}
 
 struct HalfCircleShape: Shape {
     func path(in rect: CGRect) -> Path {
@@ -1037,49 +1321,34 @@ struct WavyLineShape: Shape {
     }
 }
 
-// MARK: - Crown Shape
-
 struct CrownShape: Shape {
     func path(in rect: CGRect) -> Path {
         var path = Path()
         let w = rect.width
         let h = rect.height
-        // Base
         path.move(to: CGPoint(x: 0, y: h))
-        // Montee vers la premiere pointe
         path.addLine(to: CGPoint(x: w * 0.1, y: h * 0.3))
-        // Creux entre pointes
         path.addLine(to: CGPoint(x: w * 0.25, y: h * 0.55))
-        // Pointe centrale (la plus haute)
         path.addLine(to: CGPoint(x: w * 0.5, y: 0))
-        // Creux
         path.addLine(to: CGPoint(x: w * 0.75, y: h * 0.55))
-        // Derniere pointe
         path.addLine(to: CGPoint(x: w * 0.9, y: h * 0.3))
-        // Retour a la base
         path.addLine(to: CGPoint(x: w, y: h))
         path.closeSubpath()
         return path
     }
 }
 
-// MARK: - Wizard Hat Shape
-
 struct WizardHatShape: Shape {
     func path(in rect: CGRect) -> Path {
         var path = Path()
         let w = rect.width
         let h = rect.height
-        // Pointe du chapeau (legerement decalee pour effet penche)
         path.move(to: CGPoint(x: w * 0.45, y: 0))
-        // Cote gauche avec courbe
         path.addQuadCurve(
             to: CGPoint(x: 0, y: h),
             control: CGPoint(x: w * 0.15, y: h * 0.5)
         )
-        // Base
         path.addLine(to: CGPoint(x: w, y: h))
-        // Cote droit avec courbe
         path.addQuadCurve(
             to: CGPoint(x: w * 0.45, y: 0),
             control: CGPoint(x: w * 0.8, y: h * 0.5)
@@ -1089,26 +1358,20 @@ struct WizardHatShape: Shape {
     }
 }
 
-// MARK: - Bow Tie Wing Shape
-
 struct BowTieWingShape: Shape {
     func path(in rect: CGRect) -> Path {
         var path = Path()
         let w = rect.width
         let h = rect.height
-        // Commence au centre (noeud)
         path.move(to: CGPoint(x: 0, y: h * 0.4))
-        // Courbe vers le haut puis l'extremite
         path.addQuadCurve(
             to: CGPoint(x: w, y: 0),
             control: CGPoint(x: w * 0.5, y: -h * 0.2)
         )
-        // Extremite vers le bas
         path.addQuadCurve(
             to: CGPoint(x: w, y: h),
             control: CGPoint(x: w * 1.1, y: h * 0.5)
         )
-        // Retour au centre par le bas
         path.addQuadCurve(
             to: CGPoint(x: 0, y: h * 0.6),
             control: CGPoint(x: w * 0.5, y: h * 1.2)
@@ -1118,22 +1381,17 @@ struct BowTieWingShape: Shape {
     }
 }
 
-// MARK: - Cape Shape
-
 struct CapeShape: Shape {
     func path(in rect: CGRect) -> Path {
         var path = Path()
         let w = rect.width
         let h = rect.height
-        // Haut de la cape (attache aux epaules)
         path.move(to: CGPoint(x: w * 0.2, y: 0))
         path.addLine(to: CGPoint(x: w * 0.8, y: 0))
-        // Cote droit qui descend avec courbe
         path.addQuadCurve(
             to: CGPoint(x: w * 0.85, y: h * 0.9),
             control: CGPoint(x: w * 1.0, y: h * 0.4)
         )
-        // Bord inferieur ondule
         path.addQuadCurve(
             to: CGPoint(x: w * 0.5, y: h),
             control: CGPoint(x: w * 0.7, y: h * 0.8)
@@ -1142,7 +1400,6 @@ struct CapeShape: Shape {
             to: CGPoint(x: w * 0.15, y: h * 0.9),
             control: CGPoint(x: w * 0.3, y: h * 0.8)
         )
-        // Cote gauche qui remonte
         path.addQuadCurve(
             to: CGPoint(x: w * 0.2, y: 0),
             control: CGPoint(x: 0, y: h * 0.4)
@@ -1152,26 +1409,20 @@ struct CapeShape: Shape {
     }
 }
 
-// MARK: - Wing Shape
-
 struct WingShape: Shape {
     func path(in rect: CGRect) -> Path {
         var path = Path()
         let w = rect.width
         let h = rect.height
-        // Base de l'aile (attachee au corps)
         path.move(to: CGPoint(x: 0, y: h * 0.3))
-        // Partie superieure de l'aile
         path.addQuadCurve(
             to: CGPoint(x: w * 0.7, y: h * 0.1),
             control: CGPoint(x: w * 0.3, y: -h * 0.1)
         )
-        // Pointe de l'aile
         path.addQuadCurve(
             to: CGPoint(x: w, y: h * 0.35),
             control: CGPoint(x: w * 1.0, y: h * 0.05)
         )
-        // Bord inferieur avec ondulations (3 plumes)
         path.addQuadCurve(
             to: CGPoint(x: w * 0.7, y: h * 0.55),
             control: CGPoint(x: w * 0.9, y: h * 0.5)

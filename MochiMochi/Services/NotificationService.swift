@@ -94,41 +94,13 @@ final class NotificationService {
         }
     }
 
-    // MARK: - Task Reminders
+    // MARK: - Task Reminder (single consolidated notification)
 
-    func scheduleTaskReminder(for task: MochiTask, personality: Personality, frequency: String = "normal") {
+    func scheduleTaskReminder(message: String, personality: Personality, frequency: String = "normal") {
         let content = UNMutableNotificationContent()
         content.title = "\(personality.emoji) \(personality.displayName)"
-        content.body = taskReminderMessage(for: task, personality: personality)
+        content.body = message
         content.sound = .default
-        content.userInfo = ["taskId": task.id.uuidString]
-
-        let interval: TimeInterval
-        switch frequency {
-        case "intense": interval = 900    // 15 min
-        case "normal":  interval = 3600   // 1h
-        case "zen":     interval = 7200   // 2h (fallback, zen ne devrait pas schedule)
-        default:        interval = 3600
-        }
-
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: interval, repeats: false)
-        let request = UNNotificationRequest(
-            identifier: "task-reminder-\(task.id.uuidString)",
-            content: content,
-            trigger: trigger
-        )
-
-        center.add(request)
-    }
-
-    // MARK: - Tracked Task Reminders (repeating)
-
-    func scheduleTrackedReminder(for task: MochiTask, personality: Personality, frequency: String = "normal") {
-        let content = UNMutableNotificationContent()
-        content.title = "\(personality.emoji) \(personality.displayName)"
-        content.body = taskReminderMessage(for: task, personality: personality)
-        content.sound = .default
-        content.userInfo = ["taskId": task.id.uuidString, "tracked": true]
 
         let interval: TimeInterval
         switch frequency {
@@ -138,9 +110,9 @@ final class NotificationService {
         default:        interval = 3600
         }
 
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: interval, repeats: true)
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: interval, repeats: false)
         let request = UNNotificationRequest(
-            identifier: "tracked-reminder-\(task.id.uuidString)",
+            identifier: "task-reminder",
             content: content,
             trigger: trigger
         )
@@ -148,8 +120,8 @@ final class NotificationService {
         center.add(request)
     }
 
-    func cancelTrackedReminder(for task: MochiTask) {
-        cancelNotification(identifier: "tracked-reminder-\(task.id.uuidString)")
+    func cancelTaskReminder() {
+        cancelNotification(identifier: "task-reminder")
     }
 
     // MARK: - Deadline Warning
@@ -225,6 +197,24 @@ final class NotificationService {
         center.add(request)
     }
 
+    // MARK: - Meeting Proposal
+
+    func sendMeetingProposalNotification(count: Int, personality: Personality) {
+        let content = UNMutableNotificationContent()
+        content.title = "\(personality.emoji) Nouvelles reunions detectees"
+        content.body = meetingProposalMessage(count: count, personality: personality)
+        content.sound = .default
+
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+        let request = UNNotificationRequest(
+            identifier: "meeting-proposal-\(Date().timeIntervalSince1970)",
+            content: content,
+            trigger: trigger
+        )
+
+        center.add(request)
+    }
+
     // MARK: - Cancel
 
     func cancelAll() {
@@ -273,6 +263,20 @@ final class NotificationService {
         case .voyante: return "Les energies cosmiques tremblent ! Ton streak de \(streakDays) jours risque de s'eteindre..."
         case .chat: return "\(streakDays) jours de streak. Ca serait dommage. Enfin, pour toi."
         case .heroique: return "Le heros risque de perdre sa serie de \(streakDays) victoires ! Agis vite !"
+        }
+    }
+
+    private func meetingProposalMessage(count: Int, personality: Personality) -> String {
+        let s = count > 1 ? "s" : ""
+        switch personality {
+        case .kawaii: return "\(count) reunion\(s) avec des taches a valider~ Viens voir !"
+        case .sensei: return "\(count) reunion\(s) detectee\(s). Des taches t'attendent. Agis."
+        case .pote: return "Eh ! \(count) reunion\(s) avec des trucs a faire. Check ca !"
+        case .butler: return "Monsieur, \(count) reunion\(s) requierent votre attention."
+        case .coach: return "\(count) REUNION\(s.uppercased()) ! Des taches a valider, GO !"
+        case .voyante: return "Les astres revelent \(count) reunion\(s)... Des taches emergent des etoiles."
+        case .chat: return "\(count) reunion\(s). Des taches. Tu devrais regarder. Ou pas."
+        case .heroique: return "\(count) conseil\(s) de guerre detecte\(s) ! De nouvelles quetes t'attendent !"
         }
     }
 

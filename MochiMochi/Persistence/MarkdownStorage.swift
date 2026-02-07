@@ -16,6 +16,9 @@ struct AppConfig {
     var weekendsProtected: Bool
     var globalShortcut: String
     var daysOff: [Int] // weekday numbers (1=Sunday, 7=Saturday)
+    var meetingWatchEnabled: Bool
+    var meetingCheckInterval: Int // minutes
+    var meetingLookbackDays: Int // how far back to search
 
     init(
         mochiName: String = "Mochi",
@@ -30,7 +33,10 @@ struct AppConfig {
         morningBriefingHour: Int = 9,
         weekendsProtected: Bool = false,
         globalShortcut: String = "⌘⇧M",
-        daysOff: [Int] = []
+        daysOff: [Int] = [],
+        meetingWatchEnabled: Bool = false,
+        meetingCheckInterval: Int = 30,
+        meetingLookbackDays: Int = 7
     ) {
         self.mochiName = mochiName
         self.personality = personality
@@ -45,6 +51,9 @@ struct AppConfig {
         self.weekendsProtected = weekendsProtected
         self.globalShortcut = globalShortcut
         self.daysOff = daysOff
+        self.meetingWatchEnabled = meetingWatchEnabled
+        self.meetingCheckInterval = meetingCheckInterval
+        self.meetingLookbackDays = meetingLookbackDays
     }
 }
 
@@ -109,6 +118,7 @@ final class MarkdownStorage {
             baseDirectory.appendingPathComponent("inventory"),
             baseDirectory.appendingPathComponent("attachments"),
             baseDirectory.appendingPathComponent("integrations/notion"),
+            baseDirectory.appendingPathComponent(".claude"),
         ]
 
         for dir in directories {
@@ -123,6 +133,8 @@ final class MarkdownStorage {
             ("state/mochi.md", defaultMochiStateMarkdown()),
             ("inventory/items.md", "# Inventaire\n"),
             ("integrations/notion/config.md", "# Notion\n\n- active: false\n"),
+            ("state/meetings.md", "# Reunions\n"),
+            (".claude/settings.local.json", defaultClaudeSettingsJSON()),
         ]
 
         for (path, content) in defaultFiles {
@@ -131,6 +143,29 @@ final class MarkdownStorage {
                 try content.write(to: fileURL, atomically: true, encoding: .utf8)
             }
         }
+    }
+
+    private func defaultClaudeSettingsJSON() -> String {
+        """
+        {
+          "permissions": {
+            "allow": [
+              "mcp__claude_ai_Notion__notion-search",
+              "mcp__claude_ai_Notion__notion-fetch",
+              "mcp__claude_ai_Notion__notion-create-pages",
+              "mcp__claude_ai_Notion__notion-create-database",
+              "mcp__claude_ai_Notion__notion-create-comment",
+              "mcp__claude_ai_Notion__notion-get-comments",
+              "mcp__claude_ai_Notion__notion-get-teams",
+              "mcp__claude_ai_Notion__notion-get-users",
+              "mcp__claude_ai_Notion__notion-update-page",
+              "mcp__claude_ai_Notion__notion-update-data-source",
+              "mcp__claude_ai_Notion__notion-move-pages",
+              "mcp__claude_ai_Notion__notion-duplicate-page"
+            ]
+          }
+        }
+        """
     }
 
     // MARK: - File Operations
@@ -223,6 +258,12 @@ final class MarkdownStorage {
                 config.globalShortcut = value
             case "jours_off":
                 config.daysOff = value.split(separator: ",").compactMap { Int($0.trimmingCharacters(in: .whitespaces)) }
+            case "veille_reunions":
+                config.meetingWatchEnabled = value == "true"
+            case "intervalle_reunions":
+                if let v = Int(value) { config.meetingCheckInterval = v }
+            case "historique_reunions":
+                if let v = Int(value) { config.meetingLookbackDays = v }
             default:
                 break
             }
@@ -254,6 +295,9 @@ final class MarkdownStorage {
         if !config.daysOff.isEmpty {
             lines.append("- jours_off: \(config.daysOff.map(String.init).joined(separator: ", "))")
         }
+        lines.append("- veille_reunions: \(config.meetingWatchEnabled)")
+        lines.append("- intervalle_reunions: \(config.meetingCheckInterval)")
+        lines.append("- historique_reunions: \(config.meetingLookbackDays)")
         lines.append("")
         return lines.joined(separator: "\n")
     }
@@ -417,6 +461,144 @@ final class MarkdownStorage {
             lines.append("- derniere_activite: \(isoFormatter.string(from: lastActive))")
         }
         lines.append("")
+        return lines.joined(separator: "\n")
+    }
+
+    // MARK: - Meeting Proposals Parsing
+
+    func parseMeetingProposalsFromMarkdown(_ markdown: String) -> [MeetingProposal] {
+        var proposals: [MeetingProposal] = []
+
+        let proposalBlocks = markdown.components(separatedBy: "\n## ").dropFirst()
+        for block in proposalBlocks {
+            let lines = block.components(separatedBy: "\n")
+            guard let titleLine = lines.first else { continue }
+
+            var id = UUID()
+            let meetingTitle = titleLine.trimmingCharacters(in: .whitespaces)
+            var meetingNotionId = ""
+            var meetingDate: Date?
+            var status: ProposalStatus = .pending
+            var checkedAt = Date()
+            var suggestedTasks: [SuggestedTask] = []
+
+            // Parse proposal-level properties
+            var i = 1
+            while i < lines.count {
+                let trimmed = lines[i].trimmingCharacters(in: .whitespaces)
+
+                if trimmed.hasPrefix("### ") {
+                    // Start of suggested task sub-section
+                    let taskTitle = String(trimmed.dropFirst(4)).trimmingCharacters(in: .whitespaces)
+                    var taskId = UUID()
+                    var taskDescription: String?
+                    var taskPriority: TaskPriority = .normal
+                    var taskAccepted: Bool?
+
+                    i += 1
+                    while i < lines.count {
+                        let tl = lines[i].trimmingCharacters(in: .whitespaces)
+                        if tl.hasPrefix("### ") || tl.hasPrefix("## ") { break }
+                        guard tl.hasPrefix("- ") else { i += 1; continue }
+                        let entry = String(tl.dropFirst(2))
+                        let parts = entry.split(separator: ":", maxSplits: 1)
+                        guard parts.count == 2 else { i += 1; continue }
+                        let key = parts[0].trimmingCharacters(in: .whitespaces)
+                        let value = parts[1].trimmingCharacters(in: .whitespaces)
+
+                        switch key {
+                        case "id":
+                            if let parsed = UUID(uuidString: value) { taskId = parsed }
+                        case "description":
+                            taskDescription = value
+                        case "priorite":
+                            if let p = TaskPriority(rawValue: value) { taskPriority = p }
+                        case "accepte":
+                            if value == "true" { taskAccepted = true }
+                            else if value == "false" { taskAccepted = false }
+                        default:
+                            break
+                        }
+                        i += 1
+                    }
+
+                    suggestedTasks.append(SuggestedTask(
+                        id: taskId,
+                        title: taskTitle,
+                        description: taskDescription,
+                        priority: taskPriority,
+                        isAccepted: taskAccepted
+                    ))
+                } else if trimmed.hasPrefix("- ") {
+                    let entry = String(trimmed.dropFirst(2))
+                    let parts = entry.split(separator: ":", maxSplits: 1)
+                    if parts.count == 2 {
+                        let key = parts[0].trimmingCharacters(in: .whitespaces)
+                        let value = parts[1].trimmingCharacters(in: .whitespaces)
+
+                        switch key {
+                        case "id":
+                            if let parsed = UUID(uuidString: value) { id = parsed }
+                        case "notion_id":
+                            meetingNotionId = value
+                        case "date":
+                            meetingDate = isoFormatter.date(from: value) ?? dateFormatter.date(from: value)
+                        case "statut":
+                            if let s = ProposalStatus(rawValue: value) { status = s }
+                        case "verifie_le":
+                            if let d = isoFormatter.date(from: value) { checkedAt = d }
+                        default:
+                            break
+                        }
+                    }
+                    i += 1
+                } else {
+                    i += 1
+                }
+            }
+
+            proposals.append(MeetingProposal(
+                id: id,
+                meetingNotionId: meetingNotionId,
+                meetingTitle: meetingTitle,
+                meetingDate: meetingDate,
+                suggestedTasks: suggestedTasks,
+                status: status,
+                checkedAt: checkedAt
+            ))
+        }
+
+        return proposals
+    }
+
+    func meetingProposalsToMarkdown(_ proposals: [MeetingProposal]) -> String {
+        var lines = ["# Reunions", ""]
+
+        for proposal in proposals {
+            lines.append("## \(proposal.meetingTitle)")
+            lines.append("- id: \(proposal.id.uuidString)")
+            lines.append("- notion_id: \(proposal.meetingNotionId)")
+            if let date = proposal.meetingDate {
+                lines.append("- date: \(dateFormatter.string(from: date))")
+            }
+            lines.append("- statut: \(proposal.status.rawValue)")
+            lines.append("- verifie_le: \(isoFormatter.string(from: proposal.checkedAt))")
+
+            for task in proposal.suggestedTasks {
+                lines.append("")
+                lines.append("### \(task.title)")
+                lines.append("- id: \(task.id.uuidString)")
+                if let desc = task.description {
+                    lines.append("- description: \(desc)")
+                }
+                lines.append("- priorite: \(task.priority.rawValue)")
+                if let accepted = task.isAccepted {
+                    lines.append("- accepte: \(accepted)")
+                }
+            }
+            lines.append("")
+        }
+
         return lines.joined(separator: "\n")
     }
 

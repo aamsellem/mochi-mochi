@@ -684,131 +684,267 @@ struct NotificationSettingsTab: View {
 // MARK: - Notion Settings
 
 struct NotionSettingsTab: View {
-    @State private var notionToken = ""
-    @State private var isConnected = false
-    @State private var databaseId = ""
+    @EnvironmentObject var appState: AppState
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                settingsSectionHeader("Connexion")
+                settingsSectionHeader("Connexion MCP Notion")
 
                 SettingsCard {
-                    SettingsRow("Statut", icon: "wifi", iconColor: isConnected ? .green : .gray, showDivider: isConnected) {
+                    SettingsRow("Statut", icon: "wifi", iconColor: appState.isNotionConnected ? .green : .gray, showDivider: true) {
                         HStack(spacing: 6) {
-                            Circle()
-                                .fill(isConnected ? Color.green : Color.gray.opacity(0.3))
-                                .frame(width: 8, height: 8)
-                            Text(isConnected ? "Connecté" : "Non connecté")
+                            if appState.isCheckingNotion {
+                                ProgressView()
+                                    .scaleEffect(0.5)
+                                    .frame(width: 8, height: 8)
+                            } else {
+                                Circle()
+                                    .fill(appState.isNotionConnected ? Color.green : Color.gray.opacity(0.3))
+                                    .frame(width: 8, height: 8)
+                            }
+                            Text(appState.isCheckingNotion ? "Verification..." : (appState.isNotionConnected ? "Connecte" : "Non connecte"))
                                 .font(.system(size: 12))
-                                .foregroundStyle(isConnected ? .green : MochiTheme.textLight.opacity(0.5))
+                                .foregroundStyle(appState.isNotionConnected ? .green : MochiTheme.textLight.opacity(0.5))
                         }
                     }
 
-                    if isConnected {
-                        SettingsRow("Base de données", icon: "tablecells", iconColor: .blue, showDivider: true) {
-                            TextField("ID", text: $databaseId)
-                                .textFieldStyle(.plain)
-                                .font(.system(size: 12, design: .monospaced))
-                                .foregroundStyle(MochiTheme.textLight)
-                                .multilineTextAlignment(.trailing)
-                                .frame(maxWidth: 200)
-                        }
-
-                        VStack(spacing: 0) {
-                            Button {
-                                disconnectNotion()
-                            } label: {
-                                HStack {
-                                    Image(systemName: "xmark.circle.fill")
-                                        .font(.system(size: 11))
-                                        .foregroundStyle(.white)
-                                        .frame(width: 22, height: 22)
-                                        .background(RoundedRectangle(cornerRadius: 5, style: .continuous).fill(.red.opacity(0.8)))
-                                    Text("Déconnecter")
-                                        .font(.system(size: 13))
-                                        .foregroundStyle(.red.opacity(0.8))
-                                    Spacer()
-                                }
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 10)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                }
-
-                if !isConnected {
-                    settingsSectionHeader("Authentification")
-
-                    SettingsCard {
-                        VStack(alignment: .leading, spacing: 0) {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("Token d'intégration Notion")
-                                    .font(.system(size: 11, weight: .medium))
-                                    .foregroundStyle(MochiTheme.textLight.opacity(0.5))
-                                SecureField("ntn_...", text: $notionToken)
-                                    .textFieldStyle(.plain)
-                                    .font(.system(size: 13, design: .monospaced))
+                    VStack(spacing: 0) {
+                        Button {
+                            Task { await appState.checkNotionConnectivity() }
+                        } label: {
+                            HStack {
+                                Image(systemName: "arrow.triangle.2.circlepath")
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(.white)
+                                    .frame(width: 22, height: 22)
+                                    .background(RoundedRectangle(cornerRadius: 5, style: .continuous).fill(MochiTheme.secondary))
+                                Text("Tester la connexion")
+                                    .font(.system(size: 13))
                                     .foregroundStyle(MochiTheme.textLight)
-                                    .padding(10)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .fill(MochiTheme.backgroundLight)
-                                            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.15)))
-                                    )
-                            }
-                            .padding(14)
-
-                            Divider()
-
-                            Button {
-                                connectNotion()
-                            } label: {
-                                HStack {
-                                    Spacer()
-                                    Text("Connecter")
-                                        .font(.system(size: 13, weight: .semibold))
-                                        .foregroundStyle(notionToken.isEmpty ? MochiTheme.textLight.opacity(0.3) : MochiTheme.primary)
-                                    Spacer()
+                                Spacer()
+                                if appState.isCheckingNotion {
+                                    ProgressView()
+                                        .scaleEffect(0.6)
+                                } else {
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 11, weight: .semibold))
+                                        .foregroundStyle(MochiTheme.textLight.opacity(0.25))
                                 }
-                                .padding(.vertical, 10)
                             }
-                            .buttonStyle(.plain)
-                            .disabled(notionToken.isEmpty)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 10)
                         }
+                        .buttonStyle(.plain)
+                        .disabled(appState.isCheckingNotion)
                     }
                 }
 
-                settingsSectionHeader("Synchronisation")
+                if !appState.isNotionConnected && !appState.isCheckingNotion {
+                    HStack(spacing: 10) {
+                        Image(systemName: "info.circle")
+                            .font(.system(size: 14))
+                            .foregroundStyle(MochiTheme.secondary)
+                        Text("La connexion Notion se fait via le MCP Notion de Claude Code. Assurez-vous que le serveur MCP Notion est configure dans Claude Code.")
+                            .font(.system(size: 11))
+                            .foregroundStyle(MochiTheme.textLight.opacity(0.5))
+                    }
+                    .padding(12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(MochiTheme.secondary.opacity(0.06))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .stroke(MochiTheme.secondary.opacity(0.15), lineWidth: 1)
+                            )
+                    )
+                }
 
-                Text("La synchronisation bidirectionnelle avec Notion permet de garder vos tâches à jour sur les deux plateformes.")
-                    .font(.system(size: 11))
-                    .foregroundStyle(MochiTheme.textLight.opacity(0.35))
-                    .padding(.horizontal, 4)
+                meetingWatchSection
             }
             .frame(maxWidth: 480)
             .padding(24)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .onAppear {
-            if let token = KeychainHelper.load(key: "notion_token") {
-                notionToken = token
-                isConnected = true
+        .task {
+            if !appState.isNotionConnected && !appState.isCheckingNotion {
+                await appState.checkNotionConnectivity()
             }
         }
     }
 
-    private func connectNotion() {
-        try? KeychainHelper.save(key: "notion_token", value: notionToken)
-        isConnected = true
+    // MARK: - Meeting Watch Section
+
+    private var meetingWatchSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            settingsSectionHeader("Veille de reunions")
+
+            SettingsCard {
+                SettingsRow("Veille active", icon: "calendar.badge.clock", iconColor: MochiTheme.primary) {
+                    Toggle("", isOn: $appState.meetingWatchEnabled)
+                        .toggleStyle(.switch)
+                        .labelsHidden()
+                        .tint(MochiTheme.primary)
+                        .onChange(of: appState.meetingWatchEnabled) {
+                            if appState.meetingWatchEnabled {
+                                appState.startMeetingWatch()
+                            } else {
+                                appState.stopMeetingWatch()
+                            }
+                            appState.saveConfig()
+                        }
+                }
+
+                SettingsRow("Historique", icon: "calendar.badge.minus", iconColor: .purple) {
+                    Menu {
+                        ForEach([3, 7, 14, 30], id: \.self) { days in
+                            Button {
+                                appState.meetingLookbackDays = days
+                                appState.saveConfig()
+                            } label: {
+                                HStack {
+                                    Text(days < 30 ? "\(days) jours" : "1 mois")
+                                    if appState.meetingLookbackDays == days {
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: 5) {
+                            Text(appState.meetingLookbackDays < 30
+                                ? "\(appState.meetingLookbackDays) jours"
+                                : "1 mois")
+                                .font(.system(size: 12))
+                                .foregroundStyle(MochiTheme.textLight)
+                            Image(systemName: "chevron.up.chevron.down")
+                                .font(.system(size: 8, weight: .semibold))
+                                .foregroundStyle(MochiTheme.textLight.opacity(0.3))
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(
+                            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                .fill(MochiTheme.backgroundLight.opacity(0.6))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                        .stroke(Color.gray.opacity(0.18), lineWidth: 1)
+                                )
+                        )
+                    }
+                    .menuStyle(.borderlessButton)
+                    .fixedSize()
+                }
+                .opacity(appState.meetingWatchEnabled ? 1 : 0.4)
+                .disabled(!appState.meetingWatchEnabled)
+
+                SettingsRow("Intervalle", icon: "clock.fill", iconColor: .blue) {
+                    Menu {
+                        ForEach([15, 30, 60], id: \.self) { minutes in
+                            Button {
+                                appState.meetingCheckInterval = minutes
+                                if appState.meetingWatchEnabled {
+                                    appState.startMeetingWatch()
+                                }
+                                appState.saveConfig()
+                            } label: {
+                                HStack {
+                                    Text(minutes < 60 ? "\(minutes) min" : "1 heure")
+                                    if appState.meetingCheckInterval == minutes {
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: 5) {
+                            Text(appState.meetingCheckInterval < 60
+                                ? "\(appState.meetingCheckInterval) min"
+                                : "1 heure")
+                                .font(.system(size: 12))
+                                .foregroundStyle(MochiTheme.textLight)
+                            Image(systemName: "chevron.up.chevron.down")
+                                .font(.system(size: 8, weight: .semibold))
+                                .foregroundStyle(MochiTheme.textLight.opacity(0.3))
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(
+                            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                .fill(MochiTheme.backgroundLight.opacity(0.6))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                        .stroke(Color.gray.opacity(0.18), lineWidth: 1)
+                                )
+                        )
+                    }
+                    .menuStyle(.borderlessButton)
+                    .fixedSize()
+                }
+                .opacity(appState.meetingWatchEnabled ? 1 : 0.4)
+                .disabled(!appState.meetingWatchEnabled)
+            }
+
+            HStack {
+                if appState.isCheckingMeetings {
+                    ProgressView()
+                        .scaleEffect(0.6)
+                        .frame(width: 22, height: 22)
+                } else {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.white)
+                        .frame(width: 22, height: 22)
+                        .background(RoundedRectangle(cornerRadius: 5, style: .continuous).fill(.green))
+                }
+                Text(appState.isCheckingMeetings ? "Verification en cours..." : "Verifier maintenant")
+                    .font(.system(size: 13))
+                    .foregroundStyle(MochiTheme.textLight)
+                Spacer()
+                if !appState.isCheckingMeetings {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(MochiTheme.textLight.opacity(0.25))
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color.white)
+                    .shadow(color: .black.opacity(0.04), radius: 4, y: 1)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(appState.isCheckingMeetings ? MochiTheme.primary.opacity(0.3) : Color.gray.opacity(0.12), lineWidth: 1)
+            )
+            .contentShape(Rectangle())
+            .onTapGesture {
+                guard !appState.isCheckingMeetings else { return }
+                appState.meetingCheckResult = nil
+                Task { await appState.checkForNewMeetings() }
+            }
+
+            if let result = appState.meetingCheckResult {
+                HStack(spacing: 8) {
+                    Image(systemName: result.hasPrefix("Erreur") ? "exclamationmark.triangle.fill" : (result.hasPrefix("Aucune") ? "checkmark.circle.fill" : "party.popper.fill"))
+                        .font(.system(size: 12))
+                        .foregroundStyle(result.hasPrefix("Erreur") ? .red : (result.hasPrefix("Aucune") ? .green : MochiTheme.primary))
+                    Text(result)
+                        .font(.system(size: 12))
+                        .foregroundStyle(MochiTheme.textLight.opacity(0.6))
+                }
+                .padding(.horizontal, 4)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+
+            Text("La veille detecte automatiquement les nouvelles reunions dans Notion et propose des taches.")
+                .font(.system(size: 11))
+                .foregroundStyle(MochiTheme.textLight.opacity(0.35))
+                .padding(.horizontal, 4)
+        }
     }
 
-    private func disconnectNotion() {
-        try? KeychainHelper.delete(key: "notion_token")
-        notionToken = ""
-        isConnected = false
-    }
 }
 
 // MARK: - Shortcut Settings

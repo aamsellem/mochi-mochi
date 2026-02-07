@@ -44,6 +44,7 @@ Mochi Mochi reprend le concept d'ULY et l'enveloppe dans une **application macOS
 - 📎 **Upload de documents** — Joignez des fichiers (PDF, code, texte) au chat
 - 🎤 **Dictée vocale** — Parlez au lieu de taper grâce à la reconnaissance vocale
 - 📝 **Notes rapides** — Prise de notes avec extraction automatique de tâches via IA
+- 📅 **Veille de réunions** — Détection automatique des réunions Notion, suggestions de tâches IA, validation en un clic
 - 🔗 **Sync Notion** — Bidirectionnelle, vos tâches partout
 - 🖥️ **Menubar** — Accès rapide sans quitter votre travail
 - 🏠 **Données locales** — Vos données sont stockées localement en Markdown (les messages transitent par Claude Code via votre abonnement Anthropic)
@@ -194,6 +195,21 @@ Tous les raccourcis globaux sont configurables.
 
 ---
 
+## 📅 Veille de réunions
+
+Mochi Mochi scanne automatiquement vos réunions Notion et vous propose des tâches concrètes à réaliser :
+
+- **Détection intelligente** — Les réunions de votre workspace Notion sont détectées automatiquement (intervalle configurable : 15min, 30min, 1h)
+- **Suggestions IA** — Claude Code analyse chaque réunion et propose des tâches actionnables avec priorité
+- **Validation en un clic** — Acceptez, rejetez ou ignorez les suggestions depuis l'onglet Réunions
+- **Notifications proactives** — Soyez alerté dès qu'une nouvelle réunion est détectée
+- **Historique configurable** — Choisissez jusqu'où remonter (3, 7, 14 ou 30 jours)
+- **Recherche et tri** — Filtrez par titre de réunion ou nom de tâche, triées par date
+
+Activable dès l'onboarding ou dans Réglages > Notion.
+
+---
+
 ## 🔗 Intégration Notion
 
 Synchronisation bidirectionnelle avec Notion :
@@ -205,9 +221,8 @@ Synchronisation bidirectionnelle avec Notion :
 
 ### Configuration
 
-1. Créez une [intégration Notion](https://www.notion.so/my-integrations)
-2. Partagez votre base de données avec l'intégration
-3. Collez le token dans les réglages de Mochi Mochi
+1. Configurez les outils MCP Notion dans Claude Code
+2. Activez la veille de réunions dans les réglages de Mochi Mochi
 
 ---
 
@@ -219,7 +234,8 @@ Synchronisation bidirectionnelle avec Notion :
 ├── state/
 │   ├── current.md         # Tâches et priorités actuelles
 │   ├── goals.md           # Objectifs long terme
-│   └── mochi.md           # État du Mochi (niveau, XP, 🍙, streak, items)
+│   ├── mochi.md           # État du Mochi (niveau, XP, 🍙, streak, items)
+│   └── meetings.md        # Propositions de réunions détectées
 ├── attachments/            # Fichiers joints au chat
 ├── sessions/
 │   └── 2026-02-06.md      # Sessions quotidiennes
@@ -282,6 +298,7 @@ MochiMochi/
 │   ├── Dashboard/         # Tableau de bord
 │   ├── Mochi/             # Compagnon animé (panneau rétractable)
 │   ├── Notes/             # Notes rapides + extraction de tâches IA
+│   ├── Meetings/          # Veille de réunions Notion
 │   ├── MenuBar/           # Mini-panel menubar
 │   ├── Onboarding/        # Assistant de configuration
 │   ├── Shop/              # Boutique cosmétique
@@ -301,7 +318,8 @@ MochiMochi/
 - [x] **Phase 2.7 — Notes & suivi (v0.2.7)** : Onglet Notes avec extraction de tâches IA, panneau Mochi rétractable, suivi de tâches (tracked) avec relances répétées, refonte TodaysFocus
 - [x] **Phase 2.8 — Polish UX (v0.2.8)** : Auto-greeting au lancement, date picker graphique pour les tâches, étape notifications dans l'onboarding, sélection de texte rose personnalisée, nettoyage interface chat
 - [x] **Phase 2.9 — Profil libre (v0.2.9)** : Champ activité/métier en texte libre (onboarding + réglages), sélection rose dans les réglages via MochiTextField
-- [ ] **Phase 3 — Intégrations (v0.3)** : Sync Notion, raccourcis globaux, mode focus
+- [x] **Phase 3.0 — Boutique & Réunions (v0.3.0)** : Refonte boutique avec inventaire intégré, veille de réunions Notion (détection automatique, suggestions IA, validation, recherche/tri), onboarding 9 étapes avec activation veille
+- [ ] **Phase 3.1 — Intégrations (v0.3.1)** : Sync Notion bidirectionnelle, raccourcis globaux, mode focus
 - [ ] **Phase 4 — Polish (v1.0)** : Onboarding complet, toutes les personnalités, distribution DMG
 
 ---

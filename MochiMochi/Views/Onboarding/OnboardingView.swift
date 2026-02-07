@@ -16,7 +16,8 @@ struct OnboardingView: View {
     @State private var avatarBounce: CGFloat = 0
 
     @State private var notificationsEnabled = false
-    private let totalSteps = 8
+    @State private var meetingWatchEnabled = false
+    private let totalSteps = 9
 
     private let goals = [
         ("🎯", "Mieux m'organiser", "Suivre mes taches et deadlines"),
@@ -44,7 +45,8 @@ struct OnboardingView: View {
                 case 4: colorStep
                 case 5: personalityStep
                 case 6: notificationStep
-                case 7: summaryStep
+                case 7: meetingWatchStep
+                case 8: summaryStep
                 default: EmptyView()
                 }
             }
@@ -370,7 +372,147 @@ struct OnboardingView: View {
         }
     }
 
-    // MARK: - Step 7: Summary
+    // MARK: - Step 7: Meeting Watch
+
+    private var meetingWatchStep: some View {
+        VStack(spacing: 24) {
+            Spacer()
+
+            stepHeader(icon: "calendar.badge.clock", title: "Veille de reunions")
+
+            // Hero icon
+            ZStack {
+                Circle()
+                    .fill(MochiTheme.primary.opacity(0.08))
+                    .frame(width: 110, height: 110)
+
+                Circle()
+                    .fill(MochiTheme.primary.opacity(0.05))
+                    .frame(width: 140, height: 140)
+
+                Image(systemName: "calendar.badge.clock")
+                    .font(.system(size: 48))
+                    .foregroundStyle(meetingWatchEnabled ? MochiTheme.primary : MochiTheme.textLight.opacity(0.3))
+                    .animation(.spring(response: 0.4), value: meetingWatchEnabled)
+            }
+
+            VStack(spacing: 10) {
+                Text(meetingWatchEnabled ? "Veille activee !" : "Ne ratez plus jamais un suivi")
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .foregroundStyle(MochiTheme.textLight)
+
+                Text("Mochi Mochi scanne automatiquement vos reunions Notion et vous propose des taches concretes a realiser. Fini les comptes-rendus oublies et les actions qui tombent dans l'oubli.")
+                    .font(.system(size: 13))
+                    .foregroundStyle(MochiTheme.textLight.opacity(0.6))
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 420)
+            }
+
+            // Feature highlights
+            VStack(alignment: .leading, spacing: 0) {
+                meetingFeatureRow(
+                    icon: "magnifyingglass",
+                    title: "Detection intelligente",
+                    subtitle: "Vos reunions Notion sont detectees automatiquement"
+                )
+                Divider().padding(.horizontal, 16)
+                meetingFeatureRow(
+                    icon: "list.bullet.clipboard",
+                    title: "Suggestions de taches",
+                    subtitle: "L'IA analyse chaque reunion et propose des actions claires"
+                )
+                Divider().padding(.horizontal, 16)
+                meetingFeatureRow(
+                    icon: "hand.tap",
+                    title: "Validation en un clic",
+                    subtitle: "Acceptez, rejetez ou ignorez — vous gardez le controle"
+                )
+                Divider().padding(.horizontal, 16)
+                meetingFeatureRow(
+                    icon: "bell.badge",
+                    title: "Notifications proactives",
+                    subtitle: "Soyez alerte des qu'une nouvelle reunion est detectee"
+                )
+            }
+            .background(cardBackground)
+            .frame(maxWidth: 420)
+
+            // Toggle button
+            if !meetingWatchEnabled {
+                Button {
+                    withAnimation(.spring(response: 0.4)) {
+                        meetingWatchEnabled = true
+                    }
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "power")
+                            .font(.system(size: 14, weight: .bold))
+                        Text("Activer la veille")
+                            .font(.system(size: 14, weight: .semibold))
+                    }
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 12)
+                    .background(
+                        Capsule().fill(MochiTheme.primary)
+                            .shadow(color: MochiTheme.primary.opacity(0.3), radius: 6, y: 2)
+                    )
+                }
+                .buttonStyle(.plain)
+            } else {
+                HStack(spacing: 8) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 20))
+                        .foregroundStyle(.green)
+                    Text("Veille activee")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.green)
+                }
+
+                Button {
+                    withAnimation(.spring(response: 0.4)) {
+                        meetingWatchEnabled = false
+                    }
+                } label: {
+                    Text("Desactiver")
+                        .font(.system(size: 12))
+                        .foregroundStyle(MochiTheme.textLight.opacity(0.4))
+                }
+                .buttonStyle(.plain)
+            }
+
+            Text("Necessite une connexion Notion — configurable dans les reglages")
+                .font(.system(size: 11))
+                .foregroundStyle(MochiTheme.textLight.opacity(0.35))
+
+            Spacer()
+        }
+    }
+
+    private func meetingFeatureRow(icon: String, title: String, subtitle: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 14))
+                .foregroundStyle(MochiTheme.primary)
+                .frame(width: 30, height: 30)
+                .background(Circle().fill(MochiTheme.primary.opacity(0.1)))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(MochiTheme.textLight)
+                Text(subtitle)
+                    .font(.system(size: 11))
+                    .foregroundStyle(MochiTheme.textLight.opacity(0.5))
+            }
+
+            Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+    }
+
+    // MARK: - Step 8: Summary
 
     private var summaryStep: some View {
         VStack(spacing: 24) {
@@ -412,6 +554,8 @@ struct OnboardingView: View {
                 summaryRow(icon: "paintpalette.fill", label: "Couleur", value: selectedColor.displayName)
                 Divider().padding(.horizontal, 16)
                 summaryRow(icon: "bell.fill", label: "Notifications", value: notificationsEnabled ? "Activees" : "Desactivees")
+                Divider().padding(.horizontal, 16)
+                summaryRow(icon: "calendar.badge.clock", label: "Veille reunions", value: meetingWatchEnabled ? "Activee" : "Desactivee")
                 if !claudeCodeInstalled {
                     Divider().padding(.horizontal, 16)
                     summaryRow(icon: "exclamationmark.triangle.fill", label: "Claude Code", value: "Non detecte")
@@ -729,8 +873,14 @@ struct OnboardingView: View {
         appState.mochi.name = mochiName
         appState.mochi.color = selectedColor
         appState.currentPersonality = selectedPersonality
+        appState.meetingWatchEnabled = meetingWatchEnabled
         appState.isOnboardingComplete = true
         appState.saveState()
+
+        // Start meeting watch if user enabled it during onboarding
+        if meetingWatchEnabled {
+            appState.startMeetingWatch()
+        }
 
         // Setup notifications if user enabled them during onboarding
         if notificationsEnabled {

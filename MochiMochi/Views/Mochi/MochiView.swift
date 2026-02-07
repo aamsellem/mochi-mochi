@@ -4,6 +4,7 @@ struct MochiView: View {
     @EnvironmentObject var appState: AppState
 
     @State private var bounceOffset: CGFloat = 0
+    @State private var squashStretch: CGFloat = 1.0
     @State private var isAnimating = false
     @State private var emotionScale: CGFloat = 1.0
     @State private var thinkingWobble: Double = 0
@@ -56,8 +57,11 @@ struct MochiView: View {
                     equippedItems: appState.mochi.equippedItems,
                     size: 100
                 )
-                .scaleEffect(isThinking ? thinkingScale : emotionScale)
-                .offset(y: bounceOffset)
+                .scaleEffect(
+                    x: (isThinking ? thinkingScale : emotionScale) * (2.0 - squashStretch),
+                    y: (isThinking ? thinkingScale : emotionScale) * squashStretch,
+                    anchor: .bottom
+                )
                 .rotationEffect(.degrees(isThinking ? thinkingWobble : 0))
                 .animation(.spring(response: 0.4, dampingFraction: 0.5), value: appState.mochi.emotion)
                 .onChange(of: appState.mochi.emotion) { _, newEmotion in
@@ -257,7 +261,7 @@ struct MochiView: View {
             .easeInOut(duration: 2.0)
             .repeatForever(autoreverses: true)
         ) {
-            bounceOffset = -4
+            squashStretch = 1.05
         }
     }
 
@@ -277,25 +281,18 @@ struct MochiView: View {
         ) {
             thinkingScale = 1.08
         }
-        // Faster bounce
-        withAnimation(
-            .easeInOut(duration: 0.8)
-            .repeatForever(autoreverses: true)
-        ) {
-            bounceOffset = -10
-        }
     }
 
     private func stopThinkingAnimation() {
         isThinking = false
         thinkingWobble = 0
         thinkingScale = 1.0
-        // Retour au bounce idle
+        // Retour au squash & stretch idle
         withAnimation(
             .easeInOut(duration: 2.0)
             .repeatForever(autoreverses: true)
         ) {
-            bounceOffset = -4
+            squashStretch = 1.05
         }
     }
 
@@ -362,12 +359,10 @@ struct MochiView: View {
             // Mouvement energique rapide
             withAnimation(.spring(response: 0.15, dampingFraction: 0.2)) {
                 emotionScale = 1.15
-                bounceOffset = -12
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.4)) {
                     emotionScale = 1.0
-                    bounceOffset = -4
                 }
             }
         case .chat:
@@ -384,12 +379,10 @@ struct MochiView: View {
             // Pose heroique avec scale
             withAnimation(.spring(response: 0.3, dampingFraction: 0.4)) {
                 emotionScale = 1.12
-                bounceOffset = -8
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.5)) {
                     emotionScale = 1.0
-                    bounceOffset = -4
                 }
             }
         case .voyante:
@@ -432,12 +425,10 @@ struct MochiView: View {
         case .sensei:
             // Lente montee concentree
             withAnimation(.easeInOut(duration: 0.8)) {
-                bounceOffset = -8
                 emotionScale = 1.03
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                 withAnimation(.easeInOut(duration: 0.8)) {
-                    bounceOffset = -4
                     emotionScale = 1.0
                 }
             }

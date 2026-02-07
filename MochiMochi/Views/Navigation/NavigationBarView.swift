@@ -4,6 +4,7 @@ enum AppTab: String, CaseIterable {
     case dashboard = "Tableau de bord"
     case tasks = "Tâches"
     case notes = "Notes"
+    case meetings = "Réunions"
     case shop = "Boutique"
     case settings = "Réglages"
 
@@ -12,6 +13,7 @@ enum AppTab: String, CaseIterable {
         case .dashboard: return "square.grid.2x2"
         case .tasks: return "checklist"
         case .notes: return "note.text"
+        case .meetings: return "calendar.badge.clock"
         case .shop: return "bag"
         case .settings: return "gearshape"
         }
@@ -81,6 +83,14 @@ struct NavigationBarView: View {
                     .font(.system(size: 13))
                 Text(tab.rawValue)
                     .font(.system(size: 13, weight: .medium))
+
+                if tab == .meetings && appState.pendingProposalsCount > 0 {
+                    Text("\(appState.pendingProposalsCount)")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(minWidth: 16, minHeight: 16)
+                        .background(Circle().fill(selectedTab == tab ? .white.opacity(0.3) : MochiTheme.primary))
+                }
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 8)

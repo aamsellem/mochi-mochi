@@ -27,6 +27,16 @@ final class AppState: ObservableObject {
     @Published var globalShortcut: String = "⌘⇧M"
     @Published var daysOff: [Int] = []
 
+    // MARK: - Notion & Meetings
+    @Published var isNotionConnected: Bool = false
+    @Published var isCheckingNotion: Bool = false
+    @Published var meetingWatchEnabled: Bool = false
+    @Published var meetingCheckInterval: Int = 30
+    @Published var meetingLookbackDays: Int = 7
+    @Published var meetingProposals: [MeetingProposal] = []
+    @Published var isCheckingMeetings: Bool = false
+    @Published var meetingCheckResult: String?
+
     // MARK: - Speech (forwarded from SpeechService)
 
     @Published var isRecordingVoice: Bool = false
@@ -41,6 +51,7 @@ final class AppState: ObservableObject {
 
     // MARK: - Emotion Timer
     private var emotionResetTask: Task<Void, Never>?
+    private var meetingWatchTask: Task<Void, Never>?
     private var speechCancellables = Set<AnyCancellable>()
 
     // MARK: - Init
@@ -94,6 +105,9 @@ final class AppState: ObservableObject {
             self.weekendsProtected = config.weekendsProtected
             self.globalShortcut = config.globalShortcut
             self.daysOff = config.daysOff
+            self.meetingWatchEnabled = config.meetingWatchEnabled
+            self.meetingCheckInterval = config.meetingCheckInterval
+            self.meetingLookbackDays = config.meetingLookbackDays
         }
 
         if let mochiState = memoryService.loadMochiState() {
@@ -102,8 +116,13 @@ final class AppState: ObservableObject {
 
         self.tasks = memoryService.loadTasks()
         self.inventory = memoryService.loadInventory()
+        self.meetingProposals = memoryService.loadMeetingProposals()
         self.mochi.updateEmotion(from: gamification, tasks: tasks)
         updateClaudeMd()
+
+        if meetingWatchEnabled {
+            startMeetingWatch()
+        }
     }
 
     func saveConfig() {
@@ -120,7 +139,10 @@ final class AppState: ObservableObject {
             morningBriefingHour: morningBriefingHour,
             weekendsProtected: weekendsProtected,
             globalShortcut: globalShortcut,
-            daysOff: daysOff
+            daysOff: daysOff,
+            meetingWatchEnabled: meetingWatchEnabled,
+            meetingCheckInterval: meetingCheckInterval,
+            meetingLookbackDays: meetingLookbackDays
         )
         memoryService.saveConfig(config)
     }
@@ -130,6 +152,7 @@ final class AppState: ObservableObject {
         memoryService.saveMochiState(gamification)
         memoryService.saveTasks(tasks)
         memoryService.saveInventory(inventory)
+        memoryService.saveMeetingProposals(meetingProposals)
         updateClaudeMd()
     }
 
@@ -202,28 +225,61 @@ final class AppState: ObservableObject {
 
         // Re-schedule reminders pour les taches en cours
         let activeTasks = tasks.filter { !$0.isCompleted }
+
+        // Deadline warnings restent individuels (dates différentes)
         for task in activeTasks {
-            if notificationFrequency != "zen" {
-                notificationService.scheduleTaskReminder(
-                    for: task,
-                    personality: currentPersonality,
-                    frequency: notificationFrequency
-                )
-            }
             notificationService.scheduleDeadlineWarning(
                 for: task,
                 personality: currentPersonality
             )
+        }
 
-            // Relances répétées pour les tâches suivies
-            if task.isTracked {
-                notificationService.scheduleTrackedReminder(
-                    for: task,
-                    personality: currentPersonality,
-                    frequency: notificationFrequency
+        // Notification consolidée via Claude Code (async, fire-and-forget)
+        if notificationFrequency != "zen" && !activeTasks.isEmpty {
+            let personality = currentPersonality
+            let frequency = notificationFrequency
+            let taskTitles = activeTasks.map { $0.title }
+            Task {
+                await generateAndScheduleTaskNotification(
+                    taskTitles: taskTitles,
+                    personality: personality,
+                    frequency: frequency
                 )
             }
         }
+    }
+
+    private func generateAndScheduleTaskNotification(
+        taskTitles: [String],
+        personality: Personality,
+        frequency: String
+    ) async {
+        let taskList = taskTitles.map { "- \($0)" }.joined(separator: "\n")
+        let prompt = """
+        Tu es \(personality.displayName). \(personality.systemPrompt)
+        Voici les tâches en cours de l'utilisateur :
+        \(taskList)
+        Génère UNE SEULE phrase courte (max 80 caractères) pour rappeler ces tâches. \
+        Adopte le ton de ta personnalité. Réponds UNIQUEMENT avec la phrase, rien d'autre.
+        """
+
+        var message: String
+        do {
+            message = try await claudeCodeService.generateQuick(prompt: prompt)
+            // Nettoyer les guillemets éventuels
+            message = message.trimmingCharacters(in: CharacterSet(charactersIn: "\"'\u{201C}\u{201D}\u{2018}\u{2019}"))
+        } catch {
+            // Fallback : message simple avec une tâche au hasard
+            let randomTitle = taskTitles.randomElement() ?? "tes tâches"
+            message = "N'oublie pas : \(randomTitle)"
+            NSLog("[Mochi Notifications] Claude Code fallback: \(error.localizedDescription)")
+        }
+
+        notificationService.scheduleTaskReminder(
+            message: message,
+            personality: personality,
+            frequency: frequency
+        )
     }
 
     // MARK: - Auto Greeting
@@ -387,9 +443,9 @@ final class AppState: ObservableObject {
         tasks[index].completedAt = Date()
 
         // Annuler les notifications de cette tache
-        notificationService.cancelNotification(identifier: "task-reminder-\(task.id.uuidString)")
         notificationService.cancelNotification(identifier: "deadline-\(task.id.uuidString)")
-        notificationService.cancelTrackedReminder(for: task)
+        // Reprogrammer la notification consolidée sans cette tâche
+        rescheduleAllNotifications()
 
         let rewards = gamification.rewardForTask(task)
         let leveledUp = gamification.applyRewards(rewards)
@@ -406,18 +462,8 @@ final class AppState: ObservableObject {
     func addTask(_ task: MochiTask) {
         tasks.append(task)
 
-        // Schedule notifications pour la nouvelle tache
-        if notificationFrequency != "zen" {
-            notificationService.scheduleTaskReminder(
-                for: task,
-                personality: currentPersonality,
-                frequency: notificationFrequency
-            )
-        }
-        notificationService.scheduleDeadlineWarning(
-            for: task,
-            personality: currentPersonality
-        )
+        // Reprogrammer les notifications avec la nouvelle tâche incluse
+        rescheduleAllNotifications()
 
         saveState()
     }
@@ -432,10 +478,10 @@ final class AppState: ObservableObject {
     }
 
     func deleteTask(_ task: MochiTask) {
-        notificationService.cancelNotification(identifier: "task-reminder-\(task.id.uuidString)")
         notificationService.cancelNotification(identifier: "deadline-\(task.id.uuidString)")
-        notificationService.cancelTrackedReminder(for: task)
         tasks.removeAll { $0.id == task.id }
+        // Reprogrammer la notification consolidée sans cette tâche
+        rescheduleAllNotifications()
         saveState()
     }
 
@@ -448,17 +494,8 @@ final class AppState: ObservableObject {
     func toggleTracked(_ task: MochiTask) {
         guard let index = tasks.firstIndex(where: { $0.id == task.id }) else { return }
         tasks[index].isTracked.toggle()
-
-        if tasks[index].isTracked {
-            notificationService.scheduleTrackedReminder(
-                for: tasks[index],
-                personality: currentPersonality,
-                frequency: notificationFrequency
-            )
-        } else {
-            notificationService.cancelTrackedReminder(for: tasks[index])
-        }
-
+        // Reprogrammer la notification consolidée
+        rescheduleAllNotifications()
         saveState()
     }
 
@@ -507,6 +544,217 @@ final class AppState: ObservableObject {
 
     func isItemOwned(name: String, category: ItemCategory) -> Bool {
         inventory.contains { $0.name == name && $0.category == category && $0.isOwned }
+    }
+
+    // MARK: - Notion Connectivity
+
+    func checkNotionConnectivity() async {
+        isCheckingNotion = true
+        defer { isCheckingNotion = false }
+
+        let prompt = """
+        Utilise l'outil MCP Notion notion-search pour faire une recherche simple \
+        avec le mot-cle "test". \
+        Si tu arrives a te connecter a Notion et obtenir un resultat (meme vide), \
+        reponds exactement : NOTION_OK \
+        Si tu n'arrives pas a te connecter ou si l'outil MCP n'est pas disponible, \
+        reponds exactement : NOTION_ERROR
+        """
+
+        do {
+            let response = try await claudeCodeService.generateQuick(
+                prompt: prompt,
+                workingDirectory: storageDirectory
+            )
+            isNotionConnected = response.contains("NOTION_OK")
+            NSLog("[Mochi Notion] Connectivity check: %@", isNotionConnected ? "OK" : "FAILED")
+        } catch {
+            isNotionConnected = false
+            NSLog("[Mochi Notion] Connectivity check error: %@", error.localizedDescription)
+        }
+    }
+
+    // MARK: - Meeting Watch
+
+    func startMeetingWatch() {
+        stopMeetingWatch()
+        guard meetingWatchEnabled else { return }
+        meetingWatchTask = Task { @MainActor in
+            while !Task.isCancelled {
+                await checkForNewMeetings()
+                let seconds = UInt64(meetingCheckInterval) * 60
+                try? await Task.sleep(nanoseconds: seconds * 1_000_000_000)
+            }
+        }
+        NSLog("[Mochi Meetings] Watch started (interval: %d min)", meetingCheckInterval)
+    }
+
+    func stopMeetingWatch() {
+        meetingWatchTask?.cancel()
+        meetingWatchTask = nil
+        NSLog("[Mochi Meetings] Watch stopped")
+    }
+
+    func checkForNewMeetings() async {
+        isCheckingMeetings = true
+        meetingCheckResult = nil
+
+        let existingIds = Set(meetingProposals.map { $0.meetingNotionId })
+        let idsString = existingIds.isEmpty ? "aucun" : existingIds.joined(separator: ", ")
+
+        let cutoffDate = Calendar.current.date(byAdding: .day, value: -meetingLookbackDays, to: Date()) ?? Date()
+        let cutoffString = ISO8601DateFormatter().string(from: cutoffDate)
+
+        let prompt = """
+        Utilise les outils MCP Notion (notion-search, notion-fetch) pour chercher des pages \
+        de reunions ou meetings recents dans le workspace Notion de l'utilisateur. \
+        Cherche avec des mots-cles comme "reunion", "meeting", "compte-rendu", "CR".
+
+        Ne remonte pas plus loin que \(meetingLookbackDays) jours (apres le \(cutoffString)).
+
+        IDs de pages deja traitees a ignorer : \(idsString)
+
+        Pour chaque nouvelle reunion trouvee, analyse le contenu et propose des taches \
+        concretes et actionnables.
+
+        Reponds UNIQUEMENT en JSON valide (pas de markdown, pas de commentaires) :
+        [{"notionPageId":"...","title":"...","date":"2025-01-15","suggestedTasks":[{"title":"...","priority":"normal","description":"..."}]}]
+
+        Si aucune nouvelle reunion, reponds : []
+        """
+
+        do {
+            let response = try await claudeCodeService.generateQuick(
+                prompt: prompt,
+                workingDirectory: storageDirectory
+            )
+            let parsed = parseMeetingResponse(response)
+            let newProposals = parsed.filter { p in !existingIds.contains(p.meetingNotionId) }
+            if !newProposals.isEmpty {
+                meetingProposals.insert(contentsOf: newProposals, at: 0)
+                notificationService.sendMeetingProposalNotification(
+                    count: newProposals.count,
+                    personality: currentPersonality
+                )
+                memoryService.saveMeetingProposals(meetingProposals)
+                let s = newProposals.count > 1 ? "s" : ""
+                meetingCheckResult = "\(newProposals.count) reunion\(s) trouvee\(s)"
+                NSLog("[Mochi Meetings] %d new proposals found", newProposals.count)
+            } else {
+                meetingCheckResult = "Aucune nouvelle reunion"
+            }
+        } catch {
+            meetingCheckResult = "Erreur : \(error.localizedDescription)"
+            NSLog("[Mochi Meetings] Check failed: %@", error.localizedDescription)
+        }
+
+        isCheckingMeetings = false
+    }
+
+    private func parseMeetingResponse(_ response: String) -> [MeetingProposal] {
+        // Try to extract JSON array from the response
+        let trimmed = response.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // Find JSON array boundaries
+        guard let startIdx = trimmed.firstIndex(of: "["),
+              let endIdx = trimmed.lastIndex(of: "]") else {
+            return []
+        }
+
+        let jsonString = String(trimmed[startIdx...endIdx])
+        guard let data = jsonString.data(using: .utf8) else { return [] }
+
+        struct RawMeeting: Decodable {
+            let notionPageId: String
+            let title: String
+            let date: String?
+            let suggestedTasks: [RawTask]
+        }
+        struct RawTask: Decodable {
+            let title: String
+            let priority: String?
+            let description: String?
+        }
+
+        do {
+            let rawMeetings = try JSONDecoder().decode([RawMeeting].self, from: data)
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd"
+
+            return rawMeetings.map { raw in
+                let tasks = raw.suggestedTasks.map { rt in
+                    SuggestedTask(
+                        title: rt.title,
+                        description: rt.description,
+                        priority: TaskPriority(rawValue: rt.priority ?? "normal") ?? .normal
+                    )
+                }
+                return MeetingProposal(
+                    meetingNotionId: raw.notionPageId,
+                    meetingTitle: raw.title,
+                    meetingDate: raw.date.flatMap { dateFormatter.date(from: $0) },
+                    suggestedTasks: tasks
+                )
+            }
+        } catch {
+            NSLog("[Mochi Meetings] JSON parse error: %@", error.localizedDescription)
+            return []
+        }
+    }
+
+    func acceptSuggestedTask(_ taskId: UUID, in proposalId: UUID) {
+        guard let pIdx = meetingProposals.firstIndex(where: { $0.id == proposalId }),
+              let tIdx = meetingProposals[pIdx].suggestedTasks.firstIndex(where: { $0.id == taskId }) else { return }
+
+        meetingProposals[pIdx].suggestedTasks[tIdx].isAccepted = true
+        let suggested = meetingProposals[pIdx].suggestedTasks[tIdx]
+        let task = MochiTask(
+            title: suggested.title,
+            description: suggested.description,
+            priority: suggested.priority
+        )
+        addTask(task)
+    }
+
+    func rejectSuggestedTask(_ taskId: UUID, in proposalId: UUID) {
+        guard let pIdx = meetingProposals.firstIndex(where: { $0.id == proposalId }),
+              let tIdx = meetingProposals[pIdx].suggestedTasks.firstIndex(where: { $0.id == taskId }) else { return }
+        meetingProposals[pIdx].suggestedTasks[tIdx].isAccepted = false
+        saveState()
+    }
+
+    func acceptAllTasks(in proposalId: UUID) {
+        guard let pIdx = meetingProposals.firstIndex(where: { $0.id == proposalId }) else { return }
+        for tIdx in meetingProposals[pIdx].suggestedTasks.indices {
+            if meetingProposals[pIdx].suggestedTasks[tIdx].isAccepted == nil {
+                meetingProposals[pIdx].suggestedTasks[tIdx].isAccepted = true
+                let suggested = meetingProposals[pIdx].suggestedTasks[tIdx]
+                let task = MochiTask(
+                    title: suggested.title,
+                    description: suggested.description,
+                    priority: suggested.priority
+                )
+                tasks.append(task)
+            }
+        }
+        meetingProposals[pIdx].status = .reviewed
+        saveState()
+        rescheduleAllNotifications()
+    }
+
+    func dismissProposal(_ proposalId: UUID) {
+        guard let pIdx = meetingProposals.firstIndex(where: { $0.id == proposalId }) else { return }
+        for tIdx in meetingProposals[pIdx].suggestedTasks.indices {
+            if meetingProposals[pIdx].suggestedTasks[tIdx].isAccepted == nil {
+                meetingProposals[pIdx].suggestedTasks[tIdx].isAccepted = false
+            }
+        }
+        meetingProposals[pIdx].status = .reviewed
+        saveState()
+    }
+
+    var pendingProposalsCount: Int {
+        meetingProposals.filter { $0.status == .pending }.count
     }
 
     // MARK: - Response Parsing

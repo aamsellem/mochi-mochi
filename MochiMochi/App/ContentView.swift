@@ -27,6 +27,8 @@ struct ContentView: View {
                     ShopView()
                 case .notes:
                     NotesView()
+                case .meetings:
+                    MeetingsView()
                 case .settings:
                     SettingsView()
                 }
