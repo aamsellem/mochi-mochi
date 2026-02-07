@@ -22,6 +22,8 @@ final class AppState: ObservableObject {
     @Published var morningBriefingEnabled: Bool = true
     @Published var morningBriefingHour: Int = 9
     @Published var weekendsProtected: Bool = false
+    @Published var globalShortcut: String = "⌘⇧M"
+    @Published var daysOff: [Int] = []
 
     // MARK: - Speech (forwarded from SpeechService)
 
@@ -75,6 +77,8 @@ final class AppState: ObservableObject {
             self.morningBriefingEnabled = config.morningBriefingEnabled
             self.morningBriefingHour = config.morningBriefingHour
             self.weekendsProtected = config.weekendsProtected
+            self.globalShortcut = config.globalShortcut
+            self.daysOff = config.daysOff
         }
 
         if let mochiState = memoryService.loadMochiState() {
@@ -99,7 +103,9 @@ final class AppState: ObservableObject {
             notificationFrequency: notificationFrequency,
             morningBriefingEnabled: morningBriefingEnabled,
             morningBriefingHour: morningBriefingHour,
-            weekendsProtected: weekendsProtected
+            weekendsProtected: weekendsProtected,
+            globalShortcut: globalShortcut,
+            daysOff: daysOff
         )
         memoryService.saveConfig(config)
     }

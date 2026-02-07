@@ -20,7 +20,8 @@ struct MochiView: View {
                 companionCard
                 statsGrid
             }
-            .padding(16)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 16)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

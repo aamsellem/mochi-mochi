@@ -142,35 +142,31 @@ struct ChatView: View {
                 size: 40
             )
 
-            // Bulle de reflexion
+            // Bulle de reflexion (calme)
             VStack(alignment: .leading, spacing: 6) {
                 Text(appState.mochi.name)
                     .font(.system(size: 12, weight: .bold))
                     .foregroundStyle(MochiTheme.primary)
 
-                HStack(spacing: 6) {
-                    ForEach(0..<3, id: \.self) { index in
-                        Circle()
-                            .fill(MochiTheme.primary)
-                            .frame(width: 8, height: 8)
-                            .scaleEffect(thinkingBounce ? 1.0 : 0.4)
-                            .opacity(thinkingBounce ? 1.0 : 0.3)
-                            .animation(
-                                .easeInOut(duration: 0.5)
-                                .repeatForever(autoreverses: true)
-                                .delay(Double(index) * 0.2),
-                                value: thinkingBounce
-                            )
-                    }
-
-                    Text("reflechit...")
+                HStack(spacing: 5) {
+                    Text("reflechit")
                         .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(.secondary)
-                        .opacity(thinkingBounce ? 1.0 : 0.4)
-                        .animation(
-                            .easeInOut(duration: 1.2).repeatForever(autoreverses: true),
-                            value: thinkingBounce
-                        )
+
+                    HStack(spacing: 4) {
+                        ForEach(0..<3, id: \.self) { index in
+                            Circle()
+                                .fill(MochiTheme.primary.opacity(0.6))
+                                .frame(width: 5, height: 5)
+                                .opacity(thinkingBounce ? 1.0 : 0.25)
+                                .animation(
+                                    .easeInOut(duration: 1.0)
+                                    .repeatForever(autoreverses: true)
+                                    .delay(Double(index) * 0.3),
+                                    value: thinkingBounce
+                                )
+                        }
+                    }
                 }
             }
             .padding(.horizontal, 14)
@@ -545,12 +541,20 @@ struct ChatView: View {
                 .buttonStyle(.plain)
 
                 // Text field
-                TextField("", text: $inputText, prompt: Text("Tape un message ou une commande...").foregroundColor(MochiTheme.textPlaceholder), axis: .vertical)
-                    .font(.body)
-                    .foregroundStyle(MochiTheme.textLight)
-                    .lineLimit(1...6)
-                    .textFieldStyle(.plain)
-                    .focused($isInputFocused)
+                ZStack(alignment: .leading) {
+                    if inputText.isEmpty {
+                        Text("Tape un message ou une commande...")
+                            .font(.body)
+                            .foregroundStyle(MochiTheme.textPlaceholder)
+                            .allowsHitTesting(false)
+                    }
+                    TextField("", text: $inputText, axis: .vertical)
+                        .font(.body)
+                        .foregroundStyle(MochiTheme.textLight)
+                        .lineLimit(1...6)
+                        .textFieldStyle(.plain)
+                        .focused($isInputFocused)
+                }
                     .onKeyPress(.upArrow) { handleUpArrow() }
                     .onKeyPress(.downArrow) { handleDownArrow() }
                     .onKeyPress(.return) { handleReturn() }

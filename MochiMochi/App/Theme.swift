@@ -16,7 +16,7 @@ enum MochiTheme {
     static let textLight = Color(hex: "4A4A4A")
     static let textDark = Color(hex: "E0E0E0")
     static let textSecondary = textLight.opacity(0.6)
-    static let textPlaceholder = textLight.opacity(0.6)
+    static let textPlaceholder = Color(hex: "9E9E9E")
     static let textDisabled = textLight.opacity(0.35)
 
     // MARK: - Pastels

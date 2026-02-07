@@ -244,11 +244,19 @@ struct TasksTrackingView: View {
                 .font(.system(size: 18))
                 .foregroundStyle(MochiTheme.primary.opacity(0.6))
 
-            TextField("", text: $newTaskTitle, prompt: Text("Ajouter une tâche...").foregroundColor(MochiTheme.textPlaceholder))
-                .font(.system(size: 14))
-                .foregroundStyle(MochiTheme.textLight)
-                .textFieldStyle(.plain)
-                .onSubmit { addTask() }
+            ZStack(alignment: .leading) {
+                if newTaskTitle.isEmpty {
+                    Text("Ajouter une tâche...")
+                        .font(.system(size: 14))
+                        .foregroundStyle(MochiTheme.textPlaceholder)
+                        .allowsHitTesting(false)
+                }
+                TextField("", text: $newTaskTitle)
+                    .font(.system(size: 14))
+                    .foregroundStyle(MochiTheme.textLight)
+                    .textFieldStyle(.plain)
+                    .onSubmit { addTask() }
+            }
 
             Button(action: addTask) {
                 Text("Ajouter")

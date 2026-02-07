@@ -40,7 +40,7 @@ struct ContentView: View {
     // MARK: - Dashboard Layout
 
     private var dashboardLayout: some View {
-        HStack(spacing: 0) {
+        HStack(alignment: .top, spacing: 0) {
             TodaysFocusView()
                 .frame(minWidth: 280, maxWidth: 320)
                 .padding(.trailing, 16)
@@ -70,6 +70,7 @@ struct ContentView: View {
         Button {
             toggleMochiPanel()
         } label: {
+
             ZStack {
                 if showMochiPanel {
                     Image(systemName: "chevron.compact.right")
@@ -123,6 +124,7 @@ struct ContentView: View {
                 mochiToggleHovered = hovering
             }
         }
+        .frame(maxHeight: .infinity)
         .padding(.leading, 8)
     }
 

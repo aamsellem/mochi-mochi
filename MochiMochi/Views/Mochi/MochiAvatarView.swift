@@ -8,6 +8,10 @@ struct MochiAvatarView: View {
     @State private var thinkingDotsAnimate = false
     @State private var isBlinking = false
     @State private var blinkTimer: Timer? = nil
+    @State private var thinkingIconIndex: Int = 0
+    @State private var thinkingIconTimer: Timer? = nil
+
+    private let thinkingIcons = ["magnifyingglass", "book.fill"]
 
     var body: some View {
         ZStack {
@@ -309,25 +313,57 @@ struct MochiAvatarView: View {
             mochiMouth(smile: false, flat: true)
         }
         .overlay(
-            // Thinking dots animees
-            HStack(spacing: 4) {
-                ForEach(0..<3, id: \.self) { index in
+            // Thought bubble with activity icon
+            ZStack {
+                // Connector circles (thought bubble trail)
+                Circle()
+                    .fill(Color.white.opacity(0.7))
+                    .frame(width: size * 0.035)
+                    .offset(x: size * 0.13, y: -size * 0.06)
+
+                Circle()
+                    .fill(Color.white.opacity(0.8))
+                    .frame(width: size * 0.055)
+                    .offset(x: size * 0.18, y: -size * 0.1)
+
+                // Main thought bubble
+                ZStack {
                     Circle()
-                        .fill(Color.secondary)
-                        .frame(width: size * 0.035)
-                        .offset(y: thinkingDotsAnimate ? -size * 0.04 : size * 0.02)
-                        .animation(
-                            .easeInOut(duration: 0.4)
-                            .repeatForever(autoreverses: true)
-                            .delay(Double(index) * 0.15),
-                            value: thinkingDotsAnimate
-                        )
+                        .fill(Color.white.opacity(0.92))
+                        .shadow(color: .black.opacity(0.08), radius: 3, y: 1)
+                        .frame(width: size * 0.2, height: size * 0.2)
+
+                    Image(systemName: thinkingIcons[thinkingIconIndex % thinkingIcons.count])
+                        .font(.system(size: size * 0.08))
+                        .foregroundStyle(MochiTheme.primary.opacity(0.7))
+                        .id(thinkingIconIndex)
+                        .transition(.opacity)
+                }
+                .offset(x: size * 0.27, y: -size * 0.2)
+            }
+            .opacity(thinkingDotsAnimate ? 1.0 : 0.0)
+            .animation(.easeIn(duration: 0.3), value: thinkingDotsAnimate)
+        )
+        .onAppear {
+            thinkingDotsAnimate = true
+            startThinkingIconCycle()
+        }
+        .onDisappear {
+            thinkingDotsAnimate = false
+            thinkingIconTimer?.invalidate()
+            thinkingIconTimer = nil
+        }
+    }
+
+    private func startThinkingIconCycle() {
+        thinkingIconTimer?.invalidate()
+        thinkingIconTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { _ in
+            Task { @MainActor in
+                withAnimation(.easeInOut(duration: 0.4)) {
+                    thinkingIconIndex = (thinkingIconIndex + 1) % thinkingIcons.count
                 }
             }
-            .offset(x: size * 0.22, y: -size * 0.15)
-        )
-        .onAppear { thinkingDotsAnimate = true }
-        .onDisappear { thinkingDotsAnimate = false }
+        }
     }
 
     // MARK: - Eye Components

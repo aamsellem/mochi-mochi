@@ -22,12 +22,14 @@ struct NavigationBarView: View {
     @Binding var selectedTab: AppTab
 
     var body: some View {
-        HStack {
+        HStack(alignment: .center) {
             logo
+                .frame(width: 120, alignment: .leading)
             Spacer()
             tabPills
             Spacer()
             notificationButton
+                .frame(width: 120, alignment: .trailing)
         }
         .padding(.horizontal, 24)
         .padding(.vertical, 12)

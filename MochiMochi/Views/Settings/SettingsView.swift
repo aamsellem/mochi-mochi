@@ -3,13 +3,35 @@ import SwiftUI
 struct SettingsView: View {
     @State private var selectedSettingsTab = 0
 
-    var body: some View {
-        VStack(spacing: 0) {
-            settingsHeader
-            Divider().opacity(0.3)
-            settingsTabs
-            Divider().opacity(0.3)
+    private let tabs: [(String, String)] = [
+        ("Général", "gear"),
+        ("Personnalité", "face.smiling"),
+        ("Notifications", "bell"),
+        ("Notion", "link"),
+        ("Raccourcis", "keyboard"),
+    ]
 
+    var body: some View {
+        HStack(spacing: 0) {
+            // Sidebar
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Réglages")
+                    .font(.title2.bold())
+                    .foregroundStyle(MochiTheme.textLight)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 20)
+                    .padding(.bottom, 16)
+
+                ForEach(Array(tabs.enumerated()), id: \.offset) { index, tab in
+                    sidebarRow(tab.0, icon: tab.1, index: index)
+                }
+
+                Spacer()
+            }
+            .frame(width: 190)
+            .background(MochiTheme.backgroundLight.opacity(0.5))
+
+            // Content
             Group {
                 switch selectedSettingsTab {
                 case 0: GeneralSettingsTab()
@@ -31,49 +53,113 @@ struct SettingsView: View {
         )
     }
 
-    private var settingsHeader: some View {
-        HStack {
-            Text("Réglages")
-                .font(.title2.bold())
-                .foregroundStyle(MochiTheme.textLight)
-            Spacer()
-        }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 14)
-    }
-
-    private var settingsTabs: some View {
-        HStack(spacing: 4) {
-            settingsTabButton("Général", icon: "gear", index: 0)
-            settingsTabButton("Personnalité", icon: "face.smiling", index: 1)
-            settingsTabButton("Notifications", icon: "bell", index: 2)
-            settingsTabButton("Notion", icon: "link", index: 3)
-            settingsTabButton("Raccourcis", icon: "keyboard", index: 4)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-    }
-
-    private func settingsTabButton(_ title: String, icon: String, index: Int) -> some View {
+    private func sidebarRow(_ title: String, icon: String, index: Int) -> some View {
         let isSelected = selectedSettingsTab == index
         return Button {
             withAnimation(.easeInOut(duration: 0.15)) { selectedSettingsTab = index }
         } label: {
-            HStack(spacing: 5) {
+            HStack(spacing: 8) {
                 Image(systemName: icon)
-                    .font(.system(size: 11))
+                    .font(.system(size: 12))
+                    .foregroundStyle(.white)
+                    .frame(width: 24, height: 24)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .fill(isSelected ? MochiTheme.primary : MochiTheme.textLight.opacity(0.3))
+                    )
                 Text(title)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
+                    .foregroundStyle(isSelected ? MochiTheme.textLight : MochiTheme.textLight.opacity(0.7))
+                Spacer()
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
             .background(
-                Capsule().fill(isSelected ? MochiTheme.primary.opacity(0.15) : Color.clear)
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(isSelected ? MochiTheme.primary.opacity(0.08) : Color.clear)
             )
-            .foregroundStyle(isSelected ? MochiTheme.primary : MochiTheme.textLight.opacity(0.5))
         }
         .buttonStyle(.plain)
+        .padding(.horizontal, 8)
     }
+}
+
+// MARK: - Settings Card Container
+
+private struct SettingsCard<Content: View>: View {
+    let content: Content
+
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            content
+        }
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Color.white)
+                .shadow(color: .black.opacity(0.04), radius: 4, y: 1)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(Color.gray.opacity(0.12), lineWidth: 1)
+        )
+    }
+}
+
+private struct SettingsRow<Content: View>: View {
+    let label: String
+    let icon: String?
+    let iconColor: Color
+    let showDivider: Bool
+    let content: Content
+
+    init(_ label: String, icon: String? = nil, iconColor: Color = MochiTheme.primary, showDivider: Bool = true, @ViewBuilder content: () -> Content) {
+        self.label = label
+        self.icon = icon
+        self.iconColor = iconColor
+        self.showDivider = showDivider
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 10) {
+                if let icon = icon {
+                    Image(systemName: icon)
+                        .font(.system(size: 11))
+                        .foregroundStyle(.white)
+                        .frame(width: 22, height: 22)
+                        .background(RoundedRectangle(cornerRadius: 5, style: .continuous).fill(iconColor))
+                }
+                Text(label)
+                    .font(.system(size: 13))
+                    .foregroundStyle(MochiTheme.textLight)
+                    .frame(width: 130, alignment: .leading)
+                content
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+
+            if showDivider {
+                Divider()
+                    .padding(.leading, icon != nil ? 50 : 14)
+            }
+        }
+    }
+}
+
+// MARK: - Section Header
+
+private func settingsSectionHeader(_ title: String) -> some View {
+    Text(title)
+        .font(.system(size: 12, weight: .regular))
+        .foregroundStyle(MochiTheme.textLight.opacity(0.5))
+        .padding(.horizontal, 4)
+        .padding(.top, 8)
 }
 
 // MARK: - General Settings
@@ -83,78 +169,205 @@ struct GeneralSettingsTab: View {
 
     @State private var mochiName: String = ""
     @State private var selectedColor: MochiColor = .pink
+    @State private var userName: String = ""
+    @State private var userOccupation: String = ""
+    @State private var userGoal: String = ""
 
-    private var unlockedColors: [MochiColor] {
-        MochiColor.allCases.filter { $0.isUnlocked(at: appState.gamification.level) }
-    }
+    private let occupations = [
+        "Developpeur", "Designer", "Chef de projet", "Etudiant",
+        "Freelance", "Entrepreneur", "Chercheur", "Autre",
+    ]
+
+    private let goals = [
+        "Mieux m'organiser", "Etre plus productif", "Apprendre des choses",
+        "Reduire mon stress", "Atteindre mes objectifs", "Avoir un compagnon",
+    ]
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                settingsSection("Mochi") {
-                    settingsField("Nom du Mochi") {
-                        TextField("Nom", text: $mochiName)
-                            .textFieldStyle(.plain)
-                            .font(.system(size: 14))
-                            .foregroundStyle(MochiTheme.textLight)
-                            .padding(10)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(MochiTheme.backgroundLight)
-                                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.15)))
-                            )
+            VStack(alignment: .leading, spacing: 16) {
+                settingsSectionHeader("Profil")
+
+                SettingsCard {
+                    SettingsRow("Prenom", icon: "person.fill", iconColor: MochiTheme.secondary) {
+                        settingsTextField("Ton prenom", text: $userName)
                     }
 
-                    settingsField("Couleur") {
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack(spacing: 8) {
-                                ForEach(MochiColor.allCases, id: \.self) { color in
-                                    colorDot(color)
-                                }
-                            }
-                            if let nextColor = MochiColor.allCases.first(where: { !$0.isUnlocked(at: appState.gamification.level) }) {
-                                Text("Prochaine couleur : \(nextColor.displayName) au niveau \(nextColor.requiredLevel)")
-                                    .font(.system(size: 11))
-                                    .foregroundStyle(MochiTheme.textLight.opacity(0.5))
-                            }
-                        }
+                    SettingsRow("Activite", icon: "briefcase.fill", iconColor: .orange) {
+                        settingsMenu(
+                            value: userOccupation,
+                            placeholder: "Choisir",
+                            options: occupations
+                        ) { userOccupation = $0 }
+                    }
+
+                    SettingsRow("Objectif", icon: "target", iconColor: .green, showDivider: false) {
+                        settingsMenu(
+                            value: userGoal,
+                            placeholder: "Choisir",
+                            options: goals
+                        ) { userGoal = $0 }
                     }
                 }
 
-                settingsSection("Stockage") {
-                    HStack {
-                        Image(systemName: "folder.fill")
-                            .foregroundStyle(MochiTheme.primary.opacity(0.6))
+                settingsSectionHeader("Compagnon")
+
+                SettingsCard {
+                    SettingsRow("Nom", icon: "pencil", iconColor: MochiTheme.primary) {
+                        settingsTextField("Nom du Mochi", text: $mochiName)
+                    }
+
+                    SettingsRow("Couleur", icon: "paintpalette.fill", iconColor: .orange, showDivider: false) {
+                        EmptyView()
+                    }
+
+                    // Color picker grid
+                    colorPickerGrid
+                        .padding(.horizontal, 14)
+                        .padding(.bottom, 12)
+                }
+
+                settingsSectionHeader("Donnees")
+
+                SettingsCard {
+                    SettingsRow("Emplacement", icon: "folder.fill", iconColor: .blue, showDivider: false) {
                         Text(MarkdownStorage.storedBaseDirectory.path
                             .replacingOccurrences(of: FileManager.default.homeDirectoryForCurrentUser.path, with: "~"))
-                            .font(.system(size: 13, design: .monospaced))
-                            .foregroundStyle(MochiTheme.textLight)
+                            .font(.system(size: 12, design: .monospaced))
+                            .foregroundStyle(MochiTheme.textLight.opacity(0.5))
                             .lineLimit(1)
                             .truncationMode(.middle)
                     }
                 }
 
-                settingsSection("Application") {
-                    Button {
-                        appState.isOnboardingComplete = false
-                        appState.saveConfig()
-                    } label: {
-                        Text("Relancer l'onboarding")
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(.red.opacity(0.8))
+                settingsSectionHeader("Application")
+
+                SettingsCard {
+                    VStack(spacing: 0) {
+                        Button {
+                            appState.isOnboardingComplete = false
+                            appState.saveConfig()
+                        } label: {
+                            HStack {
+                                Image(systemName: "arrow.counterclockwise")
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(.white)
+                                    .frame(width: 22, height: 22)
+                                    .background(RoundedRectangle(cornerRadius: 5, style: .continuous).fill(.orange))
+                                Text("Relancer l'onboarding")
+                                    .font(.system(size: 13))
+                                    .foregroundStyle(MochiTheme.textLight)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundStyle(MochiTheme.textLight.opacity(0.25))
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 10)
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
                 }
             }
-            .padding(20)
+            .frame(maxWidth: 480)
+            .padding(24)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .onAppear {
             mochiName = appState.mochi.name
             selectedColor = appState.mochi.color
+            userName = appState.userName
+            userOccupation = appState.userOccupation
+            userGoal = appState.userGoal
         }
         .onChange(of: mochiName) { _, newValue in
             appState.mochi.name = newValue
             appState.saveConfig()
+        }
+        .onChange(of: userName) { _, newValue in
+            appState.userName = newValue
+            appState.saveConfig()
+        }
+        .onChange(of: userOccupation) { _, newValue in
+            appState.userOccupation = newValue
+            appState.saveConfig()
+        }
+        .onChange(of: userGoal) { _, newValue in
+            appState.userGoal = newValue
+            appState.saveConfig()
+        }
+    }
+
+    private func settingsTextField(_ placeholder: String, text: Binding<String>) -> some View {
+        TextField(placeholder, text: text)
+            .textFieldStyle(.plain)
+            .font(.system(size: 13))
+            .foregroundStyle(MochiTheme.textLight)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    .fill(MochiTheme.backgroundLight.opacity(0.6))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 7, style: .continuous)
+                            .stroke(Color.gray.opacity(0.18), lineWidth: 1)
+                    )
+            )
+            .frame(width: 160)
+    }
+
+    private func settingsMenu(value: String, placeholder: String, options: [String], onSelect: @escaping (String) -> Void) -> some View {
+        Menu {
+            Button("Aucun") { onSelect("") }
+            Divider()
+            ForEach(options, id: \.self) { option in
+                Button {
+                    onSelect(option)
+                } label: {
+                    HStack {
+                        Text(option)
+                        if value == option {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 5) {
+                Text(value.isEmpty ? placeholder : value)
+                    .font(.system(size: 12))
+                    .foregroundStyle(value.isEmpty ? MochiTheme.textLight.opacity(0.4) : MochiTheme.textLight)
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.system(size: 8, weight: .semibold))
+                    .foregroundStyle(MochiTheme.textLight.opacity(0.3))
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    .fill(MochiTheme.backgroundLight.opacity(0.6))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 7, style: .continuous)
+                            .stroke(Color.gray.opacity(0.18), lineWidth: 1)
+                    )
+            )
+        }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
+    }
+
+    private var colorPickerGrid: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 6), spacing: 6) {
+                ForEach(MochiColor.allCases, id: \.self) { color in
+                    colorDot(color)
+                }
+            }
+            if let nextColor = MochiColor.allCases.first(where: { !$0.isUnlocked(at: appState.gamification.level) }) {
+                Text("Prochaine : \(nextColor.displayName) au niv. \(nextColor.requiredLevel)")
+                    .font(.system(size: 11))
+                    .foregroundStyle(MochiTheme.textLight.opacity(0.4))
+            }
         }
     }
 
@@ -166,31 +379,24 @@ struct GeneralSettingsTab: View {
             selectedColor = color
             appState.equipColor(color.displayName)
         } label: {
-            VStack(spacing: 4) {
+            VStack(spacing: 3) {
                 ZStack {
                     Circle()
-                        .fill(isUnlocked ? colorPreview(color) : Color.gray.opacity(0.2))
-                        .frame(width: 32, height: 32)
+                        .fill(isUnlocked ? colorPreview(color) : Color.gray.opacity(0.15))
+                        .frame(width: 28, height: 28)
                         .overlay(
                             Circle().stroke(isSelected ? MochiTheme.primary : Color.clear, lineWidth: 2)
                         )
-                        .shadow(color: isSelected ? MochiTheme.primary.opacity(0.3) : .clear, radius: 4)
+                        .shadow(color: isSelected ? MochiTheme.primary.opacity(0.3) : .clear, radius: 3)
                     if !isUnlocked {
                         Image(systemName: "lock.fill")
-                            .font(.system(size: 10))
-                            .foregroundStyle(MochiTheme.textLight.opacity(0.4))
-                    }
-                }
-                VStack(spacing: 1) {
-                    Text(color.displayName)
-                        .font(.system(size: 10))
-                        .foregroundStyle(isUnlocked ? MochiTheme.textLight.opacity(0.6) : MochiTheme.textLight.opacity(0.3))
-                    if !isUnlocked {
-                        Text("Niv. \(color.requiredLevel)")
                             .font(.system(size: 8))
                             .foregroundStyle(MochiTheme.textLight.opacity(0.3))
                     }
                 }
+                Text(color.displayName)
+                    .font(.system(size: 9))
+                    .foregroundStyle(isUnlocked ? MochiTheme.textLight.opacity(0.5) : MochiTheme.textLight.opacity(0.25))
             }
         }
         .buttonStyle(.plain)
@@ -218,53 +424,74 @@ struct GeneralSettingsTab: View {
 
 struct PersonalitySettingsTab: View {
     @EnvironmentObject var appState: AppState
+    @State private var hoveredPersonality: Personality? = nil
 
     var body: some View {
         ScrollView {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 200))], spacing: 12) {
-                ForEach(Personality.allCases, id: \.self) { personality in
-                    personalityCard(personality)
+            VStack(alignment: .leading, spacing: 16) {
+                settingsSectionHeader("Choisis la personnalité de ton Mochi")
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 200))], spacing: 10) {
+                    ForEach(Personality.allCases, id: \.self) { personality in
+                        personalityCard(personality)
+                    }
                 }
             }
-            .padding(20)
+            .frame(maxWidth: 500)
+            .padding(24)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
     private func personalityCard(_ personality: Personality) -> some View {
         let isSelected = appState.currentPersonality == personality
 
-        return VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text(personality.emoji)
-                    .font(.title2)
-                Text(personality.displayName)
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(MochiTheme.textLight)
-                Spacer()
-                if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(MochiTheme.primary)
-                }
+        return Button {
+            withAnimation(.easeInOut(duration: 0.15)) {
+                appState.currentPersonality = personality
+                appState.saveConfig()
             }
+        } label: {
+            HStack(spacing: 12) {
+                Text(personality.emoji)
+                    .font(.system(size: 28))
+                    .frame(width: 44, height: 44)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(isSelected ? MochiTheme.primary.opacity(0.15) : MochiTheme.backgroundLight)
+                    )
 
-            Text(personality.description)
-                .font(.system(size: 12))
-                .foregroundStyle(MochiTheme.textLight.opacity(0.5))
-                .lineLimit(2)
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Text(personality.displayName)
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(MochiTheme.textLight)
+                        if isSelected {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 12))
+                                .foregroundStyle(MochiTheme.primary)
+                        }
+                    }
+                    Text(personality.description)
+                        .font(.system(size: 11))
+                        .foregroundStyle(MochiTheme.textLight.opacity(0.45))
+                        .lineLimit(2)
+                }
+
+                Spacer()
+            }
+            .padding(12)
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(isSelected ? MochiTheme.primary.opacity(0.05) : Color.white)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(isSelected ? MochiTheme.primary.opacity(0.35) : Color.gray.opacity(0.12), lineWidth: 1)
+            )
+            .shadow(color: isSelected ? MochiTheme.primary.opacity(0.08) : .black.opacity(0.02), radius: 4, y: 1)
         }
-        .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(isSelected ? MochiTheme.primary.opacity(0.08) : MochiTheme.backgroundLight)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(isSelected ? MochiTheme.primary.opacity(0.4) : Color.gray.opacity(0.1), lineWidth: 1)
-        )
-        .onTapGesture {
-            appState.currentPersonality = personality
-            appState.saveConfig()
-        }
+        .buttonStyle(.plain)
     }
 }
 
@@ -273,51 +500,93 @@ struct PersonalitySettingsTab: View {
 struct NotificationSettingsTab: View {
     @EnvironmentObject var appState: AppState
 
+    private let frequencies: [(value: String, label: String, icon: String, description: String)] = [
+        ("zen", "Zen", "leaf.fill", "Toutes les 2h"),
+        ("normal", "Normal", "bell.fill", "Toutes les heures"),
+        ("intense", "Intense", "bolt.fill", "Toutes les 15 min"),
+    ]
+
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                settingsSection("Fréquence des relances") {
-                    VStack(alignment: .leading, spacing: 8) {
-                        radioOption("zen", label: "Zen (peu de relances)")
-                        radioOption("normal", label: "Normal")
-                        radioOption("intense", label: "Intense (beaucoup de relances)")
+            VStack(alignment: .leading, spacing: 16) {
+                settingsSectionHeader("Fréquence des relances")
+
+                HStack(spacing: 10) {
+                    ForEach(frequencies, id: \.value) { freq in
+                        frequencyCard(freq.value, label: freq.label, icon: freq.icon, description: freq.description)
                     }
                 }
 
-                settingsSection("Briefing matinal") {
-                    Toggle(isOn: $appState.morningBriefingEnabled) {
-                        Text("Activer le briefing matinal")
-                            .font(.system(size: 13))
-                            .foregroundStyle(MochiTheme.textLight)
-                    }
-                    .tint(MochiTheme.primary)
+                settingsSectionHeader("Briefing matinal")
 
-                    if appState.morningBriefingEnabled {
-                        HStack {
-                            Text("Heure du briefing")
-                                .font(.system(size: 13))
-                                .foregroundStyle(MochiTheme.textLight)
-                            Spacer()
-                            Picker("", selection: $appState.morningBriefingHour) {
-                                ForEach(6..<12, id: \.self) { hour in
-                                    Text("\(hour)h00").tag(hour)
+                SettingsCard {
+                    SettingsRow("Briefing matinal", icon: "sunrise.fill", iconColor: .orange) {
+                        Toggle("", isOn: $appState.morningBriefingEnabled)
+                            .toggleStyle(.switch)
+                            .labelsHidden()
+                            .tint(MochiTheme.primary)
+                    }
+
+                    SettingsRow("Heure d'envoi", icon: "clock.fill", iconColor: .blue, showDivider: false) {
+                        Menu {
+                            ForEach(6..<13, id: \.self) { hour in
+                                Button {
+                                    appState.morningBriefingHour = hour
+                                } label: {
+                                    HStack {
+                                        Text("\(hour)h00")
+                                        if appState.morningBriefingHour == hour {
+                                            Image(systemName: "checkmark")
+                                        }
+                                    }
                                 }
                             }
-                            .frame(width: 100)
+                        } label: {
+                            HStack(spacing: 5) {
+                                Text("\(appState.morningBriefingHour)h00")
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(MochiTheme.textLight)
+                                Image(systemName: "chevron.up.chevron.down")
+                                    .font(.system(size: 8, weight: .semibold))
+                                    .foregroundStyle(MochiTheme.textLight.opacity(0.3))
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(
+                                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                    .fill(MochiTheme.backgroundLight.opacity(0.6))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                            .stroke(Color.gray.opacity(0.18), lineWidth: 1)
+                                    )
+                            )
                         }
+                        .menuStyle(.borderlessButton)
+                        .fixedSize()
+                    }
+                    .opacity(appState.morningBriefingEnabled ? 1 : 0.4)
+                    .disabled(!appState.morningBriefingEnabled)
+                }
+
+                settingsSectionHeader("Streak")
+
+                SettingsCard {
+                    SettingsRow("Proteger les week-ends", icon: "calendar", iconColor: .green, showDivider: false) {
+                        Toggle("", isOn: $appState.weekendsProtected)
+                            .toggleStyle(.switch)
+                            .labelsHidden()
+                            .tint(MochiTheme.primary)
                     }
                 }
 
-                settingsSection("Streak") {
-                    Toggle(isOn: $appState.weekendsProtected) {
-                        Text("Week-ends ne cassent pas le streak")
-                            .font(.system(size: 13))
-                            .foregroundStyle(MochiTheme.textLight)
-                    }
-                    .tint(MochiTheme.primary)
-                }
+                Text("Les week-ends ne casseront pas votre streak si active.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(MochiTheme.textLight.opacity(0.35))
+                    .padding(.horizontal, 4)
             }
-            .padding(20)
+            .frame(maxWidth: 480)
+            .padding(24)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .onChange(of: appState.notificationFrequency) {
                 appState.rescheduleAllNotifications()
                 appState.saveConfig()
@@ -336,19 +605,35 @@ struct NotificationSettingsTab: View {
         }
     }
 
-    private func radioOption(_ value: String, label: String) -> some View {
-        Button {
-            appState.notificationFrequency = value
-        } label: {
-            HStack(spacing: 10) {
-                Circle()
-                    .fill(appState.notificationFrequency == value ? MochiTheme.primary : Color.clear)
-                    .frame(width: 14, height: 14)
-                    .overlay(Circle().stroke(appState.notificationFrequency == value ? MochiTheme.primary : Color.gray.opacity(0.3), lineWidth: 1.5))
-                Text(label)
-                    .font(.system(size: 13))
-                    .foregroundStyle(MochiTheme.textLight)
+    private func frequencyCard(_ value: String, label: String, icon: String, description: String) -> some View {
+        let isSelected = appState.notificationFrequency == value
+        return Button {
+            withAnimation(.easeInOut(duration: 0.15)) {
+                appState.notificationFrequency = value
             }
+        } label: {
+            VStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: 16))
+                    .foregroundStyle(isSelected ? MochiTheme.primary : MochiTheme.textLight.opacity(0.35))
+                Text(label)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(isSelected ? MochiTheme.textLight : MochiTheme.textLight.opacity(0.6))
+                Text(description)
+                    .font(.system(size: 11))
+                    .foregroundStyle(isSelected ? MochiTheme.primary.opacity(0.7) : MochiTheme.textLight.opacity(0.35))
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 14)
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(isSelected ? MochiTheme.primary.opacity(0.08) : Color.white)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(isSelected ? MochiTheme.primary.opacity(0.4) : Color.gray.opacity(0.12), lineWidth: 1)
+            )
+            .shadow(color: isSelected ? MochiTheme.primary.opacity(0.08) : .clear, radius: 4, y: 1)
         }
         .buttonStyle(.plain)
     }
@@ -363,74 +648,106 @@ struct NotionSettingsTab: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                settingsSection("Connexion Notion") {
-                    if isConnected {
-                        HStack {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(.green)
-                            Text("Connecté à Notion")
-                                .font(.system(size: 13))
-                                .foregroundStyle(MochiTheme.textLight)
-                        }
+            VStack(alignment: .leading, spacing: 16) {
+                settingsSectionHeader("Connexion")
 
-                        settingsField("ID de la base de données") {
+                SettingsCard {
+                    SettingsRow("Statut", icon: "wifi", iconColor: isConnected ? .green : .gray, showDivider: isConnected) {
+                        HStack(spacing: 6) {
+                            Circle()
+                                .fill(isConnected ? Color.green : Color.gray.opacity(0.3))
+                                .frame(width: 8, height: 8)
+                            Text(isConnected ? "Connecté" : "Non connecté")
+                                .font(.system(size: 12))
+                                .foregroundStyle(isConnected ? .green : MochiTheme.textLight.opacity(0.5))
+                        }
+                    }
+
+                    if isConnected {
+                        SettingsRow("Base de données", icon: "tablecells", iconColor: .blue, showDivider: true) {
                             TextField("ID", text: $databaseId)
                                 .textFieldStyle(.plain)
-                                .font(.system(size: 13))
+                                .font(.system(size: 12, design: .monospaced))
                                 .foregroundStyle(MochiTheme.textLight)
-                                .padding(10)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .fill(MochiTheme.backgroundLight)
-                                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.15)))
-                                )
+                                .multilineTextAlignment(.trailing)
+                                .frame(maxWidth: 200)
                         }
 
-                        Button {
-                            disconnectNotion()
-                        } label: {
-                            Text("Déconnecter")
-                                .font(.system(size: 13, weight: .medium))
-                                .foregroundStyle(.red.opacity(0.8))
+                        VStack(spacing: 0) {
+                            Button {
+                                disconnectNotion()
+                            } label: {
+                                HStack {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .font(.system(size: 11))
+                                        .foregroundStyle(.white)
+                                        .frame(width: 22, height: 22)
+                                        .background(RoundedRectangle(cornerRadius: 5, style: .continuous).fill(.red.opacity(0.8)))
+                                    Text("Déconnecter")
+                                        .font(.system(size: 13))
+                                        .foregroundStyle(.red.opacity(0.8))
+                                    Spacer()
+                                }
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 10)
+                            }
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
-                    } else {
-                        settingsField("Token d'intégration") {
-                            SecureField("Token Notion", text: $notionToken)
-                                .textFieldStyle(.plain)
-                                .font(.system(size: 13))
-                                .foregroundStyle(MochiTheme.textLight)
-                                .padding(10)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .fill(MochiTheme.backgroundLight)
-                                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.15)))
-                                )
-                        }
-
-                        Button {
-                            connectNotion()
-                        } label: {
-                            Text("Connecter")
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 8)
-                                .background(Capsule().fill(notionToken.isEmpty ? MochiTheme.primary.opacity(0.4) : MochiTheme.primary))
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(notionToken.isEmpty)
                     }
                 }
 
-                settingsSection("Synchronisation") {
-                    Text("La synchronisation bidirectionnelle sera configurée après connexion.")
-                        .font(.system(size: 12))
-                        .foregroundStyle(MochiTheme.textLight.opacity(0.5))
+                if !isConnected {
+                    settingsSectionHeader("Authentification")
+
+                    SettingsCard {
+                        VStack(alignment: .leading, spacing: 0) {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Token d'intégration Notion")
+                                    .font(.system(size: 11, weight: .medium))
+                                    .foregroundStyle(MochiTheme.textLight.opacity(0.5))
+                                SecureField("ntn_...", text: $notionToken)
+                                    .textFieldStyle(.plain)
+                                    .font(.system(size: 13, design: .monospaced))
+                                    .foregroundStyle(MochiTheme.textLight)
+                                    .padding(10)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .fill(MochiTheme.backgroundLight)
+                                            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.15)))
+                                    )
+                            }
+                            .padding(14)
+
+                            Divider()
+
+                            Button {
+                                connectNotion()
+                            } label: {
+                                HStack {
+                                    Spacer()
+                                    Text("Connecter")
+                                        .font(.system(size: 13, weight: .semibold))
+                                        .foregroundStyle(notionToken.isEmpty ? MochiTheme.textLight.opacity(0.3) : MochiTheme.primary)
+                                    Spacer()
+                                }
+                                .padding(.vertical, 10)
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(notionToken.isEmpty)
+                        }
+                    }
                 }
+
+                settingsSectionHeader("Synchronisation")
+
+                Text("La synchronisation bidirectionnelle avec Notion permet de garder vos tâches à jour sur les deux plateformes.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(MochiTheme.textLight.opacity(0.35))
+                    .padding(.horizontal, 4)
             }
-            .padding(20)
+            .frame(maxWidth: 480)
+            .padding(24)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .onAppear {
             if let token = KeychainHelper.load(key: "notion_token") {
@@ -457,62 +774,67 @@ struct NotionSettingsTab: View {
 struct ShortcutSettingsTab: View {
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                settingsSection("Raccourcis globaux") {
-                    shortcutRow("Ouvrir/fermer le chat", shortcut: "⌘⇧M")
-                    shortcutRow("Mini-panel menubar", shortcut: "⌘⇧N")
-                    shortcutRow("Ajout rapide de tâche", shortcut: "⌘⇧A")
+            VStack(alignment: .leading, spacing: 16) {
+                settingsSectionHeader("Raccourcis globaux")
+
+                SettingsCard {
+                    shortcutRow("Ouvrir/fermer le chat", icon: "message.fill", iconColor: MochiTheme.primary, shortcut: "⌘⇧M")
+                    shortcutRow("Mini-panel menubar", icon: "menubar.rectangle", iconColor: .purple, shortcut: "⌘⇧N")
+                    shortcutRow("Ajout rapide de tâche", icon: "plus.circle.fill", iconColor: .green, shortcut: "⌘⇧A", showDivider: false)
                 }
 
-                Text("La configuration personnalisée des raccourcis sera disponible dans une version future.")
-                    .font(.system(size: 12))
-                    .foregroundStyle(MochiTheme.textLight.opacity(0.4))
+                Text("La personnalisation des raccourcis sera disponible dans une future version.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(MochiTheme.textLight.opacity(0.35))
+                    .padding(.horizontal, 4)
             }
-            .padding(20)
+            .frame(maxWidth: 480)
+            .padding(24)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
-    private func shortcutRow(_ label: String, shortcut: String) -> some View {
-        HStack {
-            Text(label)
-                .font(.system(size: 13))
-                .foregroundStyle(MochiTheme.textLight)
-            Spacer()
-            Text(shortcut)
-                .font(.system(size: 12, weight: .medium, design: .monospaced))
-                .foregroundStyle(MochiTheme.textLight.opacity(0.7))
-                .padding(.horizontal, 10)
-                .padding(.vertical, 5)
-                .background(
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(MochiTheme.backgroundLight)
-                        .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.gray.opacity(0.15)))
-                )
+    private func shortcutRow(_ label: String, icon: String, iconColor: Color, shortcut: String, showDivider: Bool = true) -> some View {
+        VStack(spacing: 0) {
+            HStack {
+                Image(systemName: icon)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.white)
+                    .frame(width: 22, height: 22)
+                    .background(RoundedRectangle(cornerRadius: 5, style: .continuous).fill(iconColor))
+                Text(label)
+                    .font(.system(size: 13))
+                    .foregroundStyle(MochiTheme.textLight)
+                Spacer()
+                HStack(spacing: 2) {
+                    ForEach(shortcutKeys(shortcut), id: \.self) { key in
+                        Text(key)
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(MochiTheme.textLight.opacity(0.6))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(
+                                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                    .fill(MochiTheme.backgroundLight)
+                                    .shadow(color: .black.opacity(0.06), radius: 0.5, y: 0.5)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                    .stroke(Color.gray.opacity(0.15), lineWidth: 0.5)
+                            )
+                    }
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+
+            if showDivider {
+                Divider().padding(.leading, 50)
+            }
         }
     }
-}
 
-// MARK: - Shared Settings Helpers
-
-private func settingsSection<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
-    VStack(alignment: .leading, spacing: 12) {
-        Text(title)
-            .font(.system(size: 13, weight: .bold))
-            .foregroundStyle(MochiTheme.textLight)
-            .textCase(.uppercase)
-            .tracking(0.5)
-
-        VStack(alignment: .leading, spacing: 10) {
-            content()
-        }
-    }
-}
-
-private func settingsField<Content: View>(_ label: String, @ViewBuilder content: () -> Content) -> some View {
-    VStack(alignment: .leading, spacing: 5) {
-        Text(label)
-            .font(.system(size: 11, weight: .medium))
-            .foregroundStyle(MochiTheme.textLight.opacity(0.5))
-        content()
+    private func shortcutKeys(_ shortcut: String) -> [String] {
+        shortcut.map { String($0) }
     }
 }
