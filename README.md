@@ -46,7 +46,7 @@ Mochi Mochi reprend le concept d'ULY et l'enveloppe dans une **application macOS
 - 📝 **Notes rapides** — Prise de notes avec extraction automatique de tâches via IA
 - 🔗 **Sync Notion** — Bidirectionnelle, vos tâches partout
 - 🖥️ **Menubar** — Accès rapide sans quitter votre travail
-- 🏠 **100% local** — Vos données restent chez vous
+- 🏠 **Données locales** — Vos données sont stockées localement en Markdown (les messages transitent par Claude Code via votre abonnement Anthropic)
 
 ---
 
@@ -56,27 +56,29 @@ Mochi Mochi reprend le concept d'ULY et l'enveloppe dans une **application macOS
 
 - macOS 14 (Sonoma) ou supérieur
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) installé et authentifié
-- [XcodeGen](https://github.com/yonaskolb/XcodeGen) (pour générer le projet Xcode)
+- Un abonnement Anthropic (Max ou Pro) — l'app utilise votre abonnement existant, pas de coût supplémentaire
 
-### Installation
+### Installation (DMG)
+
+1. Téléchargez le fichier **MochiMochi.dmg** depuis les [Releases GitHub](https://github.com/aamsellem/mochi-mochi/releases)
+2. Ouvrez le DMG et glissez **Mochi Mochi** dans votre dossier Applications
+3. Au premier lancement, macOS peut afficher un avertissement "développeur non identifié" :
+   - Allez dans **Réglages Système → Confidentialité et sécurité** et cliquez sur **Ouvrir quand même**
+4. Lancez Mochi Mochi et suivez l'onboarding
+
+### Installation (depuis les sources)
 
 ```bash
 # 1. Cloner le repo
 git clone https://github.com/aamsellem/mochi-mochi.git && cd mochi-mochi
 
-# 2. Générer le projet Xcode
+# 2. Générer le projet Xcode (nécessite XcodeGen : brew install xcodegen)
 xcodegen generate
 
 # 3. Ouvrir dans Xcode
 open MochiMochi.xcodeproj
 
 # 4. Build & Run (⌘R)
-```
-
-### Avec Homebrew (bientôt)
-
-```bash
-brew install --cask mochi-mochi
 ```
 
 ---
@@ -266,16 +268,8 @@ Synchronisation bidirectionnelle avec Notion :
 
 - Xcode 15+
 - [XcodeGen](https://github.com/yonaskolb/XcodeGen) : `brew install xcodegen`
-- Claude Code : `brew install claude-code`
-
-### Setup
-
-```bash
-git clone https://github.com/aamsellem/mochi-mochi.git
-cd mochi-mochi
-xcodegen generate
-open MochiMochi.xcodeproj
-```
+- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) installé et authentifié
+- Un abonnement Anthropic (Max ou Pro)
 
 ### Structure du code
 
