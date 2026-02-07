@@ -7,6 +7,10 @@ struct ChatView: View {
     @State private var showSlashMenu = false
     @State private var thinkingBounce = false
     @State private var pendingAttachments: [Attachment] = []
+    @State private var inputHistory: [String] = []
+    @State private var historyIndex: Int = -1
+    @State private var isNavigatingHistory = false
+    @State private var selectedCommandIndex: Int = 0
     @FocusState private var isInputFocused: Bool
 
     var body: some View {
@@ -547,9 +551,23 @@ struct ChatView: View {
                     .lineLimit(1...6)
                     .textFieldStyle(.plain)
                     .focused($isInputFocused)
+                    .onKeyPress(.upArrow) { handleUpArrow() }
+                    .onKeyPress(.downArrow) { handleDownArrow() }
+                    .onKeyPress(.return) { handleReturn() }
+                    .onKeyPress(.escape) { handleEscape() }
+                    .onKeyPress(.tab) { handleTab() }
                     .onSubmit { sendIfReady() }
                     .onChange(of: inputText) { _, newValue in
-                        showSlashMenu = newValue.hasPrefix("/") && !newValue.contains(" ")
+                        if !isNavigatingHistory {
+                            historyIndex = -1
+                        }
+                        isNavigatingHistory = false
+
+                        let isSlashPrefix = newValue.hasPrefix("/") && !newValue.contains(" ")
+                        showSlashMenu = isSlashPrefix
+                        if isSlashPrefix {
+                            selectedCommandIndex = 0
+                        }
                     }
 
                 // Microphone button
@@ -725,32 +743,51 @@ struct ChatView: View {
 
     @ViewBuilder
     private var slashCommandMenu: some View {
-        if !filteredCommands.isEmpty {
+        let commands = filteredCommands
+        let safeIndex = commands.isEmpty ? 0 : min(selectedCommandIndex, commands.count - 1)
+
+        if !commands.isEmpty {
             VStack(alignment: .leading, spacing: 0) {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 2) {
-                        ForEach(filteredCommands, id: \.command) { item in
-                            Button(action: {
-                                inputText = item.command + " "
-                                showSlashMenu = false
-                            }) {
-                                HStack {
-                                    Text(item.command)
-                                        .font(.system(.body, design: .monospaced))
-                                        .fontWeight(.medium)
-                                    Spacer()
-                                    Text(item.description)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 2) {
+                            ForEach(Array(commands.enumerated()), id: \.element.command) { index, item in
+                                Button(action: {
+                                    inputText = item.command + " "
+                                    showSlashMenu = false
+                                }) {
+                                    HStack {
+                                        Text(item.command)
+                                            .font(.system(.body, design: .monospaced))
+                                            .fontWeight(.medium)
+                                            .foregroundStyle(index == safeIndex ? MochiTheme.primary : MochiTheme.textLight)
+                                        Spacer()
+                                        Text(item.description)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 6)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                            .fill(index == safeIndex ? MochiTheme.primary.opacity(0.1) : Color.clear)
+                                    )
+                                    .contentShape(Rectangle())
                                 }
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 6)
-                                .contentShape(Rectangle())
+                                .buttonStyle(.plain)
+                                .id(item.command)
                             }
-                            .buttonStyle(.plain)
+                        }
+                        .padding(8)
+                    }
+                    .onChange(of: selectedCommandIndex) { _, newIndex in
+                        let clampedIndex = min(newIndex, commands.count - 1)
+                        if clampedIndex >= 0 && clampedIndex < commands.count {
+                            withAnimation(.easeOut(duration: 0.1)) {
+                                proxy.scrollTo(commands[clampedIndex].command, anchor: .center)
+                            }
                         }
                     }
-                    .padding(8)
                 }
             }
             .frame(maxWidth: 400, maxHeight: slashMenuHeight)
@@ -763,6 +800,85 @@ struct ChatView: View {
         }
     }
 
+    // MARK: - Key Handlers
+
+    private func handleUpArrow() -> KeyPress.Result {
+        // Slash menu: navigate up
+        if showSlashMenu && !filteredCommands.isEmpty {
+            selectedCommandIndex = max(0, selectedCommandIndex - 1)
+            return .handled
+        }
+        // History: navigate backward
+        if inputText.isEmpty && !inputHistory.isEmpty {
+            isNavigatingHistory = true
+            if historyIndex == -1 {
+                historyIndex = inputHistory.count - 1
+            } else if historyIndex > 0 {
+                historyIndex -= 1
+            }
+            inputText = inputHistory[historyIndex]
+            return .handled
+        }
+        return .ignored
+    }
+
+    private func handleDownArrow() -> KeyPress.Result {
+        // Slash menu: navigate down
+        if showSlashMenu && !filteredCommands.isEmpty {
+            selectedCommandIndex = min(filteredCommands.count - 1, selectedCommandIndex + 1)
+            return .handled
+        }
+        // History: navigate forward
+        if historyIndex >= 0 {
+            isNavigatingHistory = true
+            if historyIndex < inputHistory.count - 1 {
+                historyIndex += 1
+                inputText = inputHistory[historyIndex]
+            } else {
+                historyIndex = -1
+                inputText = ""
+            }
+            return .handled
+        }
+        return .ignored
+    }
+
+    private func handleReturn() -> KeyPress.Result {
+        // Slash menu: select command
+        if showSlashMenu && !filteredCommands.isEmpty {
+            let safeIndex = min(selectedCommandIndex, filteredCommands.count - 1)
+            let selected = filteredCommands[safeIndex]
+            inputText = selected.command + " "
+            showSlashMenu = false
+            return .handled
+        }
+        return .ignored
+    }
+
+    private func handleEscape() -> KeyPress.Result {
+        if showSlashMenu {
+            showSlashMenu = false
+            return .handled
+        }
+        if historyIndex >= 0 {
+            historyIndex = -1
+            inputText = ""
+            return .handled
+        }
+        return .ignored
+    }
+
+    private func handleTab() -> KeyPress.Result {
+        if showSlashMenu && !filteredCommands.isEmpty {
+            let safeIndex = min(selectedCommandIndex, filteredCommands.count - 1)
+            let selected = filteredCommands[safeIndex]
+            inputText = selected.command + " "
+            showSlashMenu = false
+            return .handled
+        }
+        return .ignored
+    }
+
     // MARK: - Actions
 
     private func sendIfReady() {
@@ -773,6 +889,13 @@ struct ChatView: View {
     private func sendMessage() {
         let text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty || !pendingAttachments.isEmpty else { return }
+
+        // Save to input history
+        if !text.isEmpty && (inputHistory.isEmpty || inputHistory.last != text) {
+            inputHistory.append(text)
+        }
+        historyIndex = -1
+
         let attachments = pendingAttachments
         inputText = ""
         pendingAttachments = []

@@ -165,6 +165,15 @@ final class AppState: ObservableObject {
                 for: task,
                 personality: currentPersonality
             )
+
+            // Relances répétées pour les tâches suivies
+            if task.isTracked {
+                notificationService.scheduleTrackedReminder(
+                    for: task,
+                    personality: currentPersonality,
+                    frequency: notificationFrequency
+                )
+            }
         }
     }
 
@@ -313,6 +322,7 @@ final class AppState: ObservableObject {
         // Annuler les notifications de cette tache
         notificationService.cancelNotification(identifier: "task-reminder-\(task.id.uuidString)")
         notificationService.cancelNotification(identifier: "deadline-\(task.id.uuidString)")
+        notificationService.cancelTrackedReminder(for: task)
 
         let rewards = gamification.rewardForTask(task)
         let leveledUp = gamification.applyRewards(rewards)
@@ -357,6 +367,7 @@ final class AppState: ObservableObject {
     func deleteTask(_ task: MochiTask) {
         notificationService.cancelNotification(identifier: "task-reminder-\(task.id.uuidString)")
         notificationService.cancelNotification(identifier: "deadline-\(task.id.uuidString)")
+        notificationService.cancelTrackedReminder(for: task)
         tasks.removeAll { $0.id == task.id }
         saveState()
     }
@@ -364,6 +375,23 @@ final class AppState: ObservableObject {
     func toggleInProgress(_ task: MochiTask) {
         guard let index = tasks.firstIndex(where: { $0.id == task.id }) else { return }
         tasks[index].isInProgress.toggle()
+        saveState()
+    }
+
+    func toggleTracked(_ task: MochiTask) {
+        guard let index = tasks.firstIndex(where: { $0.id == task.id }) else { return }
+        tasks[index].isTracked.toggle()
+
+        if tasks[index].isTracked {
+            notificationService.scheduleTrackedReminder(
+                for: tasks[index],
+                personality: currentPersonality,
+                frequency: notificationFrequency
+            )
+        } else {
+            notificationService.cancelTrackedReminder(for: tasks[index])
+        }
+
         saveState()
     }
 

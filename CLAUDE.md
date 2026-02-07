@@ -23,12 +23,12 @@
 MochiMochi/
 ├── App/                        # Point d'entrée, configuration, thème
 │   ├── MochiMochiApp.swift    # @main, WindowGroup, MenuBarExtra
-│   ├── AppState.swift         # État global (@MainActor, @Published)
-│   ├── ContentView.swift      # Layout principal (3 colonnes sur Dashboard)
+│   ├── AppState.swift         # État global (@MainActor, @Published, tracked tasks)
+│   ├── ContentView.swift      # Layout principal (3 colonnes + Mochi rétractable)
 │   └── Theme.swift            # Design system (MochiTheme: couleurs, dimensions)
 ├── Models/                     # Modèles de données
 │   ├── MochiCharacter.swift   # État du Mochi (émotion, niveau, accessoires)
-│   ├── MochiTask.swift        # Tâche utilisateur (priorité, deadline)
+│   ├── MochiTask.swift        # Tâche utilisateur (priorité, deadline, suivi)
 │   ├── Personality.swift      # 8 personnalités du Mochi
 │   ├── GamificationState.swift # XP, niveaux, 🍙, streaks
 │   ├── ShopItem.swift         # Items cosmétiques
@@ -44,9 +44,11 @@ MochiMochi/
 │   │   ├── TasksTrackingView.swift  # Suivi complet des tâches (onglet Tâches)
 │   │   ├── DashboardView.swift      # Vue dashboard legacy
 │   │   └── TaskRowView.swift        # Ligne de tâche réutilisable
-│   ├── Mochi/                 # Compagnon virtuel (sidebar droite)
+│   ├── Mochi/                 # Compagnon virtuel (sidebar droite, rétractable)
 │   │   ├── MochiView.swift    # Carte compagnon + stats + tâches en attente
 │   │   └── MochiAvatarView.swift # Avatar avec 9 émotions
+│   ├── Notes/                 # Prise de notes rapide
+│   │   └── NotesView.swift    # Éditeur de notes + extraction de tâches via IA
 │   ├── MenuBar/               # Icône menubar + mini-panel
 │   ├── Onboarding/            # Assistant 8 étapes
 │   ├── Shop/                  # Boutique et inventaire
@@ -55,7 +57,7 @@ MochiMochi/
 │   ├── ClaudeCodeService.swift    # Communication avec Claude Code (Process)
 │   ├── MemoryService.swift        # Lecture/écriture Markdown
 │   ├── NotionSyncService.swift    # Synchronisation bidirectionnelle
-│   ├── NotificationService.swift  # Notifications macOS
+│   ├── NotificationService.swift  # Notifications macOS + relances tracked
 │   └── KeyboardShortcutService.swift # Raccourcis globaux
 ├── Engine/                     # Moteur de traitement
 │   ├── CommandEngine.swift    # Orchestration des 14 commandes slash
@@ -81,9 +83,10 @@ MochiMochi/
 
 ### Navigation (AppTab)
 
-4 onglets via `NavigationBarView` (pilules arrondies) :
-- **Tableau de bord** : layout 3 colonnes (Focus | Chat | Compagnon)
-- **Tâches** : suivi complet avec filtres, stats, ajout
+5 onglets via `NavigationBarView` (pilules arrondies) :
+- **Tableau de bord** : layout 3 colonnes (Focus | Chat | Compagnon rétractable)
+- **Tâches** : suivi complet avec filtres, stats, ajout, suivi de tâches (tracked)
+- **Notes** : prise de notes rapide avec extraction de tâches via Claude Code
 - **Boutique** : achat de cosmétiques avec 🍙
 - **Réglages** : 5 sous-onglets (Général, Personnalité, Notifications, Notion, Raccourcis)
 
@@ -116,6 +119,7 @@ Stockage local dans `~/.mochi-mochi/` :
 | `state/current.md` | Tâches et priorités actuelles |
 | `state/goals.md` | Objectifs long terme |
 | `state/mochi.md` | État du Mochi (niveau, XP, 🍙, streak, items équipés) |
+| `content/notes/quick-notes.json` | Notes rapides (JSON) |
 | `sessions/YYYY-MM-DD.md` | Journaux de session quotidiens |
 | `inventory/items.md` | Items cosmétiques débloqués |
 | `integrations/notion/config.md` | Configuration Notion |

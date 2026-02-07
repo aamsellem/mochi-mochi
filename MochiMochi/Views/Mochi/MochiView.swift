@@ -19,7 +19,6 @@ struct MochiView: View {
             VStack(spacing: 16) {
                 companionCard
                 statsGrid
-                taskBacklogCard
             }
             .padding(16)
         }
@@ -215,112 +214,10 @@ struct MochiView: View {
         )
     }
 
-    // MARK: - Section 3: Tâches en attente
-
-    private var taskBacklogCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text("En attente")
-                    .font(.headline.bold())
-                    .foregroundStyle(MochiTheme.textLight)
-                Spacer()
-                Text("\(pendingTasks.count)")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(MochiTheme.primary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(Capsule().fill(MochiTheme.primary.opacity(0.15)))
-            }
-
-            if pendingTasks.isEmpty {
-                HStack {
-                    Spacer()
-                    VStack(spacing: 6) {
-                        Image(systemName: "tray")
-                            .font(.system(size: 20))
-                            .foregroundStyle(.secondary.opacity(0.5))
-                        Text("Aucune tâche en attente")
-                            .font(.system(size: 12))
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.vertical, 12)
-                    Spacer()
-                }
-            } else {
-                ForEach(pendingTasks.prefix(5)) { task in
-                    backlogTaskRow(task)
-                }
-
-                if pendingTasks.count > 5 {
-                    Text("+ \(pendingTasks.count - 5) autres")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
-                        .padding(.top, 2)
-                }
-            }
-        }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: MochiTheme.cornerRadiusXL)
-                .fill(MochiTheme.primary.opacity(0.06))
-                .overlay(
-                    RoundedRectangle(cornerRadius: MochiTheme.cornerRadiusXL)
-                        .stroke(MochiTheme.primary.opacity(0.15), lineWidth: 1)
-                )
-        )
-    }
-
-    private func backlogTaskRow(_ task: MochiTask) -> some View {
-        HStack(spacing: 8) {
-            Circle()
-                .fill(backlogDotColor(task.priority))
-                .frame(width: 7, height: 7)
-
-            Text(task.title)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(MochiTheme.textLight)
-                .lineLimit(1)
-
-            Spacer()
-
-            Button {
-                appState.toggleInProgress(task)
-            } label: {
-                Text(task.isInProgress ? "En cours" : "Je suis dessus")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(task.isInProgress ? .white : MochiTheme.primary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(
-                        Capsule().fill(task.isInProgress ? MochiTheme.primary : MochiTheme.primary.opacity(0.12))
-                    )
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(.vertical, 2)
-    }
-
-    private func backlogDotColor(_ priority: TaskPriority) -> Color {
-        switch priority {
-        case .high: return MochiTheme.errorRed
-        case .normal: return MochiTheme.priorityNormal
-        case .low: return MochiTheme.priorityLow
-        }
-    }
-
     // MARK: - Computed Properties
 
     private var energyPercent: Int {
         min(100, appState.gamification.streakDays * 10)
-    }
-
-    private var activeTaskCount: Int {
-        appState.tasks.filter { !$0.isCompleted }.count
-    }
-
-    private var pendingTasks: [MochiTask] {
-        appState.tasks.filter { !$0.isCompleted }
-            .sorted { $0.priority.xpReward > $1.priority.xpReward }
     }
 
     private func emotionLabel(_ emotion: MochiEmotion) -> String {

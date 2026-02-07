@@ -3,6 +3,7 @@ import SwiftUI
 enum AppTab: String, CaseIterable {
     case dashboard = "Tableau de bord"
     case tasks = "Tâches"
+    case notes = "Notes"
     case shop = "Boutique"
     case settings = "Réglages"
 
@@ -10,6 +11,7 @@ enum AppTab: String, CaseIterable {
         switch self {
         case .dashboard: return "square.grid.2x2"
         case .tasks: return "checklist"
+        case .notes: return "note.text"
         case .shop: return "bag"
         case .settings: return "gearshape"
         }

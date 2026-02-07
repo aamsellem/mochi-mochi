@@ -104,6 +104,37 @@ final class NotificationService {
         center.add(request)
     }
 
+    // MARK: - Tracked Task Reminders (repeating)
+
+    func scheduleTrackedReminder(for task: MochiTask, personality: Personality, frequency: String = "normal") {
+        let content = UNMutableNotificationContent()
+        content.title = "\(personality.emoji) \(personality.displayName)"
+        content.body = taskReminderMessage(for: task, personality: personality)
+        content.sound = .default
+        content.userInfo = ["taskId": task.id.uuidString, "tracked": true]
+
+        let interval: TimeInterval
+        switch frequency {
+        case "intense": interval = 900    // 15 min
+        case "normal":  interval = 3600   // 1h
+        case "zen":     interval = 7200   // 2h
+        default:        interval = 3600
+        }
+
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: interval, repeats: true)
+        let request = UNNotificationRequest(
+            identifier: "tracked-reminder-\(task.id.uuidString)",
+            content: content,
+            trigger: trigger
+        )
+
+        center.add(request)
+    }
+
+    func cancelTrackedReminder(for task: MochiTask) {
+        cancelNotification(identifier: "tracked-reminder-\(task.id.uuidString)")
+    }
+
     // MARK: - Deadline Warning
 
     func scheduleDeadlineWarning(for task: MochiTask, personality: Personality) {

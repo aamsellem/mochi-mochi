@@ -1,37 +1,68 @@
 import SwiftUI
 
+// MARK: - Task Filter
+
+enum TaskFilter: String, CaseIterable {
+    case all = "Toutes"
+    case inProgress = "En cours"
+    case tracked = "Suivies"
+}
+
 struct TodaysFocusView: View {
     @EnvironmentObject var appState: AppState
-    @State private var hoveredTaskId: UUID?
-    @State private var hoveredAddIndex: Int?
-    @State private var showAddForm = false
+    @State private var newTaskTitle: String = ""
     @State private var editingTask: MochiTask?
+    @State private var selectedFilter: TaskFilter = .all
+    @State private var hoveredTaskId: UUID?
+    @FocusState private var isQuickAddFocused: Bool
 
-    private var activeTasks: [MochiTask] {
-        appState.tasks
-            .filter { !$0.isCompleted }
-            .sorted { $0.createdAt < $1.createdAt }
+    private var filteredTasks: [MochiTask] {
+        let active = appState.tasks.filter { !$0.isCompleted }
+        switch selectedFilter {
+        case .all:
+            return active.sorted { $0.createdAt > $1.createdAt }
+        case .inProgress:
+            return active.filter { $0.isInProgress }.sorted { $0.createdAt > $1.createdAt }
+        case .tracked:
+            return active.filter { $0.isTracked }.sorted { $0.createdAt > $1.createdAt }
+        }
+    }
+
+    private var activeCount: Int {
+        appState.tasks.filter { !$0.isCompleted }.count
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             header
+                .padding(.bottom, 12)
+
+            quickAddField
+                .padding(.bottom, 12)
+
+            filterBar
                 .padding(.bottom, 8)
 
             ScrollView(.vertical, showsIndicators: false) {
-                timelineWrapper
-                    .padding(.bottom, 40)
+                if filteredTasks.isEmpty {
+                    emptyState
+                } else {
+                    LazyVStack(spacing: 6) {
+                        ForEach(filteredTasks) { task in
+                            taskRow(task)
+                        }
+                    }
+                }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .sheet(isPresented: $showAddForm) {
-            TaskFormSheet(mode: .add) { task in
-                appState.addTask(task)
-            }
-        }
         .sheet(item: $editingTask) { task in
             TaskFormSheet(mode: .edit(task)) { updated in
-                appState.updateTask(updated)
+                if updated.title.isEmpty {
+                    appState.deleteTask(task)
+                } else {
+                    appState.updateTask(updated)
+                }
             }
         }
     }
@@ -39,293 +70,213 @@ struct TodaysFocusView: View {
     // MARK: - Header
 
     private var header: some View {
-        HStack {
-            Text("Focus du jour")
+        HStack(alignment: .center) {
+            Text("Mes taches")
                 .font(.system(size: 18, weight: .bold))
                 .foregroundStyle(MochiTheme.textLight)
 
-            Spacer()
+            Text("\(activeCount)")
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(MochiTheme.primary)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
+                .background(Capsule().fill(MochiTheme.primary.opacity(0.15)))
 
-            HStack(spacing: 8) {
-                headerButton(icon: "minus") {}
-                headerButton(icon: "plus") {
-                    showAddForm = true
-                }
-            }
+            Spacer()
         }
         .padding(.horizontal, 8)
     }
 
-    private func headerButton(icon: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Circle()
-                .fill(.white)
-                .frame(width: 28, height: 28)
-                .shadow(color: .black.opacity(0.06), radius: 4, y: 1)
+    // MARK: - Quick Add
+
+    private var quickAddField: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "plus.circle.fill")
+                .font(.system(size: 18))
+                .foregroundStyle(MochiTheme.primary.opacity(0.6))
+
+            TextField("Ajouter une tache...", text: $newTaskTitle)
+                .font(.system(size: 14))
+                .foregroundStyle(MochiTheme.textLight)
+                .textFieldStyle(.plain)
+                .focused($isQuickAddFocused)
+                .onSubmit {
+                    addQuickTask()
+                }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.white)
                 .overlay(
-                    Image(systemName: icon)
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(MochiTheme.textLight.opacity(0.5))
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(
+                            isQuickAddFocused ? MochiTheme.primary.opacity(0.4) : Color.gray.opacity(0.2),
+                            lineWidth: 1
+                        )
                 )
+                .shadow(color: .black.opacity(0.04), radius: 4, y: 2)
+        )
+        .padding(.horizontal, 8)
+    }
+
+    private func addQuickTask() {
+        let trimmed = newTaskTitle.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return }
+        let task = MochiTask(title: trimmed)
+        appState.addTask(task)
+        newTaskTitle = ""
+    }
+
+    // MARK: - Filter Bar
+
+    private var filterBar: some View {
+        HStack(spacing: 6) {
+            ForEach(TaskFilter.allCases, id: \.self) { filter in
+                filterPill(filter)
+            }
+            Spacer()
+        }
+        .padding(.horizontal, 8)
+    }
+
+    private func filterPill(_ filter: TaskFilter) -> some View {
+        let isSelected = selectedFilter == filter
+        let count: Int = {
+            let active = appState.tasks.filter { !$0.isCompleted }
+            switch filter {
+            case .all: return active.count
+            case .inProgress: return active.filter { $0.isInProgress }.count
+            case .tracked: return active.filter { $0.isTracked }.count
+            }
+        }()
+
+        return Button {
+            withAnimation(.easeInOut(duration: 0.15)) {
+                selectedFilter = filter
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Text(filter.rawValue)
+                    .font(.system(size: 11, weight: .semibold))
+                if count > 0 {
+                    Text("\(count)")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(isSelected ? .white : MochiTheme.textLight.opacity(0.4))
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 1)
+                        .background(
+                            Capsule().fill(isSelected ? .white.opacity(0.3) : Color.gray.opacity(0.12))
+                        )
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .foregroundStyle(isSelected ? .white : MochiTheme.textLight.opacity(0.6))
+            .background(
+                Capsule().fill(isSelected ? MochiTheme.primary : Color.gray.opacity(0.08))
+            )
         }
         .buttonStyle(.plain)
     }
 
-    // MARK: - Timeline
+    // MARK: - Task Row
 
-    private var timelineWrapper: some View {
-        ZStack(alignment: .leading) {
-            Rectangle()
-                .fill(Color.gray.opacity(0.2))
-                .frame(width: 2)
-                .padding(.leading, 38)
+    private func taskRow(_ task: MochiTask) -> some View {
+        let isHovered = hoveredTaskId == task.id
 
-            VStack(alignment: .leading, spacing: 0) {
-                if activeTasks.isEmpty {
-                    emptyState
-                } else {
-                    ForEach(Array(activeTasks.enumerated()), id: \.element.id) { _, task in
-                        taskTimelineItem(task: task)
-                    }
-
-                    addSlotButton
-                }
-            }
-        }
-    }
-
-    private var emptyState: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "sun.max")
-                .font(.system(size: 32))
-                .foregroundStyle(MochiTheme.pastelYellow)
-            Text("Aucune tâche pour aujourd'hui")
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(MochiTheme.textLight.opacity(0.5))
+        return HStack(spacing: 10) {
+            // Checkbox
             Button {
-                showAddForm = true
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                    appState.completeTask(task)
+                }
             } label: {
-                Text("Ajouter une tâche")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(MochiTheme.primary)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(MochiTheme.primary, lineWidth: 1)
+                Circle()
+                    .stroke(MochiTheme.textLight.opacity(0.25), lineWidth: 1.5)
+                    .frame(width: 20, height: 20)
+                    .overlay(
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(MochiTheme.primary)
+                            .opacity(isHovered ? 0.5 : 0)
                     )
             }
             .buttonStyle(.plain)
+
+            // Title (tap to edit)
+            Text(task.title)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(MochiTheme.textLight)
+                .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    editingTask = task
+                }
+
+            // In progress toggle
+            Button {
+                appState.toggleInProgress(task)
+            } label: {
+                Image(systemName: task.isInProgress ? "play.circle.fill" : "play.circle")
+                    .font(.system(size: 16))
+                    .foregroundStyle(task.isInProgress ? MochiTheme.secondary : MochiTheme.textLight.opacity(0.25))
+            }
+            .buttonStyle(.plain)
+            .help("En cours")
+
+            // Tracked toggle (bell)
+            Button {
+                appState.toggleTracked(task)
+            } label: {
+                Image(systemName: task.isTracked ? "bell.fill" : "bell")
+                    .font(.system(size: 14))
+                    .foregroundStyle(task.isTracked ? MochiTheme.primary : MochiTheme.textLight.opacity(0.25))
+            }
+            .buttonStyle(.plain)
+            .help("Suivi (relances notif)")
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(isHovered ? Color.gray.opacity(0.04) : Color.white)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(Color.gray.opacity(0.1), lineWidth: 1)
+                )
+        )
+        .onHover { hovering in
+            hoveredTaskId = hovering ? task.id : nil
+        }
+        .padding(.horizontal, 8)
+    }
+
+    // MARK: - Empty State
+
+    private var emptyState: some View {
+        VStack(spacing: 12) {
+            Image(systemName: selectedFilter == .all ? "sun.max" : "line.3.horizontal.decrease.circle")
+                .font(.system(size: 32))
+                .foregroundStyle(MochiTheme.pastelYellow)
+
+            Text(emptyMessage)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(MochiTheme.textLight.opacity(0.5))
+                .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 40)
     }
 
-    // MARK: - Task Timeline Item
-
-    private func taskTimelineItem(task: MochiTask) -> some View {
-        let isHovered = hoveredTaskId == task.id
-        return HStack(alignment: .top, spacing: 0) {
-            Text(timeString(for: task))
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(MochiTheme.textLight.opacity(0.4))
-                .frame(width: 40, alignment: .trailing)
-                .lineLimit(1)
-                .fixedSize()
-                .padding(.top, 16)
-
-            ZStack {
-                Circle()
-                    .fill(dotColor(for: task.priority))
-                    .frame(width: 12, height: 12)
-                    .overlay(
-                        Circle()
-                            .stroke(.white, lineWidth: 2)
-                    )
-                    .shadow(color: dotColor(for: task.priority).opacity(0.3), radius: 3, y: 1)
-                    .scaleEffect(isHovered ? 1.25 : 1.0)
-                    .animation(.easeInOut(duration: 0.15), value: isHovered)
-            }
-            .frame(width: 14)
-            .padding(.top, 18)
-            .padding(.horizontal, 4)
-            .zIndex(10)
-            .onHover { hovering in
-                hoveredTaskId = hovering ? task.id : nil
-            }
-
-            taskCard(for: task)
-                .padding(.leading, 6)
-                .padding(.trailing, 4)
+    private var emptyMessage: String {
+        switch selectedFilter {
+        case .all: return "Aucune tache en cours\nAjoute-en une ci-dessus !"
+        case .inProgress: return "Aucune tache en cours"
+        case .tracked: return "Aucune tache suivie"
         }
-        .padding(.bottom, 4)
-    }
-
-    private func timeString(for task: MochiTask) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
-        return formatter.string(from: task.createdAt)
-    }
-
-    private func dotColor(for priority: TaskPriority) -> Color {
-        switch priority {
-        case .high: return MochiTheme.priorityHigh
-        case .normal: return MochiTheme.priorityNormal
-        case .low: return MochiTheme.priorityLow
-        }
-    }
-
-    private func taskCard(for task: MochiTask) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text(categoryLabel(for: task.priority))
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(cardTextColor(for: task.priority))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(.white.opacity(0.6))
-                    )
-
-                Spacer()
-
-                Button {
-                    editingTask = task
-                } label: {
-                    Image(systemName: "pencil")
-                        .font(.system(size: 11))
-                        .foregroundStyle(cardTextColor(for: task.priority).opacity(0.6))
-                }
-                .buttonStyle(.plain)
-            }
-
-            Text(task.title)
-                .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(MochiTheme.textLight)
-                .lineLimit(1)
-
-            if let description = task.description, !description.isEmpty {
-                Text(description)
-                    .font(.system(size: 12))
-                    .foregroundStyle(MochiTheme.textLight.opacity(0.5))
-                    .lineLimit(2)
-            }
-
-            HStack(spacing: 4) {
-                Image(systemName: "clock")
-                    .font(.system(size: 10))
-                Text(estimatedDuration(for: task.priority))
-                    .font(.system(size: 11, weight: .medium))
-            }
-            .foregroundStyle(MochiTheme.textLight.opacity(0.4))
-            .padding(.top, 2)
-        }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: MochiTheme.cornerRadius)
-                .fill(cardBackgroundColor(for: task.priority))
-                .overlay(
-                    RoundedRectangle(cornerRadius: MochiTheme.cornerRadius)
-                        .stroke(cardBorderColor(for: task.priority), lineWidth: 1)
-                )
-        )
-    }
-
-    private func cardBackgroundColor(for priority: TaskPriority) -> Color {
-        switch priority {
-        case .high: return MochiTheme.pastelBlue.opacity(0.2)
-        case .normal: return MochiTheme.pastelGreen.opacity(0.2)
-        case .low: return MochiTheme.pastelYellow.opacity(0.2)
-        }
-    }
-
-    private func cardBorderColor(for priority: TaskPriority) -> Color {
-        switch priority {
-        case .high: return MochiTheme.pastelBlue.opacity(0.3)
-        case .normal: return MochiTheme.pastelGreen.opacity(0.3)
-        case .low: return MochiTheme.pastelYellow.opacity(0.3)
-        }
-    }
-
-    private func cardTextColor(for priority: TaskPriority) -> Color {
-        switch priority {
-        case .high: return Color(hex: "2563EB")
-        case .normal: return Color(hex: "15803D")
-        case .low: return Color(hex: "EA580C")
-        }
-    }
-
-    private func categoryLabel(for priority: TaskPriority) -> String {
-        switch priority {
-        case .high: return "Urgent"
-        case .normal: return "A faire"
-        case .low: return "Plus tard"
-        }
-    }
-
-    private func estimatedDuration(for priority: TaskPriority) -> String {
-        switch priority {
-        case .high: return "1h 30m"
-        case .normal: return "45m"
-        case .low: return "15m"
-        }
-    }
-
-    // MARK: - Add Slot
-
-    private var addSlotButton: some View {
-        let isHovered = hoveredAddIndex == 0
-
-        return HStack(alignment: .center, spacing: 0) {
-            Color.clear
-                .frame(width: 40)
-
-            ZStack {
-                Circle()
-                    .fill(Color.gray.opacity(0.3))
-                    .frame(width: 12, height: 12)
-                    .overlay(Circle().stroke(.white, lineWidth: 2))
-            }
-            .frame(width: 14)
-            .padding(.horizontal, 4)
-            .zIndex(10)
-
-            Button {
-                showAddForm = true
-            } label: {
-                HStack {
-                    Spacer()
-                    Image(systemName: "plus")
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(
-                            isHovered ? MochiTheme.primary : MochiTheme.textLight.opacity(0.3)
-                        )
-                    Spacer()
-                }
-                .frame(height: 40)
-                .background(
-                    RoundedRectangle(cornerRadius: MochiTheme.cornerRadius)
-                        .stroke(
-                            isHovered ? MochiTheme.primary : Color.gray.opacity(0.3),
-                            style: StrokeStyle(lineWidth: 2, dash: [6, 4])
-                        )
-                        .background(
-                            RoundedRectangle(cornerRadius: MochiTheme.cornerRadius)
-                                .fill(isHovered ? MochiTheme.primary.opacity(0.05) : .clear)
-                        )
-                )
-            }
-            .buttonStyle(.plain)
-            .onHover { hovering in
-                hoveredAddIndex = hovering ? 0 : nil
-            }
-            .padding(.leading, 6)
-            .padding(.trailing, 4)
-        }
-        .padding(.vertical, 4)
-        .animation(.easeInOut(duration: 0.15), value: isHovered)
     }
 }
 
@@ -377,7 +328,7 @@ struct TaskFormSheet: View {
 
     private var sheetHeader: some View {
         HStack {
-            Text(isEditing ? "Modifier la tâche" : "Nouvelle tâche")
+            Text(isEditing ? "Modifier la tache" : "Nouvelle tache")
                 .font(.system(size: 15, weight: .bold))
                 .foregroundStyle(MochiTheme.textLight)
             Spacer()
@@ -424,7 +375,7 @@ struct TaskFormSheet: View {
                     Text("Description (optionnel)")
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(MochiTheme.textLight.opacity(0.5))
-                    TextField("", text: $description, prompt: Text("Ajouter des détails...").foregroundColor(MochiTheme.textPlaceholder), axis: .vertical)
+                    TextField("", text: $description, prompt: Text("Ajouter des details...").foregroundColor(MochiTheme.textPlaceholder), axis: .vertical)
                         .font(.system(size: 13))
                         .foregroundStyle(MochiTheme.textLight)
                         .lineLimit(2...4)
@@ -442,7 +393,7 @@ struct TaskFormSheet: View {
 
                 // Priority
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Priorité")
+                    Text("Priorite")
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(MochiTheme.textLight.opacity(0.5))
                     HStack(spacing: 8) {
@@ -513,7 +464,6 @@ struct TaskFormSheet: View {
             if isEditing {
                 Button {
                     if let task = editingTask {
-                        // Need to find AppState to delete - use onSave with empty title as signal
                         var deleted = task
                         deleted.title = ""
                         onSave(deleted)

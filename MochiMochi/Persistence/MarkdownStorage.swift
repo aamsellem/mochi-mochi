@@ -274,6 +274,7 @@ final class MarkdownStorage {
             var priority: TaskPriority = .normal
             var deadline: Date?
             var isInProgress = false
+            var isTracked = false
             var isCompleted = false
             var completedAt: Date?
             var createdAt = Date()
@@ -299,6 +300,8 @@ final class MarkdownStorage {
                     deadline = isoFormatter.date(from: value)
                 case "en_cours":
                     isInProgress = value == "true"
+                case "suivi":
+                    isTracked = value == "true"
                 case "complete":
                     isCompleted = value == "true"
                 case "complete_le":
@@ -327,6 +330,7 @@ final class MarkdownStorage {
                 priority: priority,
                 deadline: deadline,
                 isInProgress: isInProgress,
+                isTracked: isTracked,
                 isCompleted: isCompleted,
                 completedAt: completedAt,
                 createdAt: createdAt,
@@ -352,6 +356,7 @@ final class MarkdownStorage {
                 lines.append("- deadline: \(isoFormatter.string(from: deadline))")
             }
             lines.append("- en_cours: \(task.isInProgress)")
+            lines.append("- suivi: \(task.isTracked)")
             lines.append("- complete: \(task.isCompleted)")
             if let completedAt = task.completedAt {
                 lines.append("- complete_le: \(isoFormatter.string(from: completedAt))")

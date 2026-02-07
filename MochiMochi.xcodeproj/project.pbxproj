@@ -27,6 +27,7 @@
 		6C7CA7589D6F4CABA02B2BC6 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3667DD83AC857A1F64951CE2 /* SettingsView.swift */; };
 		79A8D4E173ECB6AD647E664D /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0AE19BBFB98F4ACCF1F4C59 /* KeychainHelper.swift */; };
 		7D1CA2FF881A0151F36F780E /* ClaudeCodeContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C2ED744C9199CA5D7C9ABBD /* ClaudeCodeContext.swift */; };
+		7D4D16F4FBDCE4D866FEDCB7 /* NotesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEF8ACFF88B913D0AC1CC094 /* NotesView.swift */; };
 		8476F243C292553F0135E7DD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA3BF3A71202B599340A0885 /* Assets.xcassets */; };
 		94E94B174A943864BB3B28C5 /* TaskRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2B3068D7F50BA3BACED8AC7 /* TaskRowView.swift */; };
 		9584934852E53BE8C46D2727 /* MochiView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B555B86C8B5673A52128050D /* MochiView.swift */; };
@@ -98,9 +99,18 @@
 		F0E87403BED2AEC9D14C6F06 /* MiniPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniPanelView.swift; sourceTree = "<group>"; };
 		F18AFE577A4E2CE012100CA9 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
 		F243FB1AF9B7EF8D5540198B /* SpeechService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechService.swift; sourceTree = "<group>"; };
+		FEF8ACFF88B913D0AC1CC094 /* NotesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
+		13DC1063F808922A42822E7E /* Notes */ = {
+			isa = PBXGroup;
+			children = (
+				FEF8ACFF88B913D0AC1CC094 /* NotesView.swift */,
+			);
+			path = Notes;
+			sourceTree = "<group>";
+		};
 		1E5E6AAFC19E732267627388 /* MenuBar */ = {
 			isa = PBXGroup;
 			children = (
@@ -156,6 +166,7 @@
 				1E5E6AAFC19E732267627388 /* MenuBar */,
 				C59576F9928F1720312BD3CF /* Mochi */,
 				20112C1AE27FCB478F19D482 /* Navigation */,
+				13DC1063F808922A42822E7E /* Notes */,
 				932A9EA76E61B21574418291 /* Onboarding */,
 				8F113AE9C2F1E6C273D28B6D /* Settings */,
 				45935B6DF3408C9BC8EACD9E /* Shop */,
@@ -399,6 +410,7 @@
 				E2349302083D99EE281B7A42 /* MochiTask.swift in Sources */,
 				9584934852E53BE8C46D2727 /* MochiView.swift in Sources */,
 				5FD499057FA66320CCE603DF /* NavigationBarView.swift in Sources */,
+				7D4D16F4FBDCE4D866FEDCB7 /* NotesView.swift in Sources */,
 				34836866FD96A405E588CC2E /* NotificationService.swift in Sources */,
 				6359FA6AD9318280D445DBAC /* NotionSyncService.swift in Sources */,
 				A12139DDB8263150E1866E82 /* OnboardingView.swift in Sources */,

@@ -661,6 +661,14 @@ L'intégration Notion utilise l'API REST officielle Notion avec authentification
 - Pièces jointes affichées en chips dans les bulles de messages
 - Stockage local des attachments dans ~/.mochi-mochi/attachments/
 
+### Phase 2.7 — Notes & suivi (v0.2.7) ✅
+- Onglet Notes : prise de notes rapide avec éditeur split (liste + contenu)
+- Extraction de tâches via Claude Code : analyse d'une note et extraction automatique des tâches actionnables avec priorisation
+- Panneau Mochi rétractable : toggle animé pour masquer/afficher le compagnon sur le dashboard (réaction émotionnelle à l'ouverture/fermeture)
+- Suivi de tâches (tracked) : propriété `isTracked` sur `MochiTask` avec relances répétées par notification (fréquences zen/normal/intense)
+- Refonte de TodaysFocusView : simplification et réorganisation de la sidebar gauche
+- Persistance des notes en JSON dans `~/.mochi-mochi/content/notes/quick-notes.json`
+
 ### Phase 3 — Intégrations (v0.3)
 - Synchronisation bidirectionnelle Notion
 - Raccourcis clavier globaux

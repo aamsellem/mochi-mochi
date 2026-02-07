@@ -39,6 +39,7 @@ Mochi Mochi reprend le concept d'ULY et l'enveloppe dans une **application macOS
 - 📋 **Gestion de tâches** — Suivi intelligent avec relances personnalisées
 - 📎 **Upload de documents** — Joignez des fichiers (PDF, code, texte) au chat
 - 🎤 **Dictée vocale** — Parlez au lieu de taper grâce à la reconnaissance vocale
+- 📝 **Notes rapides** — Prise de notes avec extraction automatique de tâches via IA
 - 🔗 **Sync Notion** — Bidirectionnelle, vos tâches partout
 - 🖥️ **Menubar** — Accès rapide sans quitter votre travail
 - 🏠 **100% local** — Vos données restent chez vous
@@ -281,7 +282,8 @@ MochiMochi/
 ├── Views/                  # Vues SwiftUI
 │   ├── Chat/              # Interface de chat
 │   ├── Dashboard/         # Tableau de bord
-│   ├── Mochi/             # Compagnon animé
+│   ├── Mochi/             # Compagnon animé (panneau rétractable)
+│   ├── Notes/             # Notes rapides + extraction de tâches IA
 │   ├── MenuBar/           # Mini-panel menubar
 │   ├── Onboarding/        # Assistant de configuration
 │   ├── Shop/              # Boutique cosmétique
@@ -298,6 +300,7 @@ MochiMochi/
 - [x] **Phase 1 — MVP (v0.1)** : Chat + Claude Code + mémoire Markdown + Mochi statique
 - [x] **Phase 2 — Gamification (v0.2)** : XP, niveaux, 🍙, boutique, animations, dashboard, 11 couleurs, clignement des yeux, messages idle
 - [x] **Phase 2.5 — Chat enrichi (v0.2.5)** : Upload de documents (PDF, texte, code), dictée vocale (fr_FR), pièces jointes dans les messages
+- [x] **Phase 2.7 — Notes & suivi (v0.2.7)** : Onglet Notes avec extraction de tâches IA, panneau Mochi rétractable, suivi de tâches (tracked) avec relances répétées, refonte TodaysFocus
 - [ ] **Phase 3 — Intégrations (v0.3)** : Sync Notion, raccourcis globaux, mode focus
 - [ ] **Phase 4 — Polish (v1.0)** : Onboarding complet, toutes les personnalités, distribution DMG
 
