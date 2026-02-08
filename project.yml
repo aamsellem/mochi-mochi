@@ -18,6 +18,11 @@ targets:
     platform: macOS
     sources:
       - path: MochiMochi
+        excludes:
+          - "Resources/Skills/**"
+      - path: MochiMochi/Resources/Skills
+        type: folder
+        buildPhase: resources
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.aamsellem.mochi-mochi

@@ -315,7 +315,7 @@ struct TaskFormSheet: View {
             Divider().opacity(0.3)
             sheetFooter
         }
-        .frame(width: 420, height: 530)
+        .frame(width: 420, height: 590)
         .background(Color.white)
         .onAppear {
             if let task = editingTask {
@@ -374,8 +374,8 @@ struct TaskFormSheet: View {
                 Text("Description (optionnel)")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(MochiTheme.textLight.opacity(0.5))
-                MochiTextField("Ajouter des details...", text: $description, fontSize: 13)
-                    .frame(height: 20)
+                MochiTextField("Ajouter des details...", text: $description, fontSize: 13, multiline: true)
+                    .frame(minHeight: 60, maxHeight: 100)
                     .padding(10)
                     .background(
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
@@ -610,17 +610,19 @@ struct MochiTextField: NSViewRepresentable {
     @Binding var text: String
     var placeholder: String
     var fontSize: CGFloat
+    var multiline: Bool
 
-    init(_ placeholder: String = "", text: Binding<String>, fontSize: CGFloat = 14) {
+    init(_ placeholder: String = "", text: Binding<String>, fontSize: CGFloat = 14, multiline: Bool = false) {
         self.placeholder = placeholder
         self._text = text
         self.fontSize = fontSize
+        self.multiline = multiline
     }
 
     func makeNSView(context: Context) -> NSView {
         let container = NSView()
 
-        let textView = MochiNSTextView()
+        let textView: NSTextView = multiline ? NSTextView() : MochiNSTextView()
         textView.string = text
         textView.font = .systemFont(ofSize: fontSize)
         textView.textColor = NSColor(MochiTheme.textLight)
@@ -628,11 +630,11 @@ struct MochiTextField: NSViewRepresentable {
         textView.isRichText = false
         textView.isEditable = true
         textView.isSelectable = true
-        textView.isVerticallyResizable = false
+        textView.isVerticallyResizable = multiline
         textView.isHorizontallyResizable = false
         textView.textContainer?.widthTracksTextView = true
         textView.textContainer?.lineFragmentPadding = 0
-        textView.textContainerInset = .zero
+        textView.textContainerInset = multiline ? NSSize(width: 0, height: 2) : .zero
         textView.isAutomaticQuoteSubstitutionEnabled = false
         textView.isAutomaticDashSubstitutionEnabled = false
         textView.selectedTextAttributes = [
@@ -653,14 +655,19 @@ struct MochiTextField: NSViewRepresentable {
         container.addSubview(textView)
         container.addSubview(placeholderLabel)
 
-        NSLayoutConstraint.activate([
+        var constraints = [
             textView.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             textView.trailingAnchor.constraint(equalTo: container.trailingAnchor),
             textView.topAnchor.constraint(equalTo: container.topAnchor),
             textView.bottomAnchor.constraint(equalTo: container.bottomAnchor),
             placeholderLabel.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 2),
-            placeholderLabel.centerYAnchor.constraint(equalTo: container.centerYAnchor),
-        ])
+        ]
+        if multiline {
+            constraints.append(placeholderLabel.topAnchor.constraint(equalTo: container.topAnchor, constant: 4))
+        } else {
+            constraints.append(placeholderLabel.centerYAnchor.constraint(equalTo: container.centerYAnchor))
+        }
+        NSLayoutConstraint.activate(constraints)
 
         return container
     }

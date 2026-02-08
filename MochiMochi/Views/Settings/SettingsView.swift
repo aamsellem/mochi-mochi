@@ -7,6 +7,7 @@ struct SettingsView: View {
         ("Général", "gear"),
         ("Personnalité", "face.smiling"),
         ("Notifications", "bell"),
+        ("Réunions", "calendar.badge.clock"),
         ("Notion", "link"),
         ("Raccourcis", "keyboard"),
     ]
@@ -37,8 +38,9 @@ struct SettingsView: View {
                 case 0: GeneralSettingsTab()
                 case 1: PersonalitySettingsTab()
                 case 2: NotificationSettingsTab()
-                case 3: NotionSettingsTab()
-                case 4: ShortcutSettingsTab()
+                case 3: MeetingsSettingsTab()
+                case 4: NotionSettingsTab()
+                case 5: ShortcutSettingsTab()
                 default: GeneralSettingsTab()
                 }
             }
@@ -760,7 +762,6 @@ struct NotionSettingsTab: View {
                     )
                 }
 
-                meetingWatchSection
             }
             .frame(maxWidth: 480)
             .padding(24)
@@ -772,57 +773,152 @@ struct NotionSettingsTab: View {
             }
         }
     }
+}
 
-    // MARK: - Meeting Watch Section
+// MARK: - Meetings Settings
 
-    private var meetingWatchSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            settingsSectionHeader("Veille de reunions")
+struct MeetingsSettingsTab: View {
+    @EnvironmentObject var appState: AppState
 
-            SettingsCard {
-                SettingsRow("Veille active", icon: "calendar.badge.clock", iconColor: MochiTheme.primary) {
-                    Toggle("", isOn: $appState.meetingWatchEnabled)
-                        .toggleStyle(.switch)
-                        .labelsHidden()
-                        .tint(MochiTheme.primary)
-                        .onChange(of: appState.meetingWatchEnabled) {
+    private func menuPicker<T: Hashable>(value: T, options: [(T, String)], onChange: @escaping (T) -> Void) -> some View {
+        Menu {
+            ForEach(options, id: \.0) { option in
+                Button {
+                    onChange(option.0)
+                } label: {
+                    HStack {
+                        Text(option.1)
+                        if value == option.0 {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 5) {
+                Text(options.first(where: { $0.0 == value })?.1 ?? "")
+                    .font(.system(size: 12))
+                    .foregroundStyle(MochiTheme.textLight)
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.system(size: 8, weight: .semibold))
+                    .foregroundStyle(MochiTheme.textLight.opacity(0.3))
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    .fill(MochiTheme.backgroundLight.opacity(0.6))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 7, style: .continuous)
+                            .stroke(Color.gray.opacity(0.18), lineWidth: 1)
+                    )
+            )
+        }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                settingsSectionHeader("Veille automatique")
+
+                SettingsCard {
+                    SettingsRow("Veille active", icon: "calendar.badge.clock", iconColor: MochiTheme.primary) {
+                        Toggle("", isOn: $appState.meetingWatchEnabled)
+                            .toggleStyle(.switch)
+                            .labelsHidden()
+                            .tint(MochiTheme.primary)
+                            .onChange(of: appState.meetingWatchEnabled) {
+                                if appState.meetingWatchEnabled {
+                                    appState.startMeetingWatch()
+                                } else {
+                                    appState.stopMeetingWatch()
+                                }
+                                appState.saveConfig()
+                            }
+                    }
+
+                    SettingsRow("Frequence", icon: "clock.fill", iconColor: .blue) {
+                        menuPicker(
+                            value: appState.meetingCheckInterval,
+                            options: [
+                                (15, "Toutes les 15 min"),
+                                (30, "Toutes les 30 min"),
+                                (60, "Toutes les heures"),
+                                (120, "Toutes les 2 heures"),
+                            ]
+                        ) { newValue in
+                            appState.meetingCheckInterval = newValue
                             if appState.meetingWatchEnabled {
                                 appState.startMeetingWatch()
-                            } else {
-                                appState.stopMeetingWatch()
                             }
                             appState.saveConfig()
                         }
+                    }
+                    .opacity(appState.meetingWatchEnabled ? 1 : 0.4)
+                    .disabled(!appState.meetingWatchEnabled)
+
+                    SettingsRow("Horizon", icon: "calendar.badge.plus", iconColor: .purple, showDivider: false) {
+                        menuPicker(
+                            value: appState.meetingLookbackDays,
+                            options: [
+                                (3, "3 jours"),
+                                (7, "7 jours"),
+                                (14, "14 jours"),
+                                (30, "1 mois"),
+                            ]
+                        ) { newValue in
+                            appState.meetingLookbackDays = newValue
+                            appState.saveConfig()
+                        }
+                    }
+                    .opacity(appState.meetingWatchEnabled ? 1 : 0.4)
+                    .disabled(!appState.meetingWatchEnabled)
                 }
 
-                SettingsRow("Historique", icon: "calendar.badge.minus", iconColor: .purple) {
-                    Menu {
-                        ForEach([3, 7, 14, 30], id: \.self) { days in
-                            Button {
-                                appState.meetingLookbackDays = days
-                                appState.saveConfig()
-                            } label: {
-                                HStack {
-                                    Text(days < 30 ? "\(days) jours" : "1 mois")
-                                    if appState.meetingLookbackDays == days {
-                                        Image(systemName: "checkmark")
-                                    }
-                                }
-                            }
-                        }
-                    } label: {
-                        HStack(spacing: 5) {
-                            Text(appState.meetingLookbackDays < 30
-                                ? "\(appState.meetingLookbackDays) jours"
-                                : "1 mois")
-                                .font(.system(size: 12))
+                Text("La veille cherche vos reunions a venir dans Outlook et les comptes-rendus dans Notion, puis propose des taches.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(MochiTheme.textLight.opacity(0.35))
+                    .padding(.horizontal, 4)
+
+                settingsSectionHeader("Exclusions automatiques")
+
+                SettingsCard {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 10) {
+                            Image(systemName: "eye.slash")
+                                .font(.system(size: 11))
+                                .foregroundStyle(.white)
+                                .frame(width: 22, height: 22)
+                                .background(RoundedRectangle(cornerRadius: 5, style: .continuous).fill(.gray))
+                            Text("Patterns d'exclusion")
+                                .font(.system(size: 13))
                                 .foregroundStyle(MochiTheme.textLight)
-                            Image(systemName: "chevron.up.chevron.down")
-                                .font(.system(size: 8, weight: .semibold))
-                                .foregroundStyle(MochiTheme.textLight.opacity(0.3))
                         }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
+                        .padding(.horizontal, 14)
+                        .padding(.top, 10)
+
+                        Text("Les reunions dont le titre correspond a ces expressions regulieres seront automatiquement ignorees. Un pattern par ligne.")
+                            .font(.system(size: 11))
+                            .foregroundStyle(MochiTheme.textLight.opacity(0.45))
+                            .padding(.horizontal, 14)
+
+                        TextEditor(text: Binding(
+                            get: { appState.meetingIgnorePatterns.joined(separator: "\n") },
+                            set: { newValue in
+                                appState.meetingIgnorePatterns = newValue
+                                    .components(separatedBy: "\n")
+                                    .map { $0.trimmingCharacters(in: .whitespaces) }
+                                    .filter { !$0.isEmpty }
+                                appState.saveConfig()
+                            }
+                        ))
+                        .font(.system(size: 12, design: .monospaced))
+                        .foregroundStyle(MochiTheme.textLight)
+                        .scrollContentBackground(.hidden)
+                        .frame(height: 80)
+                        .padding(8)
                         .background(
                             RoundedRectangle(cornerRadius: 7, style: .continuous)
                                 .fill(MochiTheme.backgroundLight.opacity(0.6))
@@ -831,120 +927,170 @@ struct NotionSettingsTab: View {
                                         .stroke(Color.gray.opacity(0.18), lineWidth: 1)
                                 )
                         )
-                    }
-                    .menuStyle(.borderlessButton)
-                    .fixedSize()
-                }
-                .opacity(appState.meetingWatchEnabled ? 1 : 0.4)
-                .disabled(!appState.meetingWatchEnabled)
+                        .padding(.horizontal, 14)
+                        .padding(.bottom, 10)
 
-                SettingsRow("Intervalle", icon: "clock.fill", iconColor: .blue) {
-                    Menu {
-                        ForEach([15, 30, 60], id: \.self) { minutes in
-                            Button {
-                                appState.meetingCheckInterval = minutes
-                                if appState.meetingWatchEnabled {
-                                    appState.startMeetingWatch()
-                                }
-                                appState.saveConfig()
-                            } label: {
-                                HStack {
-                                    Text(minutes < 60 ? "\(minutes) min" : "1 heure")
-                                    if appState.meetingCheckInterval == minutes {
-                                        Image(systemName: "checkmark")
-                                    }
+                        Text("Exemples : Sport, GYMINNO, Pot de depart.*, 1:1.*Manager")
+                            .font(.system(size: 11))
+                            .foregroundStyle(MochiTheme.textLight.opacity(0.3))
+                            .padding(.horizontal, 14)
+                            .padding(.bottom, 10)
+                    }
+                }
+
+                settingsSectionHeader("Connexion Microsoft 365")
+
+                SettingsCard {
+                    SettingsRow("Outlook", icon: "envelope.fill", iconColor: appState.isOutlookConnected ? .green : .gray, showDivider: true) {
+                        HStack(spacing: 6) {
+                            if appState.isCheckingOutlook {
+                                ProgressView()
+                                    .scaleEffect(0.5)
+                                    .frame(width: 8, height: 8)
+                            } else {
+                                Circle()
+                                    .fill(appState.isOutlookConnected ? Color.green : Color.gray.opacity(0.3))
+                                    .frame(width: 8, height: 8)
+                            }
+                            Text(appState.isCheckingOutlook ? "Verification..." : (appState.isOutlookConnected ? "Connecte" : "Non connecte"))
+                                .font(.system(size: 12))
+                                .foregroundStyle(appState.isOutlookConnected ? .green : MochiTheme.textLight.opacity(0.5))
+                        }
+                    }
+
+                    VStack(spacing: 0) {
+                        Button {
+                            Task { await appState.checkOutlookConnectivity() }
+                        } label: {
+                            HStack {
+                                Image(systemName: "arrow.triangle.2.circlepath")
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(.white)
+                                    .frame(width: 22, height: 22)
+                                    .background(RoundedRectangle(cornerRadius: 5, style: .continuous).fill(MochiTheme.secondary))
+                                Text("Tester la connexion Outlook")
+                                    .font(.system(size: 13))
+                                    .foregroundStyle(MochiTheme.textLight)
+                                Spacer()
+                                if appState.isCheckingOutlook {
+                                    ProgressView()
+                                        .scaleEffect(0.6)
+                                } else {
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 11, weight: .semibold))
+                                        .foregroundStyle(MochiTheme.textLight.opacity(0.25))
                                 }
                             }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 10)
                         }
-                    } label: {
-                        HStack(spacing: 5) {
-                            Text(appState.meetingCheckInterval < 60
-                                ? "\(appState.meetingCheckInterval) min"
-                                : "1 heure")
-                                .font(.system(size: 12))
-                                .foregroundStyle(MochiTheme.textLight)
-                            Image(systemName: "chevron.up.chevron.down")
-                                .font(.system(size: 8, weight: .semibold))
-                                .foregroundStyle(MochiTheme.textLight.opacity(0.3))
-                        }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(
-                            RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                .fill(MochiTheme.backgroundLight.opacity(0.6))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                        .stroke(Color.gray.opacity(0.18), lineWidth: 1)
-                                )
-                        )
+                        .buttonStyle(.plain)
+                        .disabled(appState.isCheckingOutlook)
                     }
-                    .menuStyle(.borderlessButton)
-                    .fixedSize()
                 }
-                .opacity(appState.meetingWatchEnabled ? 1 : 0.4)
-                .disabled(!appState.meetingWatchEnabled)
-            }
 
-            HStack {
-                if appState.isCheckingMeetings {
-                    ProgressView()
-                        .scaleEffect(0.6)
-                        .frame(width: 22, height: 22)
-                } else {
-                    Image(systemName: "arrow.clockwise")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.white)
-                        .frame(width: 22, height: 22)
-                        .background(RoundedRectangle(cornerRadius: 5, style: .continuous).fill(.green))
+                if !appState.isOutlookConnected && !appState.isCheckingOutlook {
+                    HStack(spacing: 10) {
+                        Image(systemName: "info.circle")
+                            .font(.system(size: 14))
+                            .foregroundStyle(.blue)
+                        Text("La connexion Outlook se fait via le MCP Microsoft 365 de Claude Code. Lors du premier appel, Claude Code vous demandera d'autoriser l'acces a votre calendrier.")
+                            .font(.system(size: 11))
+                            .foregroundStyle(MochiTheme.textLight.opacity(0.5))
+                    }
+                    .padding(12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(Color.blue.opacity(0.06))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .stroke(Color.blue.opacity(0.15), lineWidth: 1)
+                            )
+                    )
                 }
-                Text(appState.isCheckingMeetings ? "Verification en cours..." : "Verifier maintenant")
-                    .font(.system(size: 13))
-                    .foregroundStyle(MochiTheme.textLight)
-                Spacer()
-                if !appState.isCheckingMeetings {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(MochiTheme.textLight.opacity(0.25))
-                }
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(Color.white)
-                    .shadow(color: .black.opacity(0.04), radius: 4, y: 1)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .stroke(appState.isCheckingMeetings ? MochiTheme.primary.opacity(0.3) : Color.gray.opacity(0.12), lineWidth: 1)
-            )
-            .contentShape(Rectangle())
-            .onTapGesture {
-                guard !appState.isCheckingMeetings else { return }
-                appState.meetingCheckResult = nil
-                Task { await appState.checkForNewMeetings() }
-            }
 
-            if let result = appState.meetingCheckResult {
-                HStack(spacing: 8) {
-                    Image(systemName: result.hasPrefix("Erreur") ? "exclamationmark.triangle.fill" : (result.hasPrefix("Aucune") ? "checkmark.circle.fill" : "party.popper.fill"))
-                        .font(.system(size: 12))
-                        .foregroundStyle(result.hasPrefix("Erreur") ? .red : (result.hasPrefix("Aucune") ? .green : MochiTheme.primary))
-                    Text(result)
-                        .font(.system(size: 12))
-                        .foregroundStyle(MochiTheme.textLight.opacity(0.6))
-                }
-                .padding(.horizontal, 4)
-                .transition(.opacity.combined(with: .move(edge: .top)))
-            }
+                settingsSectionHeader("Verification manuelle")
 
-            Text("La veille detecte automatiquement les nouvelles reunions dans Notion et propose des taches.")
-                .font(.system(size: 11))
-                .foregroundStyle(MochiTheme.textLight.opacity(0.35))
-                .padding(.horizontal, 4)
+                HStack {
+                    if appState.isCheckingMeetings {
+                        ProgressView()
+                            .scaleEffect(0.6)
+                            .frame(width: 22, height: 22)
+                    } else {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.white)
+                            .frame(width: 22, height: 22)
+                            .background(RoundedRectangle(cornerRadius: 5, style: .continuous).fill(.green))
+                    }
+                    Text(appState.isCheckingMeetings ? "Verification en cours..." : "Verifier maintenant")
+                        .font(.system(size: 13))
+                        .foregroundStyle(MochiTheme.textLight)
+                    Spacer()
+                    if !appState.isCheckingMeetings {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(MochiTheme.textLight.opacity(0.25))
+                    }
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(Color.white)
+                        .shadow(color: .black.opacity(0.04), radius: 4, y: 1)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(appState.isCheckingMeetings ? MochiTheme.primary.opacity(0.3) : Color.gray.opacity(0.12), lineWidth: 1)
+                )
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    guard !appState.isCheckingMeetings else { return }
+                    appState.meetingCheckResult = nil
+                    Task { await appState.checkForNewMeetings() }
+                }
+
+                if let result = appState.meetingCheckResult {
+                    HStack(spacing: 8) {
+                        Image(systemName: result.hasPrefix("Erreur") ? "exclamationmark.triangle.fill" : (result.hasPrefix("Aucune") ? "checkmark.circle.fill" : "party.popper.fill"))
+                            .font(.system(size: 12))
+                            .foregroundStyle(result.hasPrefix("Erreur") ? .red : (result.hasPrefix("Aucune") ? .green : MochiTheme.primary))
+                        Text(result)
+                            .font(.system(size: 12))
+                            .foregroundStyle(MochiTheme.textLight.opacity(0.6))
+                    }
+                    .padding(.horizontal, 4)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+
+                settingsSectionHeader("Statistiques")
+
+                SettingsCard {
+                    SettingsRow("Reunions suivies", icon: "doc.text.fill", iconColor: .orange, showDivider: true) {
+                        Text("\(appState.meetingProposals.count)")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(MochiTheme.textLight)
+                    }
+
+                    SettingsRow("A traiter", icon: "tray.full.fill", iconColor: MochiTheme.primary, showDivider: true) {
+                        Text("\(appState.meetingProposals.filter { $0.status == .prepared }.count)")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(MochiTheme.primary)
+                    }
+
+                    SettingsRow("Traitees", icon: "checkmark.circle.fill", iconColor: .green, showDivider: false) {
+                        Text("\(appState.meetingProposals.filter { $0.status == .reviewed }.count)")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(.green)
+                    }
+                }
+            }
+            .frame(maxWidth: 480)
+            .padding(24)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
-
 }
 
 // MARK: - Shortcut Settings

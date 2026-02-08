@@ -44,7 +44,7 @@ Mochi Mochi reprend le concept d'ULY et l'enveloppe dans une **application macOS
 - 📎 **Upload de documents** — Joignez des fichiers (PDF, code, texte) au chat
 - 🎤 **Dictée vocale** — Parlez au lieu de taper grâce à la reconnaissance vocale
 - 📝 **Notes rapides** — Prise de notes avec extraction automatique de tâches via IA
-- 📅 **Veille de réunions** — Détection automatique des réunions Notion, suggestions de tâches IA, validation en un clic
+- 📅 **Veille de réunions** — Détection Outlook + Notion, préparation automatique via IA, vue Kanban, exclusions configurables
 - 🔗 **Sync Notion** — Bidirectionnelle, vos tâches partout
 - 🖥️ **Menubar** — Accès rapide sans quitter votre travail
 - 🏠 **Données locales** — Vos données sont stockées localement en Markdown (les messages transitent par Claude Code via votre abonnement Anthropic)
@@ -197,16 +197,17 @@ Tous les raccourcis globaux sont configurables.
 
 ## 📅 Veille de réunions
 
-Mochi Mochi scanne automatiquement vos réunions Notion et vous propose des tâches concrètes à réaliser :
+Mochi Mochi scanne automatiquement vos réunions Outlook et Notion, les prépare et vous propose des tâches concrètes :
 
-- **Détection intelligente** — Les réunions de votre workspace Notion sont détectées automatiquement (intervalle configurable : 15min, 30min, 1h)
-- **Suggestions IA** — Claude Code analyse chaque réunion et propose des tâches actionnables avec priorité
-- **Validation en un clic** — Acceptez, rejetez ou ignorez les suggestions depuis l'onglet Réunions
-- **Notifications proactives** — Soyez alerté dès qu'une nouvelle réunion est détectée
-- **Historique configurable** — Choisissez jusqu'où remonter (3, 7, 14 ou 30 jours)
-- **Recherche et tri** — Filtrez par titre de réunion ou nom de tâche, triées par date
+- **Double source** — Outlook (calendrier via MCP Microsoft 365) + Notion (comptes-rendus via MCP Notion)
+- **Préparation automatique** — Chaque réunion Outlook découverte est automatiquement préparée par Claude Code (recherche de contexte Notion, création de pages Préparation et Réunion, suggestions de tâches)
+- **Vue Kanban** — Board horizontal avec colonnes : En préparation, Préparées, Notes à traiter, Traitées, Ignorées (colonnes masquées si vides)
+- **Exclusions configurables** — Patterns regexp dans Réglages > Réunions pour ignorer automatiquement certaines réunions (ex: Sport, GYMINNO). Bouton "Ignorer" avec choix : ignorer cette réunion ou exclure les futures similaires
+- **Validation en un clic** — Acceptez, rejetez ou ignorez les suggestions depuis le détail de chaque réunion
+- **Notifications proactives** — Soyez alerté dès qu'une nouvelle réunion est détectée ou préparée
+- **Recherche et filtres** — Filtrez par source (Outlook/Notion), recherchez par titre ou tâche
 
-Activable dès l'onboarding ou dans Réglages > Notion.
+Activable dès l'onboarding ou dans Réglages > Réunions.
 
 ---
 
@@ -319,7 +320,8 @@ MochiMochi/
 - [x] **Phase 2.8 — Polish UX (v0.2.8)** : Auto-greeting au lancement, date picker graphique pour les tâches, étape notifications dans l'onboarding, sélection de texte rose personnalisée, nettoyage interface chat
 - [x] **Phase 2.9 — Profil libre (v0.2.9)** : Champ activité/métier en texte libre (onboarding + réglages), sélection rose dans les réglages via MochiTextField
 - [x] **Phase 3.0 — Boutique & Réunions (v0.3.0)** : Refonte boutique avec inventaire intégré, veille de réunions Notion (détection automatique, suggestions IA, validation, recherche/tri), onboarding 9 étapes avec activation veille
-- [ ] **Phase 3.1 — Intégrations (v0.3.1)** : Sync Notion bidirectionnelle, raccourcis globaux, mode focus
+- [x] **Phase 4.0 — Réunions proactives (v0.4.0)** : Préparation automatique des réunions Outlook, vue Kanban horizontale (5 colonnes), patterns d'exclusion regexp, statut "ignoré", dialogue ignorer/exclure
+- [ ] **Phase 4.1 — Intégrations (v0.4.1)** : Sync Notion bidirectionnelle, raccourcis globaux, mode focus
 - [ ] **Phase 4 — Polish (v1.0)** : Onboarding complet, toutes les personnalités, distribution DMG
 
 ---

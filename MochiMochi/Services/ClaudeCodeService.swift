@@ -66,13 +66,13 @@ final class ClaudeCodeService: @unchecked Sendable {
     }
 
     /// Quick one-shot generation (no session, no interference with chat)
-    func generateQuick(prompt: String, workingDirectory: URL? = nil) async throws -> String {
+    func generateQuick(prompt: String, workingDirectory: URL? = nil, timeout: TimeInterval? = nil) async throws -> String {
         guard isClaudeCodeInstalled() else {
             throw ClaudeCodeError.notInstalled
         }
         let args = ["-p", prompt, "--output-format", "json"]
         let dir = workingDirectory ?? URL(fileURLWithPath: NSHomeDirectory())
-        let rawOutput = try await executeClaudeCode(arguments: args, workingDirectory: dir)
+        let rawOutput = try await executeClaudeCode(arguments: args, workingDirectory: dir, timeout: timeout)
         guard let data = rawOutput.data(using: .utf8) else {
             throw ClaudeCodeError.invalidResponse
         }
@@ -129,7 +129,7 @@ final class ClaudeCodeService: @unchecked Sendable {
         return env
     }
 
-    private func executeClaudeCode(arguments: [String], workingDirectory: URL) async throws -> String {
+    private func executeClaudeCode(arguments: [String], workingDirectory: URL, timeout: TimeInterval? = nil) async throws -> String {
         guard let executablePath = claudeCodePath() else {
             throw ClaudeCodeError.notInstalled
         }
@@ -165,7 +165,7 @@ final class ClaudeCodeService: @unchecked Sendable {
                 safeResume(with: .failure(ClaudeCodeError.timeout))
             }
             DispatchQueue.global().asyncAfter(
-                deadline: .now() + timeoutSeconds,
+                deadline: .now() + (timeout ?? timeoutSeconds),
                 execute: timeoutWork
             )
 

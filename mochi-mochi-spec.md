@@ -693,12 +693,20 @@ L'intégration Notion utilise l'API REST officielle Notion avec authentification
 - Persistence des propositions dans `state/meetings.md`
 - Connexion Notion via MCP (Claude Code) au lieu de token API direct
 
-### Phase 3.1 — Intégrations (v0.3.1)
+### Phase 4.0 — Réunions proactives (v0.4.0) ✅
+- Préparation automatique : les réunions Outlook découvertes sont automatiquement préparées par Claude Code (plus besoin de cliquer "Préparer")
+- Vue Kanban : l'onglet Réunions passe d'une liste verticale à un board horizontal avec 5 colonnes (En préparation, Préparées, Notes à traiter, Traitées, Ignorées), colonnes masquées si vides
+- Patterns d'exclusion : section "Exclusions automatiques" dans Réglages > Réunions avec saisie de regexp (un par ligne), les réunions matchant sont auto-ignorées à la découverte
+- Statut `ignored` : nouveau `MeetingPrepStatus.ignored` avec persistence markdown
+- Bouton "Ignorer" : dialogue de confirmation proposant d'ignorer cette réunion uniquement ou d'exclure les futures similaires (ajout du titre échappé dans les patterns)
+- Bouton "Ignorer" ajouté sur les cartes préparées Outlook et dans le détail des réunions
+
+### Phase 4.1 — Intégrations (v0.4.1)
 - Synchronisation bidirectionnelle Notion
 - Raccourcis clavier globaux
 - Mode focus
 
-### Phase 4 — Polish (v1.0)
+### Phase 5 — Polish (v1.0)
 - Onboarding complet
 - Toutes les personnalités
 - Distribution GitHub (DMG)

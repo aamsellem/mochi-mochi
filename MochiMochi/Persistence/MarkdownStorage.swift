@@ -19,6 +19,7 @@ struct AppConfig {
     var meetingWatchEnabled: Bool
     var meetingCheckInterval: Int // minutes
     var meetingLookbackDays: Int // how far back to search
+    var meetingIgnorePatterns: [String] // regexp patterns to auto-ignore meetings
 
     init(
         mochiName: String = "Mochi",
@@ -36,7 +37,8 @@ struct AppConfig {
         daysOff: [Int] = [],
         meetingWatchEnabled: Bool = false,
         meetingCheckInterval: Int = 30,
-        meetingLookbackDays: Int = 7
+        meetingLookbackDays: Int = 7,
+        meetingIgnorePatterns: [String] = []
     ) {
         self.mochiName = mochiName
         self.personality = personality
@@ -54,6 +56,7 @@ struct AppConfig {
         self.meetingWatchEnabled = meetingWatchEnabled
         self.meetingCheckInterval = meetingCheckInterval
         self.meetingLookbackDays = meetingLookbackDays
+        self.meetingIgnorePatterns = meetingIgnorePatterns
     }
 }
 
@@ -143,6 +146,68 @@ final class MarkdownStorage {
                 try content.write(to: fileURL, atomically: true, encoding: .utf8)
             }
         }
+
+        // Ensure Claude settings include Microsoft 365 permissions
+        ensureMcpPermissions()
+
+        // Install bundled Claude Code skills
+        installBundledSkills()
+    }
+
+    private func ensureMcpPermissions() {
+        let settingsPath = baseDirectory.appendingPathComponent(".claude/settings.local.json")
+        guard fileManager.fileExists(atPath: settingsPath.path),
+              let data = try? Data(contentsOf: settingsPath),
+              var json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              var permissions = json["permissions"] as? [String: Any],
+              var allow = permissions["allow"] as? [String] else { return }
+
+        let requiredPermissions = [
+            "mcp__claude_ai_Microsoft_365__outlook_calendar_search",
+            "mcp__claude_ai_Microsoft_365__outlook_email_search",
+            "mcp__claude_ai_Microsoft_365__chat_message_search",
+            "mcp__claude_ai_Microsoft_365__find_meeting_availability",
+            "mcp__claude_ai_Microsoft_365__sharepoint_search",
+            "mcp__claude_ai_Microsoft_365__sharepoint_folder_search",
+            "mcp__claude_ai_Microsoft_365__read_resource",
+        ]
+
+        let existingSet = Set(allow)
+        let missing = requiredPermissions.filter { !existingSet.contains($0) }
+        guard !missing.isEmpty else { return }
+
+        allow.append(contentsOf: missing)
+        permissions["allow"] = allow
+        json["permissions"] = permissions
+
+        if let updatedData = try? JSONSerialization.data(withJSONObject: json, options: [.prettyPrinted, .sortedKeys]) {
+            try? updatedData.write(to: settingsPath)
+            NSLog("[Mochi] Added %d Microsoft 365 permissions to settings", missing.count)
+        }
+    }
+
+    private func installBundledSkills() {
+        guard let skillsURL = Bundle.main.url(forResource: "Skills", withExtension: nil) else { return }
+
+        let destBase = baseDirectory.appendingPathComponent(".claude/commands")
+        try? fileManager.createDirectory(at: destBase, withIntermediateDirectories: true)
+
+        // Recursively copy skill folders from bundle to .claude/commands/
+        guard let enumerator = fileManager.enumerator(at: skillsURL, includingPropertiesForKeys: [.isDirectoryKey]) else { return }
+
+        for case let fileURL as URL in enumerator {
+            let isDir = (try? fileURL.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+            let relativePath = fileURL.path.replacingOccurrences(of: skillsURL.path + "/", with: "")
+            let destURL = destBase.appendingPathComponent(relativePath)
+
+            if isDir {
+                try? fileManager.createDirectory(at: destURL, withIntermediateDirectories: true)
+            } else {
+                // Always overwrite to keep skills up to date with app version
+                try? fileManager.removeItem(at: destURL)
+                try? fileManager.copyItem(at: fileURL, to: destURL)
+            }
+        }
     }
 
     private func defaultClaudeSettingsJSON() -> String {
@@ -161,7 +226,14 @@ final class MarkdownStorage {
               "mcp__claude_ai_Notion__notion-update-page",
               "mcp__claude_ai_Notion__notion-update-data-source",
               "mcp__claude_ai_Notion__notion-move-pages",
-              "mcp__claude_ai_Notion__notion-duplicate-page"
+              "mcp__claude_ai_Notion__notion-duplicate-page",
+              "mcp__claude_ai_Microsoft_365__outlook_calendar_search",
+              "mcp__claude_ai_Microsoft_365__outlook_email_search",
+              "mcp__claude_ai_Microsoft_365__chat_message_search",
+              "mcp__claude_ai_Microsoft_365__find_meeting_availability",
+              "mcp__claude_ai_Microsoft_365__sharepoint_search",
+              "mcp__claude_ai_Microsoft_365__sharepoint_folder_search",
+              "mcp__claude_ai_Microsoft_365__read_resource"
             ]
           }
         }
@@ -264,6 +336,8 @@ final class MarkdownStorage {
                 if let v = Int(value) { config.meetingCheckInterval = v }
             case "historique_reunions":
                 if let v = Int(value) { config.meetingLookbackDays = v }
+            case "exclusions_reunions":
+                config.meetingIgnorePatterns = value.split(separator: "|").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
             default:
                 break
             }
@@ -298,6 +372,9 @@ final class MarkdownStorage {
         lines.append("- veille_reunions: \(config.meetingWatchEnabled)")
         lines.append("- intervalle_reunions: \(config.meetingCheckInterval)")
         lines.append("- historique_reunions: \(config.meetingLookbackDays)")
+        if !config.meetingIgnorePatterns.isEmpty {
+            lines.append("- exclusions_reunions: \(config.meetingIgnorePatterns.joined(separator: "|"))")
+        }
         lines.append("")
         return lines.joined(separator: "\n")
     }
@@ -476,9 +553,16 @@ final class MarkdownStorage {
 
             var id = UUID()
             let meetingTitle = titleLine.trimmingCharacters(in: .whitespaces)
-            var meetingNotionId = ""
+            var sourceId = ""
             var meetingDate: Date?
-            var status: ProposalStatus = .pending
+            var meetingEndDate: Date?
+            var attendees: [String] = []
+            var location: String?
+            var source: MeetingSource = .notion
+            var status: MeetingPrepStatus = .discovered
+            var preReadNotionUrl: String?
+            var agendaNotionUrl: String?
+            var prepSummary: String?
             var checkedAt = Date()
             var suggestedTasks: [SuggestedTask] = []
 
@@ -539,12 +623,33 @@ final class MarkdownStorage {
                         switch key {
                         case "id":
                             if let parsed = UUID(uuidString: value) { id = parsed }
-                        case "notion_id":
-                            meetingNotionId = value
+                        case "source":
+                            if let s = MeetingSource(rawValue: value) { source = s }
+                        case "source_id", "notion_id":
+                            sourceId = value
                         case "date":
                             meetingDate = isoFormatter.date(from: value) ?? dateFormatter.date(from: value)
+                        case "date_fin":
+                            meetingEndDate = isoFormatter.date(from: value)
+                        case "participants":
+                            attendees = value.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
+                        case "lieu":
+                            location = value.isEmpty ? nil : value
                         case "statut":
-                            if let s = ProposalStatus(rawValue: value) { status = s }
+                            // Backward compat: pending → prepared if has tasks, discovered otherwise
+                            // (old "pending" meant tasks were already suggested)
+                            if value == "pending" || value == "discovered" {
+                                // Will be resolved after parsing tasks below
+                                status = .discovered
+                            } else if let s = MeetingPrepStatus(rawValue: value) {
+                                status = s
+                            }
+                        case "preread_url":
+                            preReadNotionUrl = value.isEmpty ? nil : value
+                        case "agenda_url":
+                            agendaNotionUrl = value.isEmpty ? nil : value
+                        case "resume":
+                            prepSummary = value.isEmpty ? nil : value
                         case "verifie_le":
                             if let d = isoFormatter.date(from: value) { checkedAt = d }
                         default:
@@ -557,13 +662,23 @@ final class MarkdownStorage {
                 }
             }
 
+            // Auto-promote discovered → prepared if tasks already exist
+            let finalStatus = (status == .discovered && !suggestedTasks.isEmpty) ? .prepared : status
+
             proposals.append(MeetingProposal(
                 id: id,
-                meetingNotionId: meetingNotionId,
+                source: source,
+                sourceId: sourceId,
                 meetingTitle: meetingTitle,
                 meetingDate: meetingDate,
+                meetingEndDate: meetingEndDate,
+                attendees: attendees,
+                location: location,
                 suggestedTasks: suggestedTasks,
-                status: status,
+                status: finalStatus,
+                preReadNotionUrl: preReadNotionUrl,
+                agendaNotionUrl: agendaNotionUrl,
+                prepSummary: prepSummary,
                 checkedAt: checkedAt
             ))
         }
@@ -577,11 +692,30 @@ final class MarkdownStorage {
         for proposal in proposals {
             lines.append("## \(proposal.meetingTitle)")
             lines.append("- id: \(proposal.id.uuidString)")
-            lines.append("- notion_id: \(proposal.meetingNotionId)")
+            lines.append("- source: \(proposal.source.rawValue)")
+            lines.append("- source_id: \(proposal.sourceId)")
             if let date = proposal.meetingDate {
-                lines.append("- date: \(dateFormatter.string(from: date))")
+                lines.append("- date: \(isoFormatter.string(from: date))")
+            }
+            if let endDate = proposal.meetingEndDate {
+                lines.append("- date_fin: \(isoFormatter.string(from: endDate))")
+            }
+            if !proposal.attendees.isEmpty {
+                lines.append("- participants: \(proposal.attendees.joined(separator: ", "))")
+            }
+            if let location = proposal.location {
+                lines.append("- lieu: \(location)")
             }
             lines.append("- statut: \(proposal.status.rawValue)")
+            if let url = proposal.preReadNotionUrl {
+                lines.append("- preread_url: \(url)")
+            }
+            if let url = proposal.agendaNotionUrl {
+                lines.append("- agenda_url: \(url)")
+            }
+            if let summary = proposal.prepSummary {
+                lines.append("- resume: \(summary)")
+            }
             lines.append("- verifie_le: \(isoFormatter.string(from: proposal.checkedAt))")
 
             for task in proposal.suggestedTasks {

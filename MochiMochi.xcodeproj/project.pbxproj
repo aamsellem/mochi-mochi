@@ -11,6 +11,7 @@
 		1C058A89BC8D53776BE5F5F1 /* MemoryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2508228670C1BC3C8B85CFAC /* MemoryService.swift */; };
 		2129143083C62BA5254FBBAD /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83EF9E4F2B98F4BBBDC7E344 /* AppState.swift */; };
 		243321986D0018E963470888 /* CommandEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B068B9BC6F530BCEF9B0DBD /* CommandEngine.swift */; };
+		2769DA05C191E863FE81FA0B /* Skills in Resources */ = {isa = PBXBuildFile; fileRef = F7E13C5EFE8351B58A234852 /* Skills */; };
 		28CC98CCBAF9144E74879CBD /* MeetingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5B1004079D4F21806D8F2BD /* MeetingsView.swift */; };
 		28F22E07AE269A66A2BAA2D5 /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = 274E2097BADDA02D9C381335 /* Message.swift */; };
 		34836866FD96A405E588CC2E /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4631B739C9C44DF637EB5066 /* NotificationService.swift */; };
@@ -103,6 +104,7 @@
 		F18AFE577A4E2CE012100CA9 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
 		F243FB1AF9B7EF8D5540198B /* SpeechService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechService.swift; sourceTree = "<group>"; };
 		F5B1004079D4F21806D8F2BD /* MeetingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeetingsView.swift; sourceTree = "<group>"; };
+		F7E13C5EFE8351B58A234852 /* Skills */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Skills; path = MochiMochi/Resources/Skills; sourceTree = SOURCE_ROOT; };
 		FEF8ACFF88B913D0AC1CC094 /* NotesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -134,6 +136,7 @@
 		4182FE965574B28C919CF161 = {
 			isa = PBXGroup;
 			children = (
+				F7E13C5EFE8351B58A234852 /* Skills */,
 				A308984EE1B195BDB478E321 /* MochiMochi */,
 				CEC236D4E201E78B096EB5C8 /* MochiMochiTests */,
 				A670E667B4A2F7BD225796FF /* Products */,
@@ -206,6 +209,13 @@
 			path = Dashboard;
 			sourceTree = "<group>";
 		};
+		9155073140F66C7A6AF024D9 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
 		932A9EA76E61B21574418291 /* Onboarding */ = {
 			isa = PBXGroup;
 			children = (
@@ -244,6 +254,7 @@
 				A119EAB84324109E3B656236 /* Engine */,
 				FA5EFB2073DB539FE8FF2DDC /* Models */,
 				B299561EE42C4B0B071DAE92 /* Persistence */,
+				9155073140F66C7A6AF024D9 /* Resources */,
 				5A6C20BE09A19016F6D70739 /* Services */,
 				85AF96469658855BFEB522AD /* Views */,
 			);
@@ -391,6 +402,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				8476F243C292553F0135E7DD /* Assets.xcassets in Resources */,
+				2769DA05C191E863FE81FA0B /* Skills in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

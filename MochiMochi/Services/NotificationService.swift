@@ -215,6 +215,23 @@ final class NotificationService {
         center.add(request)
     }
 
+    func sendMeetingPreparedNotification(meetingTitle: String, taskCount: Int, personality: Personality) {
+        let content = UNMutableNotificationContent()
+        content.title = "\(personality.emoji) Reunion preparee !"
+        let taskLabel = taskCount > 0 ? " — \(taskCount) tache\(taskCount > 1 ? "s" : "") suggeree\(taskCount > 1 ? "s" : "")" : ""
+        content.body = "\"\(meetingTitle)\" est prete\(taskLabel). Pre-read et agenda crees dans Notion."
+        content.sound = .default
+
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+        let request = UNNotificationRequest(
+            identifier: "meeting-prepared-\(Date().timeIntervalSince1970)",
+            content: content,
+            trigger: trigger
+        )
+
+        center.add(request)
+    }
+
     // MARK: - Cancel
 
     func cancelAll() {

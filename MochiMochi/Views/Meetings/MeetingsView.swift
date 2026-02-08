@@ -1,9 +1,19 @@
 import SwiftUI
 
+private enum MeetingFilter: String, CaseIterable {
+    case all = "Tout"
+    case outlook = "Outlook"
+    case notion = "Notion"
+}
+
 struct MeetingsView: View {
     @EnvironmentObject var appState: AppState
     @State private var selectedProposal: MeetingProposal?
     @State private var searchText: String = ""
+    @State private var selectedFilter: MeetingFilter = .all
+    @State private var collapsedSections: Set<String> = ["ignored"]
+    @State private var showIgnored: Bool = false
+    @State private var meetingToIgnore: MeetingProposal?
 
     private var filteredProposals: [MeetingProposal] {
         let sorted = appState.meetingProposals.sorted { a, b in
@@ -11,20 +21,52 @@ struct MeetingsView: View {
             let dateB = b.meetingDate ?? .distantPast
             return dateA > dateB
         }
-        guard !searchText.isEmpty else { return sorted }
+        let bySource: [MeetingProposal]
+        switch selectedFilter {
+        case .all: bySource = sorted
+        case .outlook: bySource = sorted.filter { $0.source == .outlook }
+        case .notion: bySource = sorted.filter { $0.source == .notion }
+        }
+        guard !searchText.isEmpty else { return bySource }
         let query = searchText.lowercased()
-        return sorted.filter { proposal in
+        return bySource.filter { proposal in
             proposal.meetingTitle.lowercased().contains(query)
+            || proposal.attendees.contains { $0.lowercased().contains(query) }
             || proposal.suggestedTasks.contains { $0.title.lowercased().contains(query) }
         }
     }
 
-    private var pendingProposals: [MeetingProposal] {
-        filteredProposals.filter { $0.status == .pending }
+    // MARK: - Counts (unfiltered, for badges)
+
+    private var outlookTotal: Int {
+        appState.meetingProposals.filter { $0.source == .outlook }.count
+    }
+    private var outlookPending: Int {
+        appState.meetingProposals.filter { $0.source == .outlook && $0.status != .reviewed && $0.status != .ignored }.count
+    }
+    private var notionTotal: Int {
+        appState.meetingProposals.filter { $0.source == .notion }.count
+    }
+    private var notionPending: Int {
+        appState.meetingProposals.filter { $0.source == .notion && $0.status != .reviewed && $0.status != .ignored }.count
     }
 
-    private var reviewedProposals: [MeetingProposal] {
+    // MARK: - Filtered lists
+
+    private var preparing: [MeetingProposal] {
+        filteredProposals.filter { $0.status == .preparing }
+    }
+    private var outlookPrepared: [MeetingProposal] {
+        filteredProposals.filter { $0.source == .outlook && $0.status == .prepared }
+    }
+    private var notionToReview: [MeetingProposal] {
+        filteredProposals.filter { $0.source == .notion && $0.status == .prepared }
+    }
+    private var reviewed: [MeetingProposal] {
         filteredProposals.filter { $0.status == .reviewed }
+    }
+    private var ignored: [MeetingProposal] {
+        filteredProposals.filter { $0.status == .ignored }
     }
 
     var body: some View {
@@ -48,6 +90,28 @@ struct MeetingsView: View {
             MeetingProposalDetailView(proposal: proposal)
                 .environmentObject(appState)
         }
+        .confirmationDialog(
+            "Ignorer cette reunion ?",
+            isPresented: Binding(
+                get: { meetingToIgnore != nil },
+                set: { if !$0 { meetingToIgnore = nil } }
+            ),
+            presenting: meetingToIgnore
+        ) { proposal in
+            Button("Ignorer cette reunion uniquement") {
+                appState.ignoreMeeting(proposal.id)
+                meetingToIgnore = nil
+            }
+            Button("Ignorer et exclure les futures similaires") {
+                appState.ignoreMeetingAndExclude(proposal.id)
+                meetingToIgnore = nil
+            }
+            Button("Annuler", role: .cancel) {
+                meetingToIgnore = nil
+            }
+        } message: { proposal in
+            Text("\"\(proposal.meetingTitle)\"")
+        }
     }
 
     // MARK: - Disabled State
@@ -55,37 +119,29 @@ struct MeetingsView: View {
     private var disabledState: some View {
         VStack(spacing: 16) {
             Spacer()
-
             Image(systemName: "calendar.badge.clock")
                 .font(.system(size: 48))
                 .foregroundStyle(MochiTheme.textLight.opacity(0.2))
-
             Text("Veille de reunions")
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(MochiTheme.textLight)
-
-            Text("Activez la veille de reunions dans\nReglages > Notion pour detecter\nautomatiquement vos reunions.")
+            Text("Activez la veille dans Reglages > Reunions\npour detecter vos reunions automatiquement.")
                 .font(.system(size: 13))
                 .foregroundStyle(MochiTheme.textLight.opacity(0.5))
                 .multilineTextAlignment(.center)
-
             Button {
                 appState.selectedSettingsTab = 3
                 appState.selectedTab = .settings
             } label: {
                 HStack(spacing: 6) {
-                    Image(systemName: "gearshape")
-                        .font(.system(size: 12))
-                    Text("Ouvrir les reglages")
-                        .font(.system(size: 13, weight: .medium))
+                    Image(systemName: "gearshape").font(.system(size: 12))
+                    Text("Ouvrir les reglages").font(.system(size: 13, weight: .medium))
                 }
                 .foregroundStyle(.white)
-                .padding(.horizontal, 18)
-                .padding(.vertical, 10)
+                .padding(.horizontal, 18).padding(.vertical, 10)
                 .background(Capsule().fill(MochiTheme.primary))
             }
             .buttonStyle(.plain)
-
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -96,45 +152,32 @@ struct MeetingsView: View {
     private var emptyState: some View {
         VStack(spacing: 16) {
             Spacer()
-
             Image(systemName: "calendar.badge.checkmark")
                 .font(.system(size: 48))
                 .foregroundStyle(MochiTheme.textLight.opacity(0.2))
-
-            Text("Aucune nouvelle reunion")
+            Text("Aucune reunion detectee")
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(MochiTheme.textLight)
-
-            Text("La veille est active. Les nouvelles reunions\ndetectees dans Notion apparaitront ici.")
+            Text("La veille est active. Les reunions\ndetectees via Outlook et Notion\napparaitront ici.")
                 .font(.system(size: 13))
                 .foregroundStyle(MochiTheme.textLight.opacity(0.5))
                 .multilineTextAlignment(.center)
-
             if appState.isCheckingMeetings {
-                ProgressView()
-                    .scaleEffect(0.8)
-                    .padding(.top, 4)
+                ProgressView().scaleEffect(0.8).padding(.top, 4)
             } else {
                 Button {
                     Task { await appState.checkForNewMeetings() }
                 } label: {
                     HStack(spacing: 6) {
-                        Image(systemName: "arrow.clockwise")
-                            .font(.system(size: 12))
-                        Text("Verifier maintenant")
-                            .font(.system(size: 13, weight: .medium))
+                        Image(systemName: "arrow.clockwise").font(.system(size: 12))
+                        Text("Verifier maintenant").font(.system(size: 13, weight: .medium))
                     }
                     .foregroundStyle(MochiTheme.primary)
-                    .padding(.horizontal, 18)
-                    .padding(.vertical, 10)
-                    .background(
-                        Capsule()
-                            .stroke(MochiTheme.primary, lineWidth: 1)
-                    )
+                    .padding(.horizontal, 18).padding(.vertical, 10)
+                    .background(Capsule().stroke(MochiTheme.primary, lineWidth: 1))
                 }
                 .buttonStyle(.plain)
             }
-
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -144,7 +187,7 @@ struct MeetingsView: View {
 
     private var proposalsList: some View {
         VStack(spacing: 0) {
-            // Header + Search
+            // Header
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Text("Reunions")
@@ -152,19 +195,17 @@ struct MeetingsView: View {
                         .foregroundStyle(MochiTheme.textLight)
 
                     if appState.pendingProposalsCount > 0 {
-                        Text("\(appState.pendingProposalsCount) en attente")
-                            .font(.system(size: 12, weight: .medium))
+                        Text("\(appState.pendingProposalsCount)")
+                            .font(.system(size: 11, weight: .bold))
                             .foregroundStyle(.white)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 4)
-                            .background(Capsule().fill(MochiTheme.primary))
+                            .padding(.horizontal, 7).padding(.vertical, 3)
+                            .background(Circle().fill(MochiTheme.primary))
                     }
 
                     Spacer()
 
                     if appState.isCheckingMeetings {
-                        ProgressView()
-                            .scaleEffect(0.7)
+                        ProgressView().scaleEffect(0.7)
                     } else {
                         Button {
                             Task { await appState.checkForNewMeetings() }
@@ -177,21 +218,20 @@ struct MeetingsView: View {
                     }
                 }
 
+                // Filter tabs
+                filterBar
+
                 // Search bar
                 HStack(spacing: 8) {
                     Image(systemName: "magnifyingglass")
                         .font(.system(size: 13))
                         .foregroundStyle(MochiTheme.textLight.opacity(0.35))
-
-                    TextField("Rechercher une reunion ou tache...", text: $searchText)
+                    TextField("Rechercher...", text: $searchText)
                         .textFieldStyle(.plain)
                         .font(.system(size: 13))
                         .foregroundStyle(MochiTheme.textLight)
-
                     if !searchText.isEmpty {
-                        Button {
-                            searchText = ""
-                        } label: {
+                        Button { searchText = "" } label: {
                             Image(systemName: "xmark.circle.fill")
                                 .font(.system(size: 12))
                                 .foregroundStyle(MochiTheme.textLight.opacity(0.3))
@@ -199,8 +239,7 @@ struct MeetingsView: View {
                         .buttonStyle(.plain)
                     }
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
+                .padding(.horizontal, 12).padding(.vertical, 8)
                 .background(
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
                         .fill(MochiTheme.backgroundLight.opacity(0.6))
@@ -210,152 +249,495 @@ struct MeetingsView: View {
                         )
                 )
             }
-            .padding(24)
-            .padding(.bottom, 0)
+            .padding(24).padding(.bottom, 0)
 
-            // List
-            ScrollView {
-                VStack(alignment: .leading, spacing: 10) {
-                    if filteredProposals.isEmpty {
-                        HStack {
-                            Spacer()
-                            VStack(spacing: 8) {
-                                Image(systemName: "magnifyingglass")
-                                    .font(.system(size: 24))
-                                    .foregroundStyle(MochiTheme.textLight.opacity(0.2))
-                                Text("Aucun resultat pour \"\(searchText)\"")
-                                    .font(.system(size: 13))
-                                    .foregroundStyle(MochiTheme.textLight.opacity(0.4))
-                            }
-                            .padding(.vertical, 40)
-                            Spacer()
-                        }
-                    } else {
-                        // Pending proposals
-                        if !pendingProposals.isEmpty {
-                            sectionHeader("En attente", count: pendingProposals.count, color: MochiTheme.primary)
-
-                            ForEach(pendingProposals) { proposal in
-                                proposalCard(proposal, isPending: true)
+            // Content — Kanban board
+            if filteredProposals.isEmpty {
+                ScrollView {
+                    noResults
+                        .padding(.horizontal, 24)
+                        .padding(.top, 8).padding(.bottom, 24)
+                }
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(alignment: .top, spacing: 16) {
+                        // Column 1: En preparation
+                        if !preparing.isEmpty {
+                            kanbanColumn(
+                                title: "En preparation",
+                                icon: "arrow.triangle.2.circlepath",
+                                count: preparing.count,
+                                color: .orange
+                            ) {
+                                ForEach(preparing) { preparingCard($0) }
                             }
                         }
 
-                        // Reviewed proposals
-                        if !reviewedProposals.isEmpty {
-                            sectionHeader("Traitees", count: reviewedProposals.count, color: .green)
-                                .padding(.top, pendingProposals.isEmpty ? 0 : 12)
+                        // Column 2: Preparees (Outlook)
+                        if !outlookPrepared.isEmpty {
+                            kanbanColumn(
+                                title: "Preparees",
+                                icon: "checkmark.seal",
+                                count: outlookPrepared.count,
+                                color: MochiTheme.secondary
+                            ) {
+                                ForEach(outlookPrepared) { outlookPreparedCard($0) }
+                            }
+                        }
 
-                            ForEach(reviewedProposals) { proposal in
-                                proposalCard(proposal, isPending: false)
+                        // Column 3: Notes a traiter (Notion)
+                        if !notionToReview.isEmpty {
+                            kanbanColumn(
+                                title: "Notes a traiter",
+                                icon: "doc.text.magnifyingglass",
+                                count: notionToReview.count,
+                                color: MochiTheme.primary
+                            ) {
+                                ForEach(notionToReview) { notionCard($0) }
+                            }
+                        }
+
+                        // Column 4: Traitees
+                        if !reviewed.isEmpty {
+                            kanbanColumn(
+                                title: "Traitees",
+                                icon: "checkmark.circle",
+                                count: reviewed.count,
+                                color: .green
+                            ) {
+                                ForEach(reviewed) { reviewedCard($0) }
+                            }
+                        }
+
+                        // Column 5: Ignorees (collapsed by default)
+                        if !ignored.isEmpty {
+                            kanbanColumn(
+                                title: "Ignorees",
+                                icon: "eye.slash",
+                                count: ignored.count,
+                                color: .gray,
+                                collapsed: !showIgnored,
+                                onToggle: { showIgnored.toggle() }
+                            ) {
+                                ForEach(ignored) { ignoredCard($0) }
                             }
                         }
                     }
+                    .padding(.horizontal, 24)
+                    .padding(.top, 8).padding(.bottom, 24)
                 }
-                .padding(.horizontal, 24)
-                .padding(.top, 8)
-                .padding(.bottom, 24)
             }
         }
     }
 
-    // MARK: - Section Header
+    // MARK: - Filter Bar
 
-    private func sectionHeader(_ title: String, count: Int, color: Color) -> some View {
-        HStack(spacing: 8) {
-            Text(title.uppercased())
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(MochiTheme.textLight.opacity(0.4))
-                .tracking(0.5)
-
-            Text("\(count)")
-                .font(.system(size: 10, weight: .bold))
-                .foregroundStyle(color)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2)
-                .background(
-                    Capsule().fill(color.opacity(0.1))
-                )
-
-            VStack { Divider() }
+    private var filterBar: some View {
+        HStack(spacing: 6) {
+            filterPill(.all, label: "Tout", count: appState.meetingProposals.count, pendingCount: appState.pendingProposalsCount)
+            filterPill(.outlook, label: "Outlook", count: outlookTotal, pendingCount: outlookPending, icon: "envelope.fill")
+            filterPill(.notion, label: "Notion", count: notionTotal, pendingCount: notionPending, icon: "doc.text.fill")
+            Spacer()
         }
     }
 
-    // MARK: - Proposal Card
-
-    private func proposalCard(_ proposal: MeetingProposal, isPending: Bool) -> some View {
-        Button {
-            selectedProposal = proposal
+    private func filterPill(_ filter: MeetingFilter, label: String, count: Int, pendingCount: Int, icon: String? = nil) -> some View {
+        let isSelected = selectedFilter == filter
+        return Button {
+            withAnimation(.easeInOut(duration: 0.15)) { selectedFilter = filter }
         } label: {
-            HStack(spacing: 14) {
-                // Date column
-                VStack(spacing: 2) {
-                    if let date = proposal.meetingDate {
-                        Text(dayString(date))
-                            .font(.system(size: 18, weight: .bold, design: .rounded))
-                            .foregroundStyle(isPending ? MochiTheme.primary : MochiTheme.textLight.opacity(0.35))
-                        Text(monthString(date))
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundStyle(isPending ? MochiTheme.primary.opacity(0.7) : MochiTheme.textLight.opacity(0.3))
-                            .textCase(.uppercase)
-                    } else {
-                        Image(systemName: "calendar")
-                            .font(.system(size: 16))
-                            .foregroundStyle(isPending ? MochiTheme.primary : MochiTheme.textLight.opacity(0.3))
+            HStack(spacing: 5) {
+                if let icon {
+                    Image(systemName: icon)
+                        .font(.system(size: 10))
+                }
+                Text(label)
+                    .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
+
+                if count > 0 {
+                    Text("\(count)")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(isSelected ? .white : pillColor(filter).opacity(0.7))
+                        .padding(.horizontal, 5).padding(.vertical, 1)
+                        .background(
+                            Capsule().fill(isSelected ? .white.opacity(0.25) : pillColor(filter).opacity(0.1))
+                        )
+                }
+
+                if pendingCount > 0 && !isSelected {
+                    Circle()
+                        .fill(MochiTheme.primary)
+                        .frame(width: 6, height: 6)
+                }
+            }
+            .foregroundStyle(isSelected ? .white : MochiTheme.textLight.opacity(0.6))
+            .padding(.horizontal, 12).padding(.vertical, 7)
+            .background(
+                Capsule().fill(isSelected ? pillColor(filter) : MochiTheme.backgroundLight.opacity(0.8))
+            )
+            .overlay(
+                Capsule().stroke(isSelected ? Color.clear : Color.gray.opacity(0.12), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func pillColor(_ filter: MeetingFilter) -> Color {
+        switch filter {
+        case .all: return MochiTheme.textLight.opacity(0.7)
+        case .outlook: return Color.blue
+        case .notion: return MochiTheme.primary
+        }
+    }
+
+    // MARK: - Kanban Column
+
+    private func kanbanColumn<Content: View>(
+        title: String,
+        icon: String,
+        count: Int,
+        color: Color,
+        collapsed: Bool = false,
+        onToggle: (() -> Void)? = nil,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Column header
+            Button {
+                if let onToggle { withAnimation(.easeInOut(duration: 0.2)) { onToggle() } }
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: icon)
+                        .font(.system(size: 12))
+                        .foregroundStyle(color)
+
+                    Text(title.uppercased())
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(MochiTheme.textLight.opacity(0.5))
+                        .tracking(0.5)
+
+                    Text("\(count)")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(color)
+                        .padding(.horizontal, 6).padding(.vertical, 2)
+                        .background(Capsule().fill(color.opacity(0.1)))
+
+                    if onToggle != nil {
+                        Image(systemName: collapsed ? "chevron.right" : "chevron.down")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(MochiTheme.textLight.opacity(0.3))
                     }
                 }
-                .frame(width: 40, height: 40)
-                .background(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(isPending ? MochiTheme.primary.opacity(0.08) : Color.gray.opacity(0.05))
-                )
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .padding(.bottom, 10)
 
+            if !collapsed {
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: 8) {
+                        content()
+                    }
+                }
+            }
+        }
+        .frame(width: 280)
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(color.opacity(0.03))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(color.opacity(0.1), lineWidth: 1)
+        )
+    }
+
+    // MARK: - No Results
+
+    private var noResults: some View {
+        HStack {
+            Spacer()
+            VStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 24))
+                    .foregroundStyle(MochiTheme.textLight.opacity(0.2))
+                Text("Aucun resultat pour \"\(searchText)\"")
+                    .font(.system(size: 13))
+                    .foregroundStyle(MochiTheme.textLight.opacity(0.4))
+            }
+            .padding(.vertical, 40)
+            Spacer()
+        }
+    }
+
+    // MARK: - Preparing Card (spinner)
+
+    private func preparingCard(_ proposal: MeetingProposal) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 10) {
+                dateColumn(proposal, color: .orange)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(proposal.meetingTitle)
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(isPending ? MochiTheme.textLight : MochiTheme.textLight.opacity(0.5))
-                        .lineLimit(1)
-
-                    HStack(spacing: 8) {
-                        if let date = proposal.meetingDate {
-                            Text(relativeDateString(date))
-                                .font(.system(size: 11))
-                                .foregroundStyle(MochiTheme.textLight.opacity(0.4))
-                        }
-
-                        HStack(spacing: 3) {
-                            Image(systemName: "checklist")
-                                .font(.system(size: 9))
-                            Text("\(proposal.suggestedTasks.count) tache\(proposal.suggestedTasks.count > 1 ? "s" : "")")
-                        }
-                        .font(.system(size: 11))
-                        .foregroundStyle(MochiTheme.textLight.opacity(0.4))
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(MochiTheme.textLight)
+                        .lineLimit(2)
+                    if let date = proposal.meetingDate {
+                        Text(relativeDateString(date))
+                            .font(.system(size: 11))
+                            .foregroundStyle(MochiTheme.textLight.opacity(0.4))
                     }
+                }
+            }
+            HStack(spacing: 6) {
+                ProgressView().scaleEffect(0.6)
+                Text("Preparation en cours...")
+                    .font(.system(size: 11))
+                    .foregroundStyle(MochiTheme.textLight.opacity(0.4))
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color.white))
+        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Color.orange.opacity(0.2), lineWidth: 1))
+        .shadow(color: Color.orange.opacity(0.05), radius: 3, y: 1)
+    }
+
+    // MARK: - Outlook Prepared Card
+
+    private func outlookPreparedCard(_ proposal: MeetingProposal) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Button { selectedProposal = proposal } label: {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 10) {
+                        dateColumn(proposal, color: MochiTheme.secondary)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(proposal.meetingTitle)
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundStyle(MochiTheme.textLight)
+                                .lineLimit(2)
+                            if let date = proposal.meetingDate {
+                                Text(relativeDateString(date))
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(MochiTheme.textLight.opacity(0.4))
+                            }
+                        }
+                    }
+
+                    if let summary = proposal.prepSummary {
+                        Text(summary)
+                            .font(.system(size: 11))
+                            .foregroundStyle(MochiTheme.textLight.opacity(0.5))
+                            .lineLimit(2)
+                    }
+
+                    HStack(spacing: 6) {
+                        if proposal.preReadNotionUrl != nil {
+                            notionBadge("Preparation", icon: "doc.text.fill")
+                        }
+                        if proposal.agendaNotionUrl != nil {
+                            notionBadge("Reunion", icon: "list.bullet.rectangle.fill")
+                        }
+                        if !proposal.suggestedTasks.isEmpty {
+                            taskCountBadge(proposal.suggestedTasks.count)
+                        }
+                    }
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            // Action buttons
+            HStack(spacing: 6) {
+                Button {
+                    meetingToIgnore = proposal
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "eye.slash").font(.system(size: 10))
+                        Text("Ignorer").font(.system(size: 11, weight: .medium))
+                    }
+                    .foregroundStyle(MochiTheme.textLight.opacity(0.5))
+                    .padding(.horizontal, 8).padding(.vertical, 4)
+                    .background(Capsule().stroke(Color.gray.opacity(0.2), lineWidth: 1))
+                }
+                .buttonStyle(.plain)
+
+                if proposal.preReadNotionUrl == nil && proposal.agendaNotionUrl == nil {
+                    Button {
+                        Task { await appState.prepareMeeting(proposal) }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "arrow.clockwise").font(.system(size: 10))
+                            Text("Re-preparer").font(.system(size: 11, weight: .medium))
+                        }
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 8).padding(.vertical, 4)
+                        .background(Capsule().fill(MochiTheme.primary))
+                    }
+                    .buttonStyle(.plain)
                 }
 
                 Spacer()
 
-                if isPending {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(MochiTheme.primary.opacity(0.5))
-                } else {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(MochiTheme.secondary.opacity(0.4))
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color.white))
+        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(MochiTheme.secondary.opacity(0.15), lineWidth: 1))
+        .shadow(color: MochiTheme.secondary.opacity(0.05), radius: 3, y: 1)
+    }
+
+    // MARK: - Notion Card
+
+    private func notionCard(_ proposal: MeetingProposal) -> some View {
+        Button { selectedProposal = proposal } label: {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 10) {
+                    dateColumn(proposal, color: MochiTheme.primary)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(proposal.meetingTitle)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(MochiTheme.textLight)
+                            .lineLimit(2)
+                    }
+                }
+
+                if !proposal.suggestedTasks.isEmpty {
+                    taskCountBadge(proposal.suggestedTasks.count, label: "tache\(proposal.suggestedTasks.count > 1 ? "s" : "") suggeree\(proposal.suggestedTasks.count > 1 ? "s" : "")")
+                }
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color.white))
+            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(MochiTheme.primary.opacity(0.15), lineWidth: 1))
+            .shadow(color: MochiTheme.primary.opacity(0.05), radius: 3, y: 1)
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Reviewed Card
+
+    private func reviewedCard(_ proposal: MeetingProposal) -> some View {
+        Button { selectedProposal = proposal } label: {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 10) {
+                    dateColumn(proposal, color: MochiTheme.textLight.opacity(0.3))
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(proposal.meetingTitle)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(MochiTheme.textLight.opacity(0.5))
+                            .lineLimit(2)
+
+                        Text(proposal.source == .outlook ? "Outlook" : "Notion")
+                            .font(.system(size: 9, weight: .medium))
+                            .foregroundStyle(MochiTheme.textLight.opacity(0.3))
+                            .padding(.horizontal, 5).padding(.vertical, 1)
+                            .background(Capsule().fill(MochiTheme.textLight.opacity(0.06)))
+                    }
+                }
+
+                HStack(spacing: 8) {
+                    let accepted = proposal.suggestedTasks.filter { $0.isAccepted == true }.count
+                    let rejected = proposal.suggestedTasks.filter { $0.isAccepted == false }.count
+
+                    if accepted > 0 {
+                        HStack(spacing: 3) {
+                            Image(systemName: "checkmark").font(.system(size: 9))
+                            Text("\(accepted) acceptee\(accepted > 1 ? "s" : "")")
+                        }
+                        .font(.system(size: 11)).foregroundStyle(.green.opacity(0.6))
+                    }
+                    if rejected > 0 {
+                        HStack(spacing: 3) {
+                            Image(systemName: "xmark").font(.system(size: 9))
+                            Text("\(rejected) rejetee\(rejected > 1 ? "s" : "")")
+                        }
+                        .font(.system(size: 11)).foregroundStyle(.red.opacity(0.4))
+                    }
+
+                    Spacer()
+
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 16))
+                        .font(.system(size: 14))
                         .foregroundStyle(Color.green.opacity(0.5))
                 }
             }
-            .padding(14)
-            .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(isPending ? Color.white : Color.gray.opacity(0.03))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(isPending ? MochiTheme.primary.opacity(0.15) : Color.gray.opacity(0.1), lineWidth: 1)
-            )
-            .shadow(color: isPending ? MochiTheme.primary.opacity(0.05) : .clear, radius: 4, y: 2)
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color.gray.opacity(0.03)))
+            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Color.gray.opacity(0.1), lineWidth: 1))
         }
         .buttonStyle(.plain)
+    }
+
+    // MARK: - Ignored Card
+
+    private func ignoredCard(_ proposal: MeetingProposal) -> some View {
+        HStack(spacing: 10) {
+            dateColumn(proposal, color: .gray)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(proposal.meetingTitle)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(MochiTheme.textLight.opacity(0.4))
+                    .lineLimit(2)
+                if let date = proposal.meetingDate {
+                    Text(relativeDateString(date))
+                        .font(.system(size: 11))
+                        .foregroundStyle(MochiTheme.textLight.opacity(0.25))
+                }
+            }
+            Spacer()
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color.gray.opacity(0.03)))
+        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Color.gray.opacity(0.1), lineWidth: 1))
+    }
+
+    // MARK: - Reusable Badges
+
+    private func notionBadge(_ label: String, icon: String) -> some View {
+        HStack(spacing: 3) {
+            Image(systemName: icon).font(.system(size: 9))
+            Text(label)
+        }
+        .font(.system(size: 10, weight: .medium))
+        .foregroundStyle(MochiTheme.secondary)
+    }
+
+    private func taskCountBadge(_ count: Int, label: String? = nil) -> some View {
+        HStack(spacing: 3) {
+            Image(systemName: "checklist").font(.system(size: 9))
+            Text(label ?? "\(count) tache\(count > 1 ? "s" : "")")
+        }
+        .font(.system(size: 10))
+        .foregroundStyle(MochiTheme.textLight.opacity(0.4))
+    }
+
+    // MARK: - Date Column
+
+    private func dateColumn(_ proposal: MeetingProposal, color: Color) -> some View {
+        VStack(spacing: 2) {
+            if let date = proposal.meetingDate {
+                Text(dayString(date))
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .foregroundStyle(color)
+                Text(monthString(date))
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(color.opacity(0.7))
+                    .textCase(.uppercase)
+            } else {
+                Image(systemName: "calendar")
+                    .font(.system(size: 16))
+                    .foregroundStyle(color)
+            }
+        }
+        .frame(width: 40, height: 40)
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(color.opacity(0.08)))
     }
 
     // MARK: - Date Helpers
@@ -376,11 +758,13 @@ struct MeetingsView: View {
     private func relativeDateString(_ date: Date) -> String {
         let calendar = Calendar.current
         let now = Date()
-        let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: date), to: calendar.startOfDay(for: now)).day ?? 0
+        let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: now), to: calendar.startOfDay(for: date)).day ?? 0
 
         if days == 0 { return "Aujourd'hui" }
-        if days == 1 { return "Hier" }
-        if days < 7 { return "Il y a \(days) jours" }
+        if days == 1 { return "Demain" }
+        if days > 1 && days < 7 { return "Dans \(days) jours" }
+        if days == -1 { return "Hier" }
+        if days < -1 { return "Il y a \(abs(days)) jours" }
 
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "fr_FR")

@@ -3,6 +3,7 @@ import SwiftUI
 struct MeetingProposalDetailView: View {
     @EnvironmentObject var appState: AppState
     @Environment(\.dismiss) private var dismiss
+    @State private var showIgnoreDialog: Bool = false
 
     let proposal: MeetingProposal
 
@@ -17,11 +18,133 @@ struct MeetingProposalDetailView: View {
 
             Divider()
 
-            // Tasks list
+            // Content
             ScrollView {
-                VStack(alignment: .leading, spacing: 10) {
-                    ForEach(currentProposal.suggestedTasks) { task in
-                        suggestedTaskRow(task)
+                VStack(alignment: .leading, spacing: 16) {
+                    // Preparation summary
+                    if let summary = currentProposal.prepSummary {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Resume de la preparation")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(MochiTheme.textLight.opacity(0.5))
+                                .textCase(.uppercase)
+
+                            Text(summary)
+                                .font(.system(size: 13))
+                                .foregroundStyle(MochiTheme.textLight)
+                                .padding(12)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                        .fill(MochiTheme.backgroundLight.opacity(0.5))
+                                )
+                        }
+                    }
+
+                    // Notion links
+                    if currentProposal.preReadNotionUrl != nil || currentProposal.agendaNotionUrl != nil {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Documents Notion")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(MochiTheme.textLight.opacity(0.5))
+                                .textCase(.uppercase)
+
+                            HStack(spacing: 10) {
+                                if let preReadUrl = currentProposal.preReadNotionUrl,
+                                   let url = URL(string: preReadUrl) {
+                                    Link(destination: url) {
+                                        HStack(spacing: 6) {
+                                            Image(systemName: "doc.text.fill")
+                                                .font(.system(size: 12))
+                                            Text("Preparation")
+                                                .font(.system(size: 12, weight: .medium))
+                                        }
+                                        .foregroundStyle(.white)
+                                        .padding(.horizontal, 14)
+                                        .padding(.vertical, 8)
+                                        .background(
+                                            Capsule().fill(MochiTheme.secondary)
+                                        )
+                                    }
+                                }
+
+                                if let agendaUrl = currentProposal.agendaNotionUrl,
+                                   let url = URL(string: agendaUrl) {
+                                    Link(destination: url) {
+                                        HStack(spacing: 6) {
+                                            Image(systemName: "list.bullet.rectangle.fill")
+                                                .font(.system(size: 12))
+                                            Text("Reunion")
+                                                .font(.system(size: 12, weight: .medium))
+                                        }
+                                        .foregroundStyle(.white)
+                                        .padding(.horizontal, 14)
+                                        .padding(.vertical, 8)
+                                        .background(
+                                            Capsule().fill(MochiTheme.secondary.opacity(0.8))
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    } else if currentProposal.source == .outlook && currentProposal.status == .prepared {
+                        // No Notion links — preparation ran but couldn't create docs
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Documents Notion")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(MochiTheme.textLight.opacity(0.5))
+                                .textCase(.uppercase)
+
+                            HStack(spacing: 10) {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .font(.system(size: 13))
+                                    .foregroundStyle(.orange)
+                                Text("Les documents Preparation et Reunion n'ont pas pu etre crees dans Notion (MCP non connecte).")
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(MochiTheme.textLight.opacity(0.6))
+                            }
+                            .padding(12)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    .fill(Color.orange.opacity(0.06))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                            .stroke(Color.orange.opacity(0.15), lineWidth: 1)
+                                    )
+                            )
+
+                            Button {
+                                Task { await appState.prepareMeeting(currentProposal) }
+                                dismiss()
+                            } label: {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "arrow.clockwise")
+                                        .font(.system(size: 11, weight: .bold))
+                                    Text("Re-preparer")
+                                        .font(.system(size: 12, weight: .semibold))
+                                }
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 8)
+                                .background(Capsule().fill(MochiTheme.primary))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+
+                    // Suggested tasks
+                    if !currentProposal.suggestedTasks.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Taches suggerees")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(MochiTheme.textLight.opacity(0.5))
+                                .textCase(.uppercase)
+
+                            ForEach(currentProposal.suggestedTasks) { task in
+                                suggestedTaskRow(task)
+                            }
+                        }
                     }
                 }
                 .padding(20)
@@ -32,14 +155,30 @@ struct MeetingProposalDetailView: View {
             // Footer
             footer
         }
-        .frame(width: 500, height: 480)
+        .frame(width: 520, height: 530)
         .background(Color.white)
+        .confirmationDialog(
+            "Ignorer cette reunion ?",
+            isPresented: $showIgnoreDialog
+        ) {
+            Button("Ignorer cette reunion uniquement") {
+                appState.ignoreMeeting(proposal.id)
+                dismiss()
+            }
+            Button("Ignorer et exclure les futures similaires") {
+                appState.ignoreMeetingAndExclude(proposal.id)
+                dismiss()
+            }
+            Button("Annuler", role: .cancel) {}
+        } message: {
+            Text("\"\(currentProposal.meetingTitle)\"")
+        }
     }
 
     // MARK: - Header
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Image(systemName: "calendar")
                     .font(.system(size: 14))
@@ -63,9 +202,41 @@ struct MeetingProposalDetailView: View {
             }
 
             if let date = currentProposal.meetingDate {
-                Text(date, style: .date)
-                    .font(.system(size: 12))
-                    .foregroundStyle(MochiTheme.textLight.opacity(0.5))
+                HStack(spacing: 4) {
+                    Text(date, style: .date)
+                    if let endDate = currentProposal.meetingEndDate {
+                        Text("•")
+                        Text(date, style: .time)
+                        Text("-")
+                        Text(endDate, style: .time)
+                    }
+                }
+                .font(.system(size: 12))
+                .foregroundStyle(MochiTheme.textLight.opacity(0.5))
+            }
+
+            HStack(spacing: 12) {
+                if !currentProposal.attendees.isEmpty {
+                    HStack(spacing: 4) {
+                        Image(systemName: "person.2")
+                            .font(.system(size: 10))
+                        Text(currentProposal.attendees.joined(separator: ", "))
+                            .lineLimit(1)
+                    }
+                    .font(.system(size: 11))
+                    .foregroundStyle(MochiTheme.textLight.opacity(0.45))
+                }
+
+                if let location = currentProposal.location {
+                    HStack(spacing: 4) {
+                        Image(systemName: "mappin")
+                            .font(.system(size: 10))
+                        Text(location)
+                            .lineLimit(1)
+                    }
+                    .font(.system(size: 11))
+                    .foregroundStyle(MochiTheme.textLight.opacity(0.45))
+                }
             }
 
             Text("\(currentProposal.suggestedTasks.count) tache\(currentProposal.suggestedTasks.count > 1 ? "s" : "") suggeree\(currentProposal.suggestedTasks.count > 1 ? "s" : "")")
@@ -155,20 +326,23 @@ struct MeetingProposalDetailView: View {
 
     private var footer: some View {
         HStack(spacing: 12) {
-            if currentProposal.status == .pending {
+            if currentProposal.status == .prepared || currentProposal.status == .discovered {
                 Button {
-                    appState.dismissProposal(proposal.id)
-                    dismiss()
+                    showIgnoreDialog = true
                 } label: {
-                    Text("Ignorer tout")
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(MochiTheme.textLight.opacity(0.6))
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                        .background(
-                            Capsule()
-                                .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-                        )
+                    HStack(spacing: 5) {
+                        Image(systemName: "eye.slash")
+                            .font(.system(size: 11))
+                        Text("Ignorer")
+                            .font(.system(size: 13, weight: .medium))
+                    }
+                    .foregroundStyle(MochiTheme.textLight.opacity(0.6))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(
+                        Capsule()
+                            .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                    )
                 }
                 .buttonStyle(.plain)
 
@@ -190,6 +364,16 @@ struct MeetingProposalDetailView: View {
                     .background(Capsule().fill(MochiTheme.primary))
                 }
                 .buttonStyle(.plain)
+            } else if currentProposal.status == .ignored {
+                Spacer()
+                HStack(spacing: 5) {
+                    Image(systemName: "eye.slash")
+                        .font(.system(size: 12))
+                    Text("Ignoree")
+                        .font(.system(size: 13))
+                }
+                .foregroundStyle(MochiTheme.textLight.opacity(0.4))
+                Spacer()
             } else {
                 Spacer()
                 Text("Traitee")

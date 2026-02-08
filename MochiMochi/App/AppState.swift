@@ -36,6 +36,10 @@ final class AppState: ObservableObject {
     @Published var meetingProposals: [MeetingProposal] = []
     @Published var isCheckingMeetings: Bool = false
     @Published var meetingCheckResult: String?
+    @Published var preparingMeetingIds: Set<UUID> = []
+    @Published var isOutlookConnected: Bool = false
+    @Published var isCheckingOutlook: Bool = false
+    @Published var meetingIgnorePatterns: [String] = []
 
     // MARK: - Speech (forwarded from SpeechService)
 
@@ -108,6 +112,7 @@ final class AppState: ObservableObject {
             self.meetingWatchEnabled = config.meetingWatchEnabled
             self.meetingCheckInterval = config.meetingCheckInterval
             self.meetingLookbackDays = config.meetingLookbackDays
+            self.meetingIgnorePatterns = config.meetingIgnorePatterns
         }
 
         if let mochiState = memoryService.loadMochiState() {
@@ -117,6 +122,12 @@ final class AppState: ObservableObject {
         self.tasks = memoryService.loadTasks()
         self.inventory = memoryService.loadInventory()
         self.meetingProposals = memoryService.loadMeetingProposals()
+
+        // Recover meetings stuck in .preparing (app was killed during preparation)
+        for i in meetingProposals.indices where meetingProposals[i].status == .preparing {
+            meetingProposals[i].status = .discovered
+        }
+
         self.mochi.updateEmotion(from: gamification, tasks: tasks)
         updateClaudeMd()
 
@@ -142,7 +153,8 @@ final class AppState: ObservableObject {
             daysOff: daysOff,
             meetingWatchEnabled: meetingWatchEnabled,
             meetingCheckInterval: meetingCheckInterval,
-            meetingLookbackDays: meetingLookbackDays
+            meetingLookbackDays: meetingLookbackDays,
+            meetingIgnorePatterns: meetingIgnorePatterns
         )
         memoryService.saveConfig(config)
     }
@@ -564,13 +576,43 @@ final class AppState: ObservableObject {
         do {
             let response = try await claudeCodeService.generateQuick(
                 prompt: prompt,
-                workingDirectory: storageDirectory
+                workingDirectory: storageDirectory,
+                timeout: 30
             )
             isNotionConnected = response.contains("NOTION_OK")
             NSLog("[Mochi Notion] Connectivity check: %@", isNotionConnected ? "OK" : "FAILED")
         } catch {
             isNotionConnected = false
             NSLog("[Mochi Notion] Connectivity check error: %@", error.localizedDescription)
+        }
+    }
+
+    // MARK: - Outlook Connectivity
+
+    func checkOutlookConnectivity() async {
+        isCheckingOutlook = true
+        defer { isCheckingOutlook = false }
+
+        let prompt = """
+        Utilise l'outil MCP Microsoft_365 outlook_calendar_search pour chercher les \
+        evenements du jour. \
+        Si tu arrives a te connecter a Microsoft 365 et obtenir un resultat (meme vide), \
+        reponds exactement : OUTLOOK_OK \
+        Si tu n'arrives pas a te connecter ou si l'outil MCP n'est pas disponible, \
+        reponds exactement : OUTLOOK_ERROR
+        """
+
+        do {
+            let response = try await claudeCodeService.generateQuick(
+                prompt: prompt,
+                workingDirectory: storageDirectory,
+                timeout: 30
+            )
+            isOutlookConnected = response.contains("OUTLOOK_OK")
+            NSLog("[Mochi Outlook] Connectivity check: %@", isOutlookConnected ? "OK" : "FAILED")
+        } catch {
+            isOutlookConnected = false
+            NSLog("[Mochi Outlook] Connectivity check error: %@", error.localizedDescription)
         }
     }
 
@@ -599,63 +641,290 @@ final class AppState: ObservableObject {
         isCheckingMeetings = true
         meetingCheckResult = nil
 
-        let existingIds = Set(meetingProposals.map { $0.meetingNotionId })
-        let idsString = existingIds.isEmpty ? "aucun" : existingIds.joined(separator: ", ")
+        let existingIds = Set(meetingProposals.map { $0.sourceId })
+        var totalNew = 0
 
-        let cutoffDate = Calendar.current.date(byAdding: .day, value: -meetingLookbackDays, to: Date()) ?? Date()
-        let cutoffString = ISO8601DateFormatter().string(from: cutoffDate)
-
-        let prompt = """
-        Utilise les outils MCP Notion (notion-search, notion-fetch) pour chercher des pages \
-        de reunions ou meetings recents dans le workspace Notion de l'utilisateur. \
-        Cherche avec des mots-cles comme "reunion", "meeting", "compte-rendu", "CR".
-
-        Ne remonte pas plus loin que \(meetingLookbackDays) jours (apres le \(cutoffString)).
-
-        IDs de pages deja traitees a ignorer : \(idsString)
-
-        Pour chaque nouvelle reunion trouvee, analyse le contenu et propose des taches \
-        concretes et actionnables.
-
-        Reponds UNIQUEMENT en JSON valide (pas de markdown, pas de commentaires) :
-        [{"notionPageId":"...","title":"...","date":"2025-01-15","suggestedTasks":[{"title":"...","priority":"normal","description":"..."}]}]
-
-        Si aucune nouvelle reunion, reponds : []
-        """
-
+        // 1. Outlook calendar discovery → status .discovered (sans taches)
         do {
+            let idsString = existingIds.isEmpty ? "aucun" : existingIds.joined(separator: ", ")
+            let outlookPrompt = """
+            Utilise l'outil MCP Microsoft_365 outlook_calendar_search pour chercher les \
+            evenements/reunions a venir dans les \(meetingLookbackDays) prochains jours.
+
+            IDs d'evenements deja connus a ignorer : \(idsString)
+
+            Pour chaque nouvel evenement trouve, retourne :
+            [{"eventId":"...", "title":"...", "date":"2025-01-15T10:00:00Z", \
+            "endDate":"2025-01-15T11:00:00Z", "attendees":["nom1","nom2"], \
+            "location":"..."}]
+
+            Si aucun nouvel evenement, reponds : []
+            Reponds UNIQUEMENT en JSON valide.
+            """
+
             let response = try await claudeCodeService.generateQuick(
-                prompt: prompt,
+                prompt: outlookPrompt,
                 workingDirectory: storageDirectory
             )
-            let parsed = parseMeetingResponse(response)
-            let newProposals = parsed.filter { p in !existingIds.contains(p.meetingNotionId) }
-            if !newProposals.isEmpty {
-                meetingProposals.insert(contentsOf: newProposals, at: 0)
-                notificationService.sendMeetingProposalNotification(
-                    count: newProposals.count,
-                    personality: currentPersonality
-                )
-                memoryService.saveMeetingProposals(meetingProposals)
-                let s = newProposals.count > 1 ? "s" : ""
-                meetingCheckResult = "\(newProposals.count) reunion\(s) trouvee\(s)"
-                NSLog("[Mochi Meetings] %d new proposals found", newProposals.count)
-            } else {
-                meetingCheckResult = "Aucune nouvelle reunion"
+            let parsed = parseOutlookResponse(response)
+            var newOutlook = parsed.filter { p in !existingIds.contains(p.sourceId) }
+            // Auto-ignore meetings matching exclusion patterns
+            for i in newOutlook.indices {
+                if shouldIgnoreMeeting(newOutlook[i].meetingTitle) {
+                    newOutlook[i].status = .ignored
+                }
+            }
+            if !newOutlook.isEmpty {
+                meetingProposals.insert(contentsOf: newOutlook, at: 0)
+                totalNew += newOutlook.count
+                NSLog("[Mochi Meetings] %d new Outlook proposals found", newOutlook.count)
             }
         } catch {
-            meetingCheckResult = "Erreur : \(error.localizedDescription)"
-            NSLog("[Mochi Meetings] Check failed: %@", error.localizedDescription)
+            NSLog("[Mochi Meetings] Outlook check failed: %@", error.localizedDescription)
+        }
+
+        // Auto-prepare newly discovered Outlook meetings
+        let toAutoPrepare = meetingProposals.filter { $0.source == .outlook && $0.status == .discovered }
+        for proposal in toAutoPrepare {
+            Task { await prepareMeeting(proposal) }
+        }
+
+        // 2. Notion meeting discovery → status .prepared (avec taches suggerees)
+        let updatedIds = Set(meetingProposals.map { $0.sourceId })
+        do {
+            let notionIdsString = updatedIds.isEmpty ? "aucun" : updatedIds.joined(separator: ", ")
+            let cutoffDate = Calendar.current.date(byAdding: .day, value: -meetingLookbackDays, to: Date()) ?? Date()
+            let cutoffString = ISO8601DateFormatter().string(from: cutoffDate)
+
+            let notionPrompt = """
+            Utilise les outils MCP Notion (notion-search, notion-fetch) pour chercher des pages \
+            de reunions ou meetings recents dans le workspace Notion de l'utilisateur. \
+            Cherche avec des mots-cles comme "reunion", "meeting", "compte-rendu", "CR".
+
+            Ne remonte pas plus loin que \(meetingLookbackDays) jours (apres le \(cutoffString)).
+
+            IDs de pages deja traitees a ignorer : \(notionIdsString)
+
+            Pour chaque nouvelle reunion trouvee, analyse le contenu et propose des taches \
+            concretes et actionnables.
+
+            Reponds UNIQUEMENT en JSON valide (pas de markdown, pas de commentaires) :
+            [{"notionPageId":"...","title":"...","date":"2025-01-15","suggestedTasks":[{"title":"...","priority":"normal","description":"..."}]}]
+
+            Si aucune nouvelle reunion, reponds : []
+            """
+
+            let response = try await claudeCodeService.generateQuick(
+                prompt: notionPrompt,
+                workingDirectory: storageDirectory
+            )
+            let parsed = parseNotionResponse(response)
+            let newNotion = parsed.filter { p in !updatedIds.contains(p.sourceId) }
+            if !newNotion.isEmpty {
+                meetingProposals.insert(contentsOf: newNotion, at: 0)
+                totalNew += newNotion.count
+                NSLog("[Mochi Meetings] %d new Notion proposals found", newNotion.count)
+            }
+        } catch {
+            NSLog("[Mochi Meetings] Notion check failed: %@", error.localizedDescription)
+        }
+
+        // Save & notify
+        if totalNew > 0 {
+            notificationService.sendMeetingProposalNotification(
+                count: totalNew,
+                personality: currentPersonality
+            )
+            memoryService.saveMeetingProposals(meetingProposals)
+            let s = totalNew > 1 ? "s" : ""
+            meetingCheckResult = "\(totalNew) reunion\(s) trouvee\(s)"
+        } else {
+            meetingCheckResult = "Aucune nouvelle reunion"
         }
 
         isCheckingMeetings = false
     }
 
-    private func parseMeetingResponse(_ response: String) -> [MeetingProposal] {
-        // Try to extract JSON array from the response
+    func prepareMeeting(_ proposal: MeetingProposal) async {
+        guard let pIdx = meetingProposals.firstIndex(where: { $0.id == proposal.id }) else { return }
+
+        meetingProposals[pIdx].status = .preparing
+        preparingMeetingIds.insert(proposal.id)
+        memoryService.saveMeetingProposals(meetingProposals)
+
+        let attendeesStr = proposal.attendees.isEmpty ? "non specifie" : proposal.attendees.joined(separator: ", ")
+        let locationStr = proposal.location ?? "non specifie"
+        let dateStr = proposal.meetingDate.map { ISO8601DateFormatter().string(from: $0) } ?? "non specifiee"
+
+        let prompt = """
+        Prepare cette reunion en utilisant les outils MCP Notion disponibles.
+
+        REUNION: "\(proposal.meetingTitle)"
+        Date: \(dateStr) | Participants: \(attendeesStr) | Lieu: \(locationStr)
+
+        ETAPES (dans cet ordre):
+        1. notion-search: cherche "\(proposal.meetingTitle)" et des mots-cles lies au sujet
+        2. notion-fetch: lis 1-2 pages pertinentes trouvees (si disponibles)
+        3. notion-create-pages: cree une page Preparation intitulee "\(proposal.meetingTitle) - Preparation" \
+        contenant: contexte (issu de Notion), points de discussion, objectifs de la reunion
+        4. notion-create-pages: cree une page Reunion intitulee "\(proposal.meetingTitle) - Reunion" \
+        contenant: details reunion, ordre du jour avec durees, points de decision
+        5. Suggere 2-5 taches actionnables pour le participant
+
+        REPONSE OBLIGATOIRE en JSON pur (pas de markdown, pas de ```):
+        {"preReadUrl":"https://notion.so/...","agendaUrl":"https://notion.so/...",\
+        "summary":"Resume en 1-2 phrases",\
+        "suggestedTasks":[{"title":"...","priority":"normal","description":"..."}]}
+
+        Priorites: "high", "normal", "low". Si Notion echoue, mets null pour les URLs \
+        mais fournis summary et suggestedTasks quand meme.
+        """
+
+        do {
+            let response = try await claudeCodeService.generateQuick(
+                prompt: prompt,
+                workingDirectory: storageDirectory,
+                timeout: 300 // 5 min for MCP calls
+            )
+            NSLog("[Mochi Meetings] Raw prep response for '%@': %@", proposal.meetingTitle, String(response.prefix(500)))
+            let result = parsePrepResponse(response)
+
+            guard let currentIdx = meetingProposals.firstIndex(where: { $0.id == proposal.id }) else { return }
+
+            // Check if preparation actually produced results
+            let hasResults = result.preReadUrl != nil || result.agendaUrl != nil
+                || result.summary != nil || !result.suggestedTasks.isEmpty
+
+            if hasResults {
+                meetingProposals[currentIdx].preReadNotionUrl = result.preReadUrl
+                meetingProposals[currentIdx].agendaNotionUrl = result.agendaUrl
+                meetingProposals[currentIdx].prepSummary = result.summary
+                meetingProposals[currentIdx].suggestedTasks = result.suggestedTasks
+                meetingProposals[currentIdx].status = .prepared
+
+                notificationService.sendMeetingPreparedNotification(
+                    meetingTitle: proposal.meetingTitle,
+                    taskCount: result.suggestedTasks.count,
+                    personality: currentPersonality
+                )
+                NSLog("[Mochi Meetings] Meeting prepared: %@", proposal.meetingTitle)
+            } else {
+                // Preparation returned empty — revert to discovered
+                meetingProposals[currentIdx].status = .discovered
+                meetingProposals[currentIdx].prepSummary = "Echec de la preparation — reessayez"
+                NSLog("[Mochi Meetings] Preparation returned empty for: %@", proposal.meetingTitle)
+            }
+        } catch {
+            // Revert to discovered on failure
+            if let currentIdx = meetingProposals.firstIndex(where: { $0.id == proposal.id }) {
+                meetingProposals[currentIdx].status = .discovered
+                meetingProposals[currentIdx].prepSummary = "Erreur: \(error.localizedDescription)"
+            }
+            NSLog("[Mochi Meetings] Preparation failed: %@", error.localizedDescription)
+        }
+
+        preparingMeetingIds.remove(proposal.id)
+        memoryService.saveMeetingProposals(meetingProposals)
+    }
+
+    private struct PrepResult {
+        var preReadUrl: String?
+        var agendaUrl: String?
+        var summary: String?
+        var suggestedTasks: [SuggestedTask]
+    }
+
+    private func parsePrepResponse(_ response: String) -> PrepResult {
         let trimmed = response.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        // Find JSON array boundaries
+        guard let startIdx = trimmed.firstIndex(of: "{"),
+              let endIdx = trimmed.lastIndex(of: "}") else {
+            return PrepResult(suggestedTasks: [])
+        }
+
+        let jsonString = String(trimmed[startIdx...endIdx])
+        guard let data = jsonString.data(using: .utf8) else {
+            return PrepResult(suggestedTasks: [])
+        }
+
+        struct RawPrep: Decodable {
+            let preReadUrl: String?
+            let agendaUrl: String?
+            let summary: String?
+            let suggestedTasks: [RawTask]?
+        }
+        struct RawTask: Decodable {
+            let title: String
+            let priority: String?
+            let description: String?
+        }
+
+        do {
+            let raw = try JSONDecoder().decode(RawPrep.self, from: data)
+            let tasks = (raw.suggestedTasks ?? []).map { rt in
+                SuggestedTask(
+                    title: rt.title,
+                    description: rt.description,
+                    priority: TaskPriority(rawValue: rt.priority ?? "normal") ?? .normal
+                )
+            }
+            return PrepResult(
+                preReadUrl: raw.preReadUrl,
+                agendaUrl: raw.agendaUrl,
+                summary: raw.summary,
+                suggestedTasks: tasks
+            )
+        } catch {
+            NSLog("[Mochi Meetings] Prep JSON parse error: %@", error.localizedDescription)
+            return PrepResult(suggestedTasks: [])
+        }
+    }
+
+    private func parseOutlookResponse(_ response: String) -> [MeetingProposal] {
+        let trimmed = response.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard let startIdx = trimmed.firstIndex(of: "["),
+              let endIdx = trimmed.lastIndex(of: "]") else {
+            return []
+        }
+
+        let jsonString = String(trimmed[startIdx...endIdx])
+        guard let data = jsonString.data(using: .utf8) else { return [] }
+
+        struct RawEvent: Decodable {
+            let eventId: String
+            let title: String
+            let date: String?
+            let endDate: String?
+            let attendees: [String]?
+            let location: String?
+        }
+
+        do {
+            let rawEvents = try JSONDecoder().decode([RawEvent].self, from: data)
+            let isoFormatter = ISO8601DateFormatter()
+            isoFormatter.formatOptions = [.withInternetDateTime]
+
+            return rawEvents.map { raw in
+                MeetingProposal(
+                    source: .outlook,
+                    sourceId: raw.eventId,
+                    meetingTitle: raw.title,
+                    meetingDate: raw.date.flatMap { isoFormatter.date(from: $0) },
+                    meetingEndDate: raw.endDate.flatMap { isoFormatter.date(from: $0) },
+                    attendees: raw.attendees ?? [],
+                    location: raw.location
+                )
+            }
+        } catch {
+            NSLog("[Mochi Meetings] Outlook JSON parse error: %@", error.localizedDescription)
+            return []
+        }
+    }
+
+    private func parseNotionResponse(_ response: String) -> [MeetingProposal] {
+        let trimmed = response.trimmingCharacters(in: .whitespacesAndNewlines)
+
         guard let startIdx = trimmed.firstIndex(of: "["),
               let endIdx = trimmed.lastIndex(of: "]") else {
             return []
@@ -690,14 +959,16 @@ final class AppState: ObservableObject {
                     )
                 }
                 return MeetingProposal(
-                    meetingNotionId: raw.notionPageId,
+                    source: .notion,
+                    sourceId: raw.notionPageId,
                     meetingTitle: raw.title,
                     meetingDate: raw.date.flatMap { dateFormatter.date(from: $0) },
-                    suggestedTasks: tasks
+                    suggestedTasks: tasks,
+                    status: .prepared
                 )
             }
         } catch {
-            NSLog("[Mochi Meetings] JSON parse error: %@", error.localizedDescription)
+            NSLog("[Mochi Meetings] Notion JSON parse error: %@", error.localizedDescription)
             return []
         }
     }
@@ -753,8 +1024,37 @@ final class AppState: ObservableObject {
         saveState()
     }
 
+    func shouldIgnoreMeeting(_ title: String) -> Bool {
+        for pattern in meetingIgnorePatterns where !pattern.isEmpty {
+            if let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) {
+                let range = NSRange(title.startIndex..., in: title)
+                if regex.firstMatch(in: title, range: range) != nil {
+                    return true
+                }
+            }
+        }
+        return false
+    }
+
+    func ignoreMeeting(_ id: UUID) {
+        guard let idx = meetingProposals.firstIndex(where: { $0.id == id }) else { return }
+        meetingProposals[idx].status = .ignored
+        memoryService.saveMeetingProposals(meetingProposals)
+    }
+
+    func ignoreMeetingAndExclude(_ id: UUID) {
+        guard let idx = meetingProposals.firstIndex(where: { $0.id == id }) else { return }
+        meetingProposals[idx].status = .ignored
+        let escaped = NSRegularExpression.escapedPattern(for: meetingProposals[idx].meetingTitle)
+        if !meetingIgnorePatterns.contains(escaped) {
+            meetingIgnorePatterns.append(escaped)
+        }
+        saveConfig()
+        memoryService.saveMeetingProposals(meetingProposals)
+    }
+
     var pendingProposalsCount: Int {
-        meetingProposals.filter { $0.status == .pending }.count
+        meetingProposals.filter { $0.status == .discovered || $0.status == .prepared }.count
     }
 
     // MARK: - Response Parsing

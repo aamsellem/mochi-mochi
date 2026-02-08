@@ -22,6 +22,12 @@ struct MochiAvatarView: View {
 
     private let thinkingIcons = ["magnifyingglass", "book.fill"]
 
+    // MARK: - Body Dimensions
+
+    private var bodyW: CGFloat { size * 0.77 }
+    private var bodyH: CGFloat { size * 0.56 }
+    private var outlineW: CGFloat { size * 0.038 }
+
     // MARK: - Body
 
     var body: some View {
@@ -41,7 +47,7 @@ struct MochiAvatarView: View {
             // Cape (behind body)
             if hasEquipped("cape") { capeAccessory }
 
-            // Body with breathing (anchored at bottom so it stays grounded)
+            // Body with breathing
             mochiBody
                 .scaleEffect(
                     x: 1.0 + breathPhase * 0.015,
@@ -52,7 +58,7 @@ struct MochiAvatarView: View {
             // Scarf
             if hasEquipped("echarpe") { scarfAccessory }
 
-            // Face (centered in the lower dome shape)
+            // Face
             mochiFace
                 .offset(
                     x: pupilOffset.x * size * 0.004,
@@ -83,68 +89,145 @@ struct MochiAvatarView: View {
         .onDisappear { stopAllAnimations() }
     }
 
-    // MARK: - Mochi Body (Multi-Layer Organic Rendering)
+    // MARK: - Mochi Body (CSS-Inspired Daifuku)
 
     private var mochiBody: some View {
-        let bodyW = size * 0.92
-        let bodyH = size * 0.58
+        let bShape = UnevenRoundedRectangle(
+            topLeadingRadius: bodyH * 0.67,
+            bottomLeadingRadius: bodyH * 0.18,
+            bottomTrailingRadius: bodyH * 0.18,
+            topTrailingRadius: bodyH * 0.67
+        )
 
         return ZStack {
-            // Layer 1: Soft drop shadow
-            MochiBodyShape()
-                .fill(bodyColor.opacity(0.2))
+            // Drop shadow
+            bShape
+                .fill(outlineColor.opacity(0.25))
                 .frame(width: bodyW, height: bodyH)
-                .offset(y: size * 0.02)
-                .blur(radius: size * 0.035)
+                .offset(y: size * 0.015)
+                .blur(radius: size * 0.025)
 
-            // Layer 2: Main body gradient
-            MochiBodyShape()
-                .fill(bodyGradient)
-                .frame(width: bodyW, height: bodyH)
+            // Body content (fill + highlight + bites) — clipped to body shape
+            ZStack {
+                // Base fill
+                bShape.fill(bodyGradient)
 
-            // Layer 3: Bottom ambient occlusion
-            MochiBodyShape()
-                .fill(
-                    LinearGradient(
-                        stops: [
-                            .init(color: .clear, location: 0),
-                            .init(color: .clear, location: 0.5),
-                            .init(color: Color.black.opacity(color.isDark ? 0.12 : 0.05), location: 1.0),
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .frame(width: bodyW, height: bodyH)
+                // Highlight circle (3D dome effect)
+                Circle()
+                    .fill(highlightColor)
+                    .frame(width: max(bodyW, bodyH))
+                    .offset(x: bodyW * 0.19)
 
-            // Layer 4: Specular highlight (top-left)
-            MochiBodyShape()
-                .fill(
-                    RadialGradient(
-                        colors: [
-                            .white.opacity(color.isDark ? 0.18 : 0.4),
-                            .white.opacity(color.isDark ? 0.03 : 0.08),
-                            .clear,
-                        ],
-                        center: UnitPoint(x: 0.33, y: 0.24),
-                        startRadius: 0,
-                        endRadius: size * 0.3
-                    )
-                )
+                // Bite marks
+                biteMarksView
+            }
+            .frame(width: bodyW, height: bodyH)
+            .clipShape(bShape)
+
+            // Thick outline
+            bShape
+                .stroke(outlineColor, lineWidth: outlineW)
                 .frame(width: bodyW, height: bodyH)
 
-            // Layer 5: Small bright specular dot
+            // Small specular dot
             Circle()
-                .fill(.white.opacity(color.isDark ? 0.12 : 0.3))
-                .frame(width: size * 0.055, height: size * 0.045)
-                .offset(x: -size * 0.11, y: -size * 0.14)
-                .blur(radius: size * 0.006)
+                .fill(.white.opacity(color.isDark ? 0.1 : 0.22))
+                .frame(width: size * 0.04, height: size * 0.03)
+                .offset(x: -bodyW * 0.22, y: -bodyH * 0.28)
+                .blur(radius: size * 0.004)
 
-            // Layer 6: Subtle outline
-            MochiBodyShape()
-                .stroke(bodyStrokeColor.opacity(0.35), lineWidth: size * 0.006)
-                .frame(width: bodyW, height: bodyH)
+            // Leaves on top
+            leavesView
+                .offset(y: -bodyH * 0.58)
         }
+    }
+
+    // MARK: - Bite Marks (3-Layer Cross-Section)
+
+    private var biteMarksView: some View {
+        let baseSize = bodyW * 0.484
+        let midSize = bodyW * 0.383
+        let topSize = bodyW * 0.302
+
+        // Two bite centers (relative to body center)
+        let bite1X = bodyW * 0.34
+        let bite1Y = -bodyH * 0.28
+        let bite2X = bodyW * 0.42
+        let bite2Y = bodyH * 0.06
+
+        return ZStack {
+            // Base layer (dark, outline color)
+            Circle().fill(outlineColor)
+                .frame(width: baseSize, height: baseSize)
+                .offset(x: bite1X, y: bite1Y)
+            Circle().fill(outlineColor)
+                .frame(width: baseSize, height: baseSize)
+                .offset(x: bite2X, y: bite2Y)
+
+            // Middle layer (highlight color)
+            Circle().fill(highlightColor)
+                .frame(width: midSize, height: midSize)
+                .offset(x: bite1X, y: bite1Y)
+            Circle().fill(highlightColor)
+                .frame(width: midSize, height: midSize)
+                .offset(x: bite2X, y: bite2Y)
+
+            // Top layer (very light)
+            Circle().fill(biteTopColor)
+                .frame(width: topSize, height: topSize)
+                .offset(x: bite1X, y: bite1Y)
+            Circle().fill(biteTopColor)
+                .frame(width: topSize, height: topSize)
+                .offset(x: bite2X, y: bite2Y)
+        }
+        .rotationEffect(.degrees(-10))
+        .offset(x: size * 0.015, y: -size * 0.01)
+    }
+
+    // MARK: - Leaves
+
+    private var leavesView: some View {
+        let leafW = bodyW * 0.18
+        let leafH = bodyW * 0.38
+        let leafOuterColor = Color(red: 0.49, green: 0.65, blue: 0.45)
+        let leafInnerColor = Color(red: 0.62, green: 0.82, blue: 0.57)
+        let stemColor = Color(red: 0.38, green: 0.52, blue: 0.34)
+        let leafStroke = outlineW * 0.85
+
+        return ZStack {
+            // Leaf 2 (behind, tilted left)
+            singleLeaf(w: leafW, h: leafH, outer: leafOuterColor, inner: leafInnerColor, stem: stemColor, stroke: leafStroke)
+                .rotationEffect(.degrees(-55), anchor: .bottom)
+                .offset(x: 0, y: -size * 0.03)
+
+            // Leaf 1 (front, tilted right)
+            singleLeaf(w: leafW, h: leafH, outer: leafOuterColor, inner: leafInnerColor, stem: stemColor, stroke: leafStroke)
+                .rotationEffect(.degrees(45), anchor: .bottom)
+                .offset(x: 0, y: -size * 0.03)
+
+        }
+    }
+
+    private func singleLeaf(w: CGFloat, h: CGFloat, outer: Color, inner: Color, stem: Color, stroke strokeW: CGFloat) -> some View {
+        ZStack {
+            VerticalLeafShape()
+                .fill(outer)
+            VerticalLeafShape()
+                .fill(inner)
+                .scaleEffect(x: 0.50, y: 0.45)
+                .offset(x: w * 0.06, y: -h * 0.08)
+            // Center vein
+            Path { path in
+                path.move(to: CGPoint(x: w * 0.5, y: h * 0.15))
+                path.addQuadCurve(
+                    to: CGPoint(x: w * 0.5, y: h * 0.85),
+                    control: CGPoint(x: w * 0.75, y: h * 0.5)
+                )
+            }
+            .stroke(stem, lineWidth: w * 0.08)
+            .opacity(0.5)
+        }
+        .frame(width: w, height: h)
     }
 
     // MARK: - Cheek Blush
@@ -269,7 +352,6 @@ struct MochiAvatarView: View {
             wavyMouth
         }
         .overlay(
-            // Animated sweat drop
             SweatDropShape()
                 .fill(
                     LinearGradient(
@@ -294,7 +376,6 @@ struct MochiAvatarView: View {
             sadMouth
         }
         .overlay(
-            // Tear drop
             Ellipse()
                 .fill(
                     LinearGradient(
@@ -469,22 +550,18 @@ struct MochiAvatarView: View {
             : Color(red: 0.2, green: 0.15, blue: 0.12)
     }
 
-    /// Kawaii eye with highlight reflections
     private var kawaiiEye: some View {
         ZStack {
-            // Main eye shape
             Ellipse()
                 .fill(faceColor)
                 .frame(width: size * 0.095, height: isBlinking ? size * 0.012 : size * 0.115)
 
-            // Primary highlight (top-right)
             if !isBlinking {
                 Circle()
                     .fill(.white)
                     .frame(width: size * 0.032, height: size * 0.032)
                     .offset(x: size * 0.012, y: -size * 0.022)
 
-                // Secondary highlight (bottom-left, smaller)
                 Circle()
                     .fill(.white.opacity(0.5))
                     .frame(width: size * 0.016, height: size * 0.016)
@@ -516,7 +593,6 @@ struct MochiAvatarView: View {
                 Ellipse()
                     .fill(faceColor)
                     .frame(width: size * 0.06, height: size * 0.065)
-                // Small highlight
                 if !isBlinking {
                     Circle()
                         .fill(.white)
@@ -683,8 +759,6 @@ struct MochiAvatarView: View {
         writingTimer = nil
     }
 
-    // MARK: - Breathing
-
     private func startBreathing() {
         withAnimation(
             .easeInOut(duration: 3.0)
@@ -693,8 +767,6 @@ struct MochiAvatarView: View {
             breathPhase = 1.0
         }
     }
-
-    // MARK: - Pupil Drift
 
     private func startPupilDrift() {
         schedulePupilMove()
@@ -720,8 +792,6 @@ struct MochiAvatarView: View {
         }
     }
 
-    // MARK: - Blink Timer
-
     private func startBlinkTimer() {
         blinkTimer?.invalidate()
         scheduleNextBlink()
@@ -743,8 +813,6 @@ struct MochiAvatarView: View {
             }
         }
     }
-
-    // MARK: - Thinking / Writing Timers
 
     private func startThinkingIconCycle() {
         thinkingIconTimer?.invalidate()
@@ -773,6 +841,25 @@ struct MochiAvatarView: View {
     }
 
     // MARK: - Color Properties
+
+    private var outlineColor: Color { bodyStrokeColor }
+
+    private var highlightColor: Color {
+        lightenColor(bodyColor, by: 0.35)
+    }
+
+    private var biteTopColor: Color {
+        lightenColor(bodyColor, by: 0.7)
+    }
+
+    private func lightenColor(_ c: Color, by amount: CGFloat) -> Color {
+        guard let srgb = NSColor(c).usingColorSpace(.sRGB) else { return c }
+        return Color(
+            red: min(1, srgb.redComponent + (1 - srgb.redComponent) * amount),
+            green: min(1, srgb.greenComponent + (1 - srgb.greenComponent) * amount),
+            blue: min(1, srgb.blueComponent + (1 - srgb.blueComponent) * amount)
+        )
+    }
 
     private var bodyStrokeColor: Color {
         switch color {
@@ -806,7 +893,7 @@ struct MochiAvatarView: View {
             )
         }
         return LinearGradient(
-            colors: [bodyColor.opacity(0.85), bodyColor],
+            colors: [bodyColor.opacity(0.92), bodyColor],
             startPoint: .top,
             endPoint: .bottom
         )
@@ -848,8 +935,6 @@ struct MochiAvatarView: View {
         }
     }
 
-    // MARK: - Beret
-
     private var beretHat: some View {
         ZStack {
             Ellipse()
@@ -872,8 +957,6 @@ struct MochiAvatarView: View {
         }
         .offset(y: -size * 0.3)
     }
-
-    // MARK: - Couronne
 
     private var crownHat: some View {
         ZStack {
@@ -900,8 +983,6 @@ struct MochiAvatarView: View {
         }
         .offset(y: -size * 0.32)
     }
-
-    // MARK: - Casquette
 
     private var capHat: some View {
         ZStack {
@@ -935,8 +1016,6 @@ struct MochiAvatarView: View {
         .offset(y: -size * 0.29)
     }
 
-    // MARK: - Chapeau Sorcier
-
     private var wizardHat: some View {
         ZStack {
             WizardHatShape()
@@ -967,8 +1046,6 @@ struct MochiAvatarView: View {
         .rotationEffect(.degrees(-5))
         .offset(y: -size * 0.39)
     }
-
-    // MARK: - Bandeau Ninja
 
     private var ninjaBand: some View {
         let clothColor = Color(red: 0.15, green: 0.2, blue: 0.45)
@@ -1020,8 +1097,6 @@ struct MochiAvatarView: View {
         .offset(y: -size * 0.18)
     }
 
-    // MARK: - Lunettes de soleil
-
     private var glassesAccessory: some View {
         let frameColor = Color(red: 0.1, green: 0.1, blue: 0.12)
         let lensColor = LinearGradient(
@@ -1068,8 +1143,6 @@ struct MochiAvatarView: View {
         }
         .offset(y: -size * 0.06)
     }
-
-    // MARK: - Echarpe
 
     private var scarfAccessory: some View {
         let scarfColor1 = Color(red: 0.85, green: 0.2, blue: 0.2)
@@ -1120,8 +1193,6 @@ struct MochiAvatarView: View {
         }
     }
 
-    // MARK: - Noeud Papillon
-
     private var bowTieAccessory: some View {
         let bowColor1 = Color(red: 0.85, green: 0.15, blue: 0.2)
         let bowColor2 = Color(red: 0.65, green: 0.08, blue: 0.12)
@@ -1144,8 +1215,6 @@ struct MochiAvatarView: View {
         }
         .offset(y: size * 0.16)
     }
-
-    // MARK: - Cape
 
     private var capeAccessory: some View {
         CapeShape()
@@ -1176,8 +1245,6 @@ struct MochiAvatarView: View {
             )
             .offset(y: size * 0.08)
     }
-
-    // MARK: - Ailes
 
     private var wingsAccessory: some View {
         HStack(spacing: size * 0.55) {
@@ -1213,77 +1280,45 @@ struct MochiAvatarView: View {
 
 // MARK: - Custom Shapes
 
-/// Organic mochi/daifuku shape — wide low dome, like a real rice cake
-struct MochiBodyShape: Shape {
+/// Vertical leaf shape: pointy tip at top-center, rounded base at bottom.
+struct VerticalLeafShape: Shape {
     func path(in rect: CGRect) -> Path {
-        var path = Path()
         let w = rect.width
         let h = rect.height
-
-        // Start at bottom-left
-        path.move(to: CGPoint(x: w * 0.12, y: h * 0.92))
-
-        // Flat bottom with subtle sag
-        path.addQuadCurve(
-            to: CGPoint(x: w * 0.88, y: h * 0.92),
-            control: CGPoint(x: w * 0.5, y: h * 0.96)
-        )
-
-        // Bottom-right corner: smooth curve up to the side
+        var path = Path()
+        // Start at the tip (top center)
+        path.move(to: CGPoint(x: w * 0.5, y: 0))
+        // Right curve down to base
         path.addCurve(
-            to: CGPoint(x: w * 0.98, y: h * 0.5),
-            control1: CGPoint(x: w * 0.97, y: h * 0.92),
-            control2: CGPoint(x: w * 0.98, y: h * 0.75)
+            to: CGPoint(x: w * 0.5, y: h),
+            control1: CGPoint(x: w * 1.3, y: h * 0.25),
+            control2: CGPoint(x: w * 0.95, y: h * 0.85)
         )
-
-        // Right to top: wide smooth dome
+        // Left curve back up to tip
         path.addCurve(
-            to: CGPoint(x: w * 0.5, y: h * 0.02),
-            control1: CGPoint(x: w * 0.98, y: h * 0.18),
-            control2: CGPoint(x: w * 0.78, y: h * 0.02)
+            to: CGPoint(x: w * 0.5, y: 0),
+            control1: CGPoint(x: w * 0.05, y: h * 0.85),
+            control2: CGPoint(x: -w * 0.3, y: h * 0.25)
         )
-
-        // Top to left: mirror dome
-        path.addCurve(
-            to: CGPoint(x: w * 0.02, y: h * 0.5),
-            control1: CGPoint(x: w * 0.22, y: h * 0.02),
-            control2: CGPoint(x: w * 0.02, y: h * 0.18)
-        )
-
-        // Left down to bottom-left
-        path.addCurve(
-            to: CGPoint(x: w * 0.12, y: h * 0.92),
-            control1: CGPoint(x: w * 0.02, y: h * 0.75),
-            control2: CGPoint(x: w * 0.03, y: h * 0.92)
-        )
-
         path.closeSubpath()
         return path
     }
 }
 
-/// Sweat drop shape for worried emotion
 struct SweatDropShape: Shape {
     func path(in rect: CGRect) -> Path {
         var path = Path()
         let w = rect.width
         let h = rect.height
-
-        // Pointed top
         path.move(to: CGPoint(x: w * 0.5, y: 0))
-
-        // Right curve down to round bottom
         path.addQuadCurve(
             to: CGPoint(x: w * 0.5, y: h),
             control: CGPoint(x: w * 1.1, y: h * 0.6)
         )
-
-        // Left curve back up
         path.addQuadCurve(
             to: CGPoint(x: w * 0.5, y: 0),
             control: CGPoint(x: -w * 0.1, y: h * 0.6)
         )
-
         path.closeSubpath()
         return path
     }
