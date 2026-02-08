@@ -904,14 +904,35 @@ final class AppState: ObservableObject {
             let rawEvents = try JSONDecoder().decode([RawEvent].self, from: data)
             let isoFormatter = ISO8601DateFormatter()
             isoFormatter.formatOptions = [.withInternetDateTime]
+            let isoFractional = ISO8601DateFormatter()
+            isoFractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            let fallbackFormatter = DateFormatter()
+            fallbackFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+            fallbackFormatter.locale = Locale(identifier: "en_US_POSIX")
+            fallbackFormatter.timeZone = TimeZone(identifier: "UTC")
+
+            func parseDate(_ str: String?) -> Date? {
+                guard let str else { return nil }
+                // Strip trailing fractional zeros beyond 3 digits (MS Graph returns .0000000)
+                let cleaned = str.replacingOccurrences(
+                    of: "\\.\\d+",
+                    with: "",
+                    options: .regularExpression
+                )
+                return isoFractional.date(from: str)
+                    ?? isoFormatter.date(from: str)
+                    ?? isoFormatter.date(from: cleaned)
+                    ?? fallbackFormatter.date(from: str)
+                    ?? fallbackFormatter.date(from: cleaned)
+            }
 
             return rawEvents.map { raw in
                 MeetingProposal(
                     source: .outlook,
                     sourceId: raw.eventId,
                     meetingTitle: raw.title,
-                    meetingDate: raw.date.flatMap { isoFormatter.date(from: $0) },
-                    meetingEndDate: raw.endDate.flatMap { isoFormatter.date(from: $0) },
+                    meetingDate: parseDate(raw.date),
+                    meetingEndDate: parseDate(raw.endDate),
                     attendees: raw.attendees ?? [],
                     location: raw.location
                 )

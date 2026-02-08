@@ -1,17 +1,9 @@
 import SwiftUI
 
-private enum MeetingFilter: String, CaseIterable {
-    case all = "Tout"
-    case outlook = "Outlook"
-    case notion = "Notion"
-}
-
 struct MeetingsView: View {
     @EnvironmentObject var appState: AppState
     @State private var selectedProposal: MeetingProposal?
     @State private var searchText: String = ""
-    @State private var selectedFilter: MeetingFilter = .all
-    @State private var collapsedSections: Set<String> = ["ignored"]
     @State private var showIgnored: Bool = false
     @State private var meetingToIgnore: MeetingProposal?
 
@@ -21,34 +13,13 @@ struct MeetingsView: View {
             let dateB = b.meetingDate ?? .distantPast
             return dateA > dateB
         }
-        let bySource: [MeetingProposal]
-        switch selectedFilter {
-        case .all: bySource = sorted
-        case .outlook: bySource = sorted.filter { $0.source == .outlook }
-        case .notion: bySource = sorted.filter { $0.source == .notion }
-        }
-        guard !searchText.isEmpty else { return bySource }
+        guard !searchText.isEmpty else { return sorted }
         let query = searchText.lowercased()
-        return bySource.filter { proposal in
+        return sorted.filter { proposal in
             proposal.meetingTitle.lowercased().contains(query)
             || proposal.attendees.contains { $0.lowercased().contains(query) }
             || proposal.suggestedTasks.contains { $0.title.lowercased().contains(query) }
         }
-    }
-
-    // MARK: - Counts (unfiltered, for badges)
-
-    private var outlookTotal: Int {
-        appState.meetingProposals.filter { $0.source == .outlook }.count
-    }
-    private var outlookPending: Int {
-        appState.meetingProposals.filter { $0.source == .outlook && $0.status != .reviewed && $0.status != .ignored }.count
-    }
-    private var notionTotal: Int {
-        appState.meetingProposals.filter { $0.source == .notion }.count
-    }
-    private var notionPending: Int {
-        appState.meetingProposals.filter { $0.source == .notion && $0.status != .reviewed && $0.status != .ignored }.count
     }
 
     // MARK: - Filtered lists
@@ -218,9 +189,6 @@ struct MeetingsView: View {
                     }
                 }
 
-                // Filter tabs
-                filterBar
-
                 // Search bar
                 HStack(spacing: 8) {
                     Image(systemName: "magnifyingglass")
@@ -327,66 +295,6 @@ struct MeetingsView: View {
                     .padding(.top, 8).padding(.bottom, 24)
                 }
             }
-        }
-    }
-
-    // MARK: - Filter Bar
-
-    private var filterBar: some View {
-        HStack(spacing: 6) {
-            filterPill(.all, label: "Tout", count: appState.meetingProposals.count, pendingCount: appState.pendingProposalsCount)
-            filterPill(.outlook, label: "Outlook", count: outlookTotal, pendingCount: outlookPending, icon: "envelope.fill")
-            filterPill(.notion, label: "Notion", count: notionTotal, pendingCount: notionPending, icon: "doc.text.fill")
-            Spacer()
-        }
-    }
-
-    private func filterPill(_ filter: MeetingFilter, label: String, count: Int, pendingCount: Int, icon: String? = nil) -> some View {
-        let isSelected = selectedFilter == filter
-        return Button {
-            withAnimation(.easeInOut(duration: 0.15)) { selectedFilter = filter }
-        } label: {
-            HStack(spacing: 5) {
-                if let icon {
-                    Image(systemName: icon)
-                        .font(.system(size: 10))
-                }
-                Text(label)
-                    .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
-
-                if count > 0 {
-                    Text("\(count)")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(isSelected ? .white : pillColor(filter).opacity(0.7))
-                        .padding(.horizontal, 5).padding(.vertical, 1)
-                        .background(
-                            Capsule().fill(isSelected ? .white.opacity(0.25) : pillColor(filter).opacity(0.1))
-                        )
-                }
-
-                if pendingCount > 0 && !isSelected {
-                    Circle()
-                        .fill(MochiTheme.primary)
-                        .frame(width: 6, height: 6)
-                }
-            }
-            .foregroundStyle(isSelected ? .white : MochiTheme.textLight.opacity(0.6))
-            .padding(.horizontal, 12).padding(.vertical, 7)
-            .background(
-                Capsule().fill(isSelected ? pillColor(filter) : MochiTheme.backgroundLight.opacity(0.8))
-            )
-            .overlay(
-                Capsule().stroke(isSelected ? Color.clear : Color.gray.opacity(0.12), lineWidth: 1)
-            )
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func pillColor(_ filter: MeetingFilter) -> Color {
-        switch filter {
-        case .all: return MochiTheme.textLight.opacity(0.7)
-        case .outlook: return Color.blue
-        case .notion: return MochiTheme.primary
         }
     }
 
@@ -517,9 +425,17 @@ struct MeetingsView: View {
                                 .foregroundStyle(MochiTheme.textLight)
                                 .lineLimit(2)
                             if let date = proposal.meetingDate {
-                                Text(relativeDateString(date))
-                                    .font(.system(size: 11))
-                                    .foregroundStyle(MochiTheme.textLight.opacity(0.4))
+                                HStack(spacing: 4) {
+                                    Text(relativeDateString(date))
+                                    if let endDate = proposal.meetingEndDate {
+                                        Text("•")
+                                        Text(date, style: .time)
+                                        Text("-")
+                                        Text(endDate, style: .time)
+                                    }
+                                }
+                                .font(.system(size: 11))
+                                .foregroundStyle(MochiTheme.textLight.opacity(0.4))
                             }
                         }
                     }

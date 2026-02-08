@@ -701,7 +701,13 @@ L'intégration Notion utilise l'API REST officielle Notion avec authentification
 - Bouton "Ignorer" : dialogue de confirmation proposant d'ignorer cette réunion uniquement ou d'exclure les futures similaires (ajout du titre échappé dans les patterns)
 - Bouton "Ignorer" ajouté sur les cartes préparées Outlook et dans le détail des réunions
 
-### Phase 4.1 — Intégrations (v0.4.1)
+### Phase 4.1 — Polish réunions (v0.4.1) ✅
+- Parsing de dates robuste : support ISO 8601 avec fractions de secondes, formats MS Graph (.0000000), multiples fallbacks
+- Simplification de la vue Réunions : suppression du filtre par source (Outlook/Notion), interface plus épurée
+- Horaires sur les cartes : chaque carte réunion affiche la date relative + heures de début et fin
+- Nettoyage de l'avatar Mochi : suppression des bite marks visuels
+
+### Phase 4.2 — Intégrations (v0.4.2)
 - Synchronisation bidirectionnelle Notion
 - Raccourcis clavier globaux
 - Mode focus

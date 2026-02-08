@@ -205,7 +205,8 @@ Mochi Mochi scanne automatiquement vos réunions Outlook et Notion, les prépare
 - **Exclusions configurables** — Patterns regexp dans Réglages > Réunions pour ignorer automatiquement certaines réunions (ex: Sport, GYMINNO). Bouton "Ignorer" avec choix : ignorer cette réunion ou exclure les futures similaires
 - **Validation en un clic** — Acceptez, rejetez ou ignorez les suggestions depuis le détail de chaque réunion
 - **Notifications proactives** — Soyez alerté dès qu'une nouvelle réunion est détectée ou préparée
-- **Recherche et filtres** — Filtrez par source (Outlook/Notion), recherchez par titre ou tâche
+- **Horaires détaillés** — Chaque carte affiche la date relative et les heures de début/fin de la réunion
+- **Recherche** — Recherchez par titre, participant ou tâche
 
 Activable dès l'onboarding ou dans Réglages > Réunions.
 
@@ -321,7 +322,8 @@ MochiMochi/
 - [x] **Phase 2.9 — Profil libre (v0.2.9)** : Champ activité/métier en texte libre (onboarding + réglages), sélection rose dans les réglages via MochiTextField
 - [x] **Phase 3.0 — Boutique & Réunions (v0.3.0)** : Refonte boutique avec inventaire intégré, veille de réunions Notion (détection automatique, suggestions IA, validation, recherche/tri), onboarding 9 étapes avec activation veille
 - [x] **Phase 4.0 — Réunions proactives (v0.4.0)** : Préparation automatique des réunions Outlook, vue Kanban horizontale (5 colonnes), patterns d'exclusion regexp, statut "ignoré", dialogue ignorer/exclure
-- [ ] **Phase 4.1 — Intégrations (v0.4.1)** : Sync Notion bidirectionnelle, raccourcis globaux, mode focus
+- [x] **Phase 4.1 — Polish réunions (v0.4.1)** : Parsing de dates robuste (MS Graph), suppression filtre par source, affichage horaires début/fin sur les cartes, nettoyage avatar Mochi
+- [ ] **Phase 4.2 — Intégrations (v0.4.2)** : Sync Notion bidirectionnelle, raccourcis globaux, mode focus
 - [ ] **Phase 4 — Polish (v1.0)** : Onboarding complet, toutes les personnalités, distribution DMG
 
 ---

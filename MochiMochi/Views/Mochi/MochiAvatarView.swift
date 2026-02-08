@@ -107,7 +107,7 @@ struct MochiAvatarView: View {
                 .offset(y: size * 0.015)
                 .blur(radius: size * 0.025)
 
-            // Body content (fill + highlight + bites) — clipped to body shape
+            // Body content (fill + highlight) — clipped to body shape
             ZStack {
                 // Base fill
                 bShape.fill(bodyGradient)
@@ -117,9 +117,6 @@ struct MochiAvatarView: View {
                     .fill(highlightColor)
                     .frame(width: max(bodyW, bodyH))
                     .offset(x: bodyW * 0.19)
-
-                // Bite marks
-                biteMarksView
             }
             .frame(width: bodyW, height: bodyH)
             .clipShape(bShape)
