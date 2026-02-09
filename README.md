@@ -43,7 +43,7 @@ Mochi Mochi reprend le concept d'ULY et l'enveloppe dans une **application macOS
 - 📋 **Gestion de tâches** — Suivi intelligent avec relances personnalisées
 - 📎 **Upload de documents** — Joignez des fichiers (PDF, code, texte) au chat
 - 🎤 **Dictée vocale** — Parlez au lieu de taper grâce à la reconnaissance vocale
-- 📝 **Notes rapides** — Prise de notes avec extraction automatique de tâches via IA
+- 📝 **Notes rapides** — Prise de notes avec extraction automatique de tâches via IA, indicateur de sauvegarde en temps réel
 - 📅 **Veille de réunions** — Détection Outlook + Notion, préparation automatique via IA, vue Kanban, exclusions configurables
 - 🔗 **Sync Notion** — Bidirectionnelle, vos tâches partout
 - 🖥️ **Menubar** — Accès rapide sans quitter votre travail
@@ -105,8 +105,8 @@ Votre Mochi est un personnage rond, inspiré des mochis japonais, qui vit dans v
 
 Équipez votre Mochi d'items cosmétiques gagnés en boutique :
 - **Couleurs** : blanc, rose, vert matcha, bleu ciel, doré, gris, noir, bleu nuit, violet, pride (arc-en-ciel)...
-- **Chapeaux** : béret, couronne, casquette, chapeau de sorcier...
-- **Accessoires** : lunettes, écharpe, nœud papillon, cape, ailes...
+- **Chapeaux** : béret velours, couronne scintillante, casquette brodée, chapeau de sorcier étoilé, bandeau ninja...
+- **Accessoires** : lunettes dorées avec reflet, écharpe animée, nœud papillon satin, cape galaxie, ailes éthérées, boule de voyante...
 - **Décors** : jardin zen, bureau cosy, espace, forêt de bambous...
 
 ---
@@ -323,7 +323,8 @@ MochiMochi/
 - [x] **Phase 3.0 — Boutique & Réunions (v0.3.0)** : Refonte boutique avec inventaire intégré, veille de réunions Notion (détection automatique, suggestions IA, validation, recherche/tri), onboarding 9 étapes avec activation veille
 - [x] **Phase 4.0 — Réunions proactives (v0.4.0)** : Préparation automatique des réunions Outlook, vue Kanban horizontale (5 colonnes), patterns d'exclusion regexp, statut "ignoré", dialogue ignorer/exclure
 - [x] **Phase 4.1 — Polish réunions (v0.4.1)** : Parsing de dates robuste (MS Graph), suppression filtre par source, affichage horaires début/fin sur les cartes, nettoyage avatar Mochi
-- [ ] **Phase 4.2 — Intégrations (v0.4.2)** : Sync Notion bidirectionnelle, raccourcis globaux, mode focus
+- [x] **Phase 4.2 — Polish accessoires & notes (v0.4.2)** : Refonte visuelle de tous les accessoires avec animations (TimelineView, gradients, particules), nouvel item boule de voyante, indicateur de sauvegarde sur les notes
+- [ ] **Phase 4.3 — Intégrations (v0.4.3)** : Sync Notion bidirectionnelle, raccourcis globaux, mode focus
 - [ ] **Phase 4 — Polish (v1.0)** : Onboarding complet, toutes les personnalités, distribution DMG
 
 ---

@@ -81,6 +81,9 @@ struct MochiAvatarView: View {
             // Wings
             if hasEquipped("ailes") { wingsAccessory }
 
+            // Crystal ball
+            if hasEquipped("boule") { crystalBallAccessory }
+
             // Emotion particles
             emotionParticles
         }
@@ -934,344 +937,979 @@ struct MochiAvatarView: View {
 
     private var beretHat: some View {
         ZStack {
+            // Soft shadow
+            Ellipse()
+                .fill(Color(red: 0.4, green: 0.08, blue: 0.1).opacity(0.25))
+                .frame(width: size * 0.44, height: size * 0.14)
+                .blur(radius: size * 0.02)
+                .offset(y: size * 0.01)
+
+            // Main beret — rich velvet RadialGradient
+            Ellipse()
+                .fill(
+                    RadialGradient(
+                        colors: [
+                            Color(red: 0.85, green: 0.2, blue: 0.24),
+                            Color(red: 0.7, green: 0.13, blue: 0.17),
+                            Color(red: 0.5, green: 0.08, blue: 0.1),
+                        ],
+                        center: UnitPoint(x: 0.35, y: 0.3),
+                        startRadius: 0,
+                        endRadius: size * 0.24
+                    )
+                )
+                .frame(width: size * 0.44, height: size * 0.17)
+                .rotationEffect(.degrees(-8))
+
+            // Velvet sheen
             Ellipse()
                 .fill(
                     LinearGradient(
-                        colors: [
-                            Color(red: 0.72, green: 0.15, blue: 0.18),
-                            Color(red: 0.55, green: 0.1, blue: 0.13),
-                        ],
+                        colors: [.white.opacity(0.18), .clear, .white.opacity(0.06)],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
                 )
-                .frame(width: size * 0.4, height: size * 0.15)
+                .frame(width: size * 0.44, height: size * 0.17)
                 .rotationEffect(.degrees(-8))
-            Circle()
-                .fill(Color(red: 0.55, green: 0.1, blue: 0.13))
-                .frame(width: size * 0.04, height: size * 0.04)
-                .offset(y: -size * 0.07)
+
+            // Rim
+            Ellipse()
+                .stroke(Color(red: 0.42, green: 0.06, blue: 0.08), lineWidth: size * 0.01)
+                .frame(width: size * 0.44, height: size * 0.17)
+                .rotationEffect(.degrees(-8))
+
+            // Pompom with 3D highlight
+            ZStack {
+                Circle()
+                    .fill(Color(red: 0.5, green: 0.08, blue: 0.1))
+                    .frame(width: size * 0.055)
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [Color(red: 0.85, green: 0.2, blue: 0.24), Color(red: 0.6, green: 0.1, blue: 0.13)],
+                            center: UnitPoint(x: 0.35, y: 0.35),
+                            startRadius: 0,
+                            endRadius: size * 0.025
+                        )
+                    )
+                    .frame(width: size * 0.042)
+                Circle()
+                    .fill(.white.opacity(0.3))
+                    .frame(width: size * 0.014)
+                    .offset(x: -size * 0.006, y: -size * 0.006)
+            }
+            .offset(x: -size * 0.05, y: -size * 0.085)
+
+            // Golden leaf pin
+            ZStack {
+                Image(systemName: "leaf.fill")
+                    .font(.system(size: size * 0.04))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [Color(red: 1.0, green: 0.88, blue: 0.35), Color(red: 0.82, green: 0.62, blue: 0.12)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                Image(systemName: "leaf.fill")
+                    .font(.system(size: size * 0.04))
+                    .foregroundStyle(.yellow.opacity(0.35))
+                    .blur(radius: size * 0.006)
+            }
+            .offset(x: size * 0.12, y: size * 0.01)
         }
         .offset(y: -size * 0.3)
     }
 
     private var crownHat: some View {
-        ZStack {
-            CrownShape()
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color(red: 1.0, green: 0.84, blue: 0.0),
-                            Color(red: 0.85, green: 0.65, blue: 0.0),
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
+        TimelineView(.animation(minimumInterval: 1.0 / 10.0)) { timeline in
+            let t = timeline.date.timeIntervalSinceReferenceDate
+            ZStack {
+                // Golden glow aura
+                CrownShape()
+                    .fill(Color.yellow.opacity(0.12 + 0.05 * sin(t * 1.5)))
+                    .frame(width: size * 0.42, height: size * 0.22)
+                    .blur(radius: size * 0.04)
+
+                // Crown body — rich gold
+                CrownShape()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color(red: 1.0, green: 0.92, blue: 0.45),
+                                Color(red: 1.0, green: 0.84, blue: 0.0),
+                                Color(red: 0.88, green: 0.68, blue: 0.0),
+                                Color(red: 0.72, green: 0.52, blue: 0.0),
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
                     )
-                )
-                .frame(width: size * 0.35, height: size * 0.18)
-            HStack(spacing: size * 0.06) {
-                Circle().fill(Color.red.opacity(0.8)).frame(width: size * 0.03)
-                    .offset(y: -size * 0.02)
-                Circle().fill(Color.blue.opacity(0.8)).frame(width: size * 0.03)
-                    .offset(y: -size * 0.06)
-                Circle().fill(Color.red.opacity(0.8)).frame(width: size * 0.03)
-                    .offset(y: -size * 0.02)
+                    .frame(width: size * 0.38, height: size * 0.2)
+
+                // Crown outline
+                CrownShape()
+                    .stroke(Color(red: 0.6, green: 0.42, blue: 0.0), lineWidth: size * 0.008)
+                    .frame(width: size * 0.38, height: size * 0.2)
+
+                // Base rim
+                RoundedRectangle(cornerRadius: size * 0.008)
+                    .fill(
+                        LinearGradient(
+                            colors: [Color(red: 1.0, green: 0.92, blue: 0.55), Color(red: 0.88, green: 0.68, blue: 0.0)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .frame(width: size * 0.39, height: size * 0.035)
+                    .offset(y: size * 0.082)
+
+                // Filigree accent
+                RoundedRectangle(cornerRadius: size * 0.005)
+                    .fill(Color(red: 0.72, green: 0.52, blue: 0.0).opacity(0.5))
+                    .frame(width: size * 0.36, height: size * 0.012)
+                    .offset(y: size * 0.075)
+
+                // Animated sparkling gems
+                HStack(spacing: size * 0.065) {
+                    crownGem(color: Color(red: 0.9, green: 0.15, blue: 0.2), sparkle: 0.55 + 0.45 * sin(t * 2.8))
+                        .offset(y: -size * 0.02)
+                    crownGem(color: Color(red: 0.2, green: 0.35, blue: 0.9), sparkle: 0.55 + 0.45 * sin(t * 2.8 + 2.1))
+                        .offset(y: -size * 0.068)
+                    crownGem(color: Color(red: 0.15, green: 0.75, blue: 0.35), sparkle: 0.55 + 0.45 * sin(t * 2.8 + 4.2))
+                        .offset(y: -size * 0.02)
+                }
             }
         }
-        .offset(y: -size * 0.32)
+        .offset(y: -size * 0.33)
+    }
+
+    private func crownGem(color: Color, sparkle: Double) -> some View {
+        ZStack {
+            Circle()
+                .fill(color.opacity(0.45 * sparkle))
+                .frame(width: size * 0.055)
+                .blur(radius: size * 0.012)
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [color.opacity(0.95), color, color.opacity(0.55)],
+                        center: UnitPoint(x: 0.3, y: 0.3),
+                        startRadius: 0,
+                        endRadius: size * 0.022
+                    )
+                )
+                .frame(width: size * 0.035)
+            Circle()
+                .fill(.white.opacity(0.75 * sparkle))
+                .frame(width: size * 0.01)
+                .offset(x: -size * 0.005, y: -size * 0.005)
+        }
     }
 
     private var capHat: some View {
         ZStack {
+            // Shadow under visor
+            Ellipse()
+                .fill(Color.black.opacity(0.12))
+                .frame(width: size * 0.25, height: size * 0.04)
+                .blur(radius: size * 0.01)
+                .offset(x: size * 0.14, y: size * 0.06)
+
+            // Main dome
             HalfCircleShape()
                 .rotation(.degrees(180))
                 .fill(
                     LinearGradient(
                         colors: [
-                            Color(red: 0.3, green: 0.5, blue: 0.8),
-                            Color(red: 0.2, green: 0.38, blue: 0.65),
+                            Color(red: 0.35, green: 0.55, blue: 0.88),
+                            Color(red: 0.25, green: 0.42, blue: 0.72),
+                            Color(red: 0.18, green: 0.32, blue: 0.58),
                         ],
                         startPoint: .top,
                         endPoint: .bottom
                     )
                 )
-                .frame(width: size * 0.35, height: size * 0.14)
+                .frame(width: size * 0.38, height: size * 0.16)
+
+            // Panel stitching
+            Path { path in
+                path.move(to: CGPoint(x: 0, y: size * 0.16))
+                path.addLine(to: CGPoint(x: size * 0.04, y: 0))
+            }
+            .stroke(Color.white.opacity(0.08), lineWidth: size * 0.005)
+            .frame(width: size * 0.04, height: size * 0.16)
+            .offset(x: -size * 0.06, y: -size * 0.05)
+
+            // "M" logo
+            Text("M")
+                .font(.system(size: size * 0.06, weight: .black, design: .rounded))
+                .foregroundStyle(.white.opacity(0.85))
+                .offset(y: -size * 0.04)
+
+            // Visor
             Ellipse()
                 .fill(
                     LinearGradient(
                         colors: [
-                            Color(red: 0.22, green: 0.4, blue: 0.68),
-                            Color(red: 0.18, green: 0.32, blue: 0.55),
+                            Color(red: 0.2, green: 0.38, blue: 0.65),
+                            Color(red: 0.15, green: 0.28, blue: 0.5),
                         ],
                         startPoint: .top,
                         endPoint: .bottom
                     )
                 )
-                .frame(width: size * 0.22, height: size * 0.06)
+                .frame(width: size * 0.24, height: size * 0.065)
                 .offset(x: size * 0.15, y: size * 0.04)
+
+            // Visor shine
+            Ellipse()
+                .fill(.white.opacity(0.1))
+                .frame(width: size * 0.15, height: size * 0.025)
+                .offset(x: size * 0.13, y: size * 0.03)
+
+            // Button on top
+            Circle()
+                .fill(Color(red: 0.25, green: 0.42, blue: 0.72))
+                .frame(width: size * 0.025)
+                .offset(y: -size * 0.14)
+
+            // Stitching arc
+            HalfCircleShape()
+                .rotation(.degrees(180))
+                .stroke(Color.white.opacity(0.12), style: StrokeStyle(lineWidth: size * 0.004, dash: [size * 0.012, size * 0.008]))
+                .frame(width: size * 0.34, height: size * 0.14)
+                .offset(y: size * 0.005)
         }
         .offset(y: -size * 0.29)
     }
 
     private var wizardHat: some View {
-        ZStack {
-            WizardHatShape()
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color(red: 0.3, green: 0.15, blue: 0.5),
-                            Color(red: 0.45, green: 0.2, blue: 0.7),
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
+        TimelineView(.animation(minimumInterval: 1.0 / 10.0)) { timeline in
+            let t = timeline.date.timeIntervalSinceReferenceDate
+            ZStack {
+                // Magical aura
+                WizardHatShape()
+                    .fill(Color(red: 0.5, green: 0.2, blue: 0.9).opacity(0.08 + 0.04 * sin(t * 1.2)))
+                    .frame(width: size * 0.34, height: size * 0.38)
+                    .blur(radius: size * 0.03)
+
+                // Hat body — deep midnight purple
+                WizardHatShape()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color(red: 0.18, green: 0.08, blue: 0.42),
+                                Color(red: 0.3, green: 0.12, blue: 0.55),
+                                Color(red: 0.42, green: 0.18, blue: 0.68),
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
                     )
-                )
-                .frame(width: size * 0.3, height: size * 0.35)
-            Ellipse()
-                .fill(Color(red: 0.35, green: 0.18, blue: 0.55))
-                .frame(width: size * 0.4, height: size * 0.06)
-                .offset(y: size * 0.14)
-            Image(systemName: "star.fill")
-                .font(.system(size: size * 0.04))
-                .foregroundStyle(Color.yellow.opacity(0.9))
-                .offset(x: -size * 0.04, y: -size * 0.02)
-            Image(systemName: "star.fill")
-                .font(.system(size: size * 0.03))
-                .foregroundStyle(Color.yellow.opacity(0.7))
-                .offset(x: size * 0.06, y: size * 0.06)
+                    .frame(width: size * 0.32, height: size * 0.36)
+
+                // Constellation stars (twinkling)
+                let starPos: [(CGFloat, CGFloat)] = [(-0.04, -0.08), (0.06, -0.02), (-0.02, 0.04), (0.08, -0.1), (-0.06, 0.0)]
+                let starSizes: [CGFloat] = [0.014, 0.01, 0.012, 0.008, 0.01]
+                ForEach(0..<5, id: \.self) { i in
+                    Circle()
+                        .fill(.white.opacity(0.3 + 0.7 * sin(t * 3.0 + Double(i) * 1.8)))
+                        .frame(width: size * starSizes[i])
+                        .offset(x: size * starPos[i].0, y: size * starPos[i].1)
+                }
+
+                // Crescent moon buckle
+                ZStack {
+                    Image(systemName: "moon.fill")
+                        .font(.system(size: size * 0.04))
+                        .foregroundStyle(Color(red: 1.0, green: 0.9, blue: 0.4))
+                    Image(systemName: "moon.fill")
+                        .font(.system(size: size * 0.04))
+                        .foregroundStyle(.yellow.opacity(0.4))
+                        .blur(radius: size * 0.006)
+                }
+                .offset(x: size * 0.02, y: size * 0.06)
+
+                // Rim with band
+                Ellipse()
+                    .fill(
+                        LinearGradient(
+                            colors: [Color(red: 0.38, green: 0.16, blue: 0.58), Color(red: 0.28, green: 0.1, blue: 0.42)],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .frame(width: size * 0.42, height: size * 0.06)
+                    .offset(y: size * 0.15)
+
+                // Gold accent on rim
+                Ellipse()
+                    .stroke(Color(red: 1.0, green: 0.85, blue: 0.3).opacity(0.4), lineWidth: size * 0.005)
+                    .frame(width: size * 0.4, height: size * 0.055)
+                    .offset(y: size * 0.15)
+
+                // Sparkle at tip
+                Image(systemName: "sparkle")
+                    .font(.system(size: size * 0.035, weight: .bold))
+                    .foregroundStyle(.yellow.opacity(0.4 + 0.6 * sin(t * 2.0)))
+                    .offset(x: -size * 0.03, y: -size * 0.18)
+            }
         }
         .rotationEffect(.degrees(-5))
         .offset(y: -size * 0.39)
     }
 
     private var ninjaBand: some View {
-        let clothColor = Color(red: 0.15, green: 0.2, blue: 0.45)
-        let clothColor2 = Color(red: 0.1, green: 0.15, blue: 0.35)
-        let metalLight = Color(red: 0.78, green: 0.78, blue: 0.82)
-        let metalDark = Color(red: 0.5, green: 0.5, blue: 0.55)
+        let clothColor = Color(red: 0.12, green: 0.15, blue: 0.38)
+        let clothColor2 = Color(red: 0.08, green: 0.1, blue: 0.28)
+        let metalLight = Color(red: 0.82, green: 0.82, blue: 0.88)
+        let metalDark = Color(red: 0.5, green: 0.5, blue: 0.58)
 
         return ZStack {
+            // Main cloth band
             RoundedRectangle(cornerRadius: size * 0.015)
-                .fill(LinearGradient(colors: [clothColor, clothColor2], startPoint: .top, endPoint: .bottom))
-                .frame(width: size * 0.55, height: size * 0.07)
-
-            RoundedRectangle(cornerRadius: size * 0.008)
-                .fill(LinearGradient(colors: [clothColor, clothColor2.opacity(0.7)], startPoint: .leading, endPoint: .trailing))
-                .frame(width: size * 0.2, height: size * 0.04)
-                .rotationEffect(.degrees(25))
-                .offset(x: size * 0.35, y: size * 0.06)
-
-            RoundedRectangle(cornerRadius: size * 0.008)
-                .fill(LinearGradient(colors: [clothColor, clothColor2.opacity(0.6)], startPoint: .leading, endPoint: .trailing))
-                .frame(width: size * 0.17, height: size * 0.035)
-                .rotationEffect(.degrees(35))
-                .offset(x: size * 0.32, y: size * 0.1)
-
-            RoundedRectangle(cornerRadius: size * 0.012)
-                .fill(LinearGradient(colors: [metalLight, metalDark], startPoint: .topLeading, endPoint: .bottomTrailing))
-                .frame(width: size * 0.1, height: size * 0.065)
+                .fill(
+                    LinearGradient(
+                        colors: [clothColor, clothColor2, clothColor],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .frame(width: size * 0.56, height: size * 0.072)
                 .overlay(
-                    RoundedRectangle(cornerRadius: size * 0.012)
-                        .stroke(metalDark, lineWidth: size * 0.005)
+                    RoundedRectangle(cornerRadius: size * 0.015)
+                        .fill(
+                            LinearGradient(
+                                colors: [.white.opacity(0.08), .clear, .white.opacity(0.04)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
                 )
 
-            Circle()
-                .stroke(metalDark, lineWidth: size * 0.006)
-                .frame(width: size * 0.035, height: size * 0.035)
-            Circle()
-                .fill(metalDark)
-                .frame(width: size * 0.012, height: size * 0.012)
+            // Flowing tail 1 (animated with breathing)
+            RoundedRectangle(cornerRadius: size * 0.008)
+                .fill(LinearGradient(colors: [clothColor, clothColor2.opacity(0.7)], startPoint: .leading, endPoint: .trailing))
+                .frame(width: size * 0.22, height: size * 0.04)
+                .rotationEffect(.degrees(Double(22 + breathPhase * 6)))
+                .offset(x: size * 0.36, y: size * 0.06)
 
-            Circle()
-                .fill(metalDark.opacity(0.6))
-                .frame(width: size * 0.008, height: size * 0.008)
-                .offset(x: -size * 0.035, y: 0)
-            Circle()
-                .fill(metalDark.opacity(0.6))
-                .frame(width: size * 0.008, height: size * 0.008)
-                .offset(x: size * 0.035, y: 0)
+            // Flowing tail 2
+            RoundedRectangle(cornerRadius: size * 0.008)
+                .fill(LinearGradient(colors: [clothColor, clothColor2.opacity(0.5)], startPoint: .leading, endPoint: .trailing))
+                .frame(width: size * 0.18, height: size * 0.035)
+                .rotationEffect(.degrees(Double(32 + breathPhase * 8)))
+                .offset(x: size * 0.33, y: size * 0.11)
+
+            // Ornate metal plate
+            ZStack {
+                RoundedRectangle(cornerRadius: size * 0.015)
+                    .fill(Color.black.opacity(0.15))
+                    .frame(width: size * 0.11, height: size * 0.072)
+                    .blur(radius: size * 0.005)
+                    .offset(y: size * 0.003)
+
+                RoundedRectangle(cornerRadius: size * 0.015)
+                    .fill(
+                        LinearGradient(
+                            colors: [metalLight, metalDark, metalLight.opacity(0.8)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: size * 0.11, height: size * 0.072)
+
+                RoundedRectangle(cornerRadius: size * 0.015)
+                    .stroke(
+                        LinearGradient(colors: [metalLight, metalDark], startPoint: .top, endPoint: .bottom),
+                        lineWidth: size * 0.005
+                    )
+                    .frame(width: size * 0.11, height: size * 0.072)
+
+                // Spiral symbol
+                Image(systemName: "hurricane")
+                    .font(.system(size: size * 0.035, weight: .bold))
+                    .foregroundStyle(
+                        LinearGradient(colors: [clothColor, clothColor2], startPoint: .top, endPoint: .bottom)
+                    )
+            }
+
+            // Decorative rivets
+            HStack(spacing: size * 0.065) {
+                ForEach(0..<2, id: \.self) { _ in
+                    Circle()
+                        .fill(
+                            RadialGradient(
+                                colors: [metalLight, metalDark],
+                                center: UnitPoint(x: 0.35, y: 0.35),
+                                startRadius: 0,
+                                endRadius: size * 0.008
+                            )
+                        )
+                        .frame(width: size * 0.014)
+                }
+            }
         }
         .offset(y: -size * 0.18)
     }
 
     private var glassesAccessory: some View {
-        let frameColor = Color(red: 0.1, green: 0.1, blue: 0.12)
-        let lensColor = LinearGradient(
-            colors: [Color(red: 0.15, green: 0.15, blue: 0.2), Color(red: 0.25, green: 0.2, blue: 0.15)],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-        let lensW = size * 0.16
-        let lensH = size * 0.11
-        let eyeSpacing = size * 0.075
+        TimelineView(.animation(minimumInterval: 1.0 / 12.0)) { timeline in
+            let t = timeline.date.timeIntervalSinceReferenceDate
+            let flareX = sin(t * 0.8) * 0.3
+            let flareOp = 0.1 + 0.12 * (sin(t * 0.8) + 1) / 2
 
-        return ZStack {
-            RoundedRectangle(cornerRadius: lensH * 0.45)
-                .fill(lensColor)
-                .frame(width: lensW, height: lensH)
-                .overlay(
-                    RoundedRectangle(cornerRadius: lensH * 0.45)
-                        .stroke(frameColor, lineWidth: size * 0.01)
-                )
-                .overlay(
-                    Ellipse()
-                        .fill(Color.white.opacity(0.15))
-                        .frame(width: lensW * 0.4, height: lensH * 0.3)
-                        .offset(x: -lensW * 0.15, y: -lensH * 0.15)
-                )
-                .offset(x: -eyeSpacing)
-            RoundedRectangle(cornerRadius: lensH * 0.45)
-                .fill(lensColor)
-                .frame(width: lensW, height: lensH)
-                .overlay(
-                    RoundedRectangle(cornerRadius: lensH * 0.45)
-                        .stroke(frameColor, lineWidth: size * 0.01)
-                )
-                .overlay(
-                    Ellipse()
-                        .fill(Color.white.opacity(0.15))
-                        .frame(width: lensW * 0.4, height: lensH * 0.3)
-                        .offset(x: -lensW * 0.15, y: -lensH * 0.15)
-                )
-                .offset(x: eyeSpacing)
-            RoundedRectangle(cornerRadius: size * 0.005)
-                .fill(frameColor)
-                .frame(width: eyeSpacing * 0.35, height: size * 0.015)
+            let frameGold = Color(red: 0.75, green: 0.6, blue: 0.35)
+            let frameDark = Color(red: 0.55, green: 0.4, blue: 0.2)
+            let lensW = size * 0.155
+            let lensH = size * 0.115
+            let spacing = size * 0.078
+
+            ZStack {
+                // Left lens
+                glassLens(lensW: lensW, lensH: lensH, frameGold: frameGold, frameDark: frameDark, flareX: flareX, flareOp: flareOp)
+                    .offset(x: -spacing)
+
+                // Right lens
+                glassLens(lensW: lensW, lensH: lensH, frameGold: frameGold, frameDark: frameDark, flareX: flareX, flareOp: flareOp)
+                    .offset(x: spacing)
+
+                // Bridge
+                RoundedRectangle(cornerRadius: size * 0.006)
+                    .fill(
+                        LinearGradient(colors: [frameGold, frameDark], startPoint: .top, endPoint: .bottom)
+                    )
+                    .frame(width: spacing * 0.4, height: size * 0.016)
+
+                // Nose pads
+                Circle().fill(frameGold.opacity(0.6)).frame(width: size * 0.012)
+                    .offset(x: -size * 0.015, y: size * 0.04)
+                Circle().fill(frameGold.opacity(0.6)).frame(width: size * 0.012)
+                    .offset(x: size * 0.015, y: size * 0.04)
+            }
         }
         .offset(y: -size * 0.06)
     }
 
+    private func glassLens(lensW: CGFloat, lensH: CGFloat, frameGold: Color, frameDark: Color, flareX: CGFloat, flareOp: Double) -> some View {
+        ZStack {
+            // Tinted lens
+            RoundedRectangle(cornerRadius: lensH * 0.5)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 0.12, green: 0.12, blue: 0.18).opacity(0.75),
+                            Color(red: 0.18, green: 0.15, blue: 0.12).opacity(0.65),
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(width: lensW, height: lensH)
+
+            // Animated lens flare sweep
+            Ellipse()
+                .fill(
+                    LinearGradient(
+                        colors: [.white.opacity(0.0), .white.opacity(flareOp), .white.opacity(0.0)],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .frame(width: lensW * 0.5, height: lensH * 0.7)
+                .offset(x: lensW * flareX)
+                .clipShape(RoundedRectangle(cornerRadius: lensH * 0.5))
+
+            // Static highlight
+            Ellipse()
+                .fill(.white.opacity(0.12))
+                .frame(width: lensW * 0.35, height: lensH * 0.25)
+                .offset(x: -lensW * 0.18, y: -lensH * 0.2)
+
+            // Gold frame
+            RoundedRectangle(cornerRadius: lensH * 0.5)
+                .stroke(
+                    LinearGradient(colors: [frameGold, frameDark, frameGold], startPoint: .topLeading, endPoint: .bottomTrailing),
+                    lineWidth: size * 0.012
+                )
+                .frame(width: lensW, height: lensH)
+        }
+    }
+
     private var scarfAccessory: some View {
-        let scarfColor1 = Color(red: 0.85, green: 0.2, blue: 0.2)
-        let scarfColor2 = Color(red: 0.65, green: 0.12, blue: 0.12)
+        let scarfRed = Color(red: 0.88, green: 0.18, blue: 0.2)
+        let scarfDark = Color(red: 0.62, green: 0.1, blue: 0.12)
+        let creamStripe = Color(red: 1.0, green: 0.95, blue: 0.85)
 
         return ZStack {
+            // Warm glow
             RoundedRectangle(cornerRadius: size * 0.03)
-                .fill(
-                    LinearGradient(colors: [scarfColor1, scarfColor2], startPoint: .leading, endPoint: .trailing)
-                )
-                .frame(width: size * 0.65, height: size * 0.08)
+                .fill(scarfRed.opacity(0.08))
+                .frame(width: size * 0.68, height: size * 0.1)
+                .blur(radius: size * 0.015)
                 .offset(y: size * 0.18)
 
-            HStack(spacing: size * 0.08) {
-                ForEach(0..<3, id: \.self) { _ in
-                    RoundedRectangle(cornerRadius: 1)
-                        .fill(Color.white.opacity(0.2))
-                        .frame(width: size * 0.01, height: size * 0.06)
+            // Main wrap with stripe pattern
+            RoundedRectangle(cornerRadius: size * 0.03)
+                .fill(
+                    LinearGradient(colors: [scarfRed, scarfDark, scarfRed], startPoint: .leading, endPoint: .trailing)
+                )
+                .frame(width: size * 0.66, height: size * 0.085)
+                .overlay(
+                    HStack(spacing: size * 0.055) {
+                        ForEach(0..<4, id: \.self) { _ in
+                            RoundedRectangle(cornerRadius: 1)
+                                .fill(creamStripe.opacity(0.25))
+                                .frame(width: size * 0.012, height: size * 0.065)
+                        }
+                    }
+                )
+                .offset(y: size * 0.18)
+
+            // Hanging end 1 (sway with breathing)
+            ZStack {
+                RoundedRectangle(cornerRadius: size * 0.015)
+                    .fill(
+                        LinearGradient(colors: [scarfRed, scarfDark], startPoint: .top, endPoint: .bottom)
+                    )
+                    .frame(width: size * 0.085, height: size * 0.2)
+                VStack(spacing: size * 0.035) {
+                    ForEach(0..<3, id: \.self) { _ in
+                        RoundedRectangle(cornerRadius: 1)
+                            .fill(creamStripe.opacity(0.2))
+                            .frame(width: size * 0.065, height: size * 0.008)
+                    }
                 }
             }
-            .offset(y: size * 0.18)
+            .rotationEffect(.degrees(Double(-10 - breathPhase * 4)), anchor: .top)
+            .offset(x: -size * 0.28, y: size * 0.28)
 
-            RoundedRectangle(cornerRadius: size * 0.015)
-                .fill(
-                    LinearGradient(colors: [scarfColor1, scarfColor2], startPoint: .top, endPoint: .bottom)
-                )
-                .frame(width: size * 0.08, height: size * 0.18)
-                .rotationEffect(.degrees(-12))
-                .offset(x: -size * 0.28, y: size * 0.28)
+            // Hanging end 2
+            ZStack {
+                RoundedRectangle(cornerRadius: size * 0.012)
+                    .fill(
+                        LinearGradient(colors: [scarfRed, scarfDark.opacity(0.8)], startPoint: .top, endPoint: .bottom)
+                    )
+                    .frame(width: size * 0.072, height: size * 0.14)
+                VStack(spacing: size * 0.028) {
+                    ForEach(0..<2, id: \.self) { _ in
+                        RoundedRectangle(cornerRadius: 1)
+                            .fill(creamStripe.opacity(0.18))
+                            .frame(width: size * 0.052, height: size * 0.007)
+                    }
+                }
+            }
+            .rotationEffect(.degrees(Double(6 + breathPhase * 3)), anchor: .top)
+            .offset(x: -size * 0.2, y: size * 0.33)
 
-            RoundedRectangle(cornerRadius: size * 0.015)
-                .fill(
-                    LinearGradient(colors: [scarfColor1, scarfColor2.opacity(0.8)], startPoint: .top, endPoint: .bottom)
-                )
-                .frame(width: size * 0.07, height: size * 0.12)
-                .rotationEffect(.degrees(8))
-                .offset(x: -size * 0.2, y: size * 0.32)
-
-            HStack(spacing: size * 0.008) {
-                ForEach(0..<4, id: \.self) { _ in
+            // Tassels
+            HStack(spacing: size * 0.01) {
+                ForEach(0..<5, id: \.self) { _ in
                     RoundedRectangle(cornerRadius: size * 0.003)
-                        .fill(scarfColor2)
-                        .frame(width: size * 0.012, height: size * 0.025)
+                        .fill(scarfDark)
+                        .frame(width: size * 0.01, height: size * 0.028)
                 }
             }
-            .rotationEffect(.degrees(-12))
-            .offset(x: -size * 0.28, y: size * 0.38)
+            .rotationEffect(.degrees(Double(-10 - breathPhase * 4)))
+            .offset(x: -size * 0.28, y: size * 0.39)
         }
     }
 
     private var bowTieAccessory: some View {
-        let bowColor1 = Color(red: 0.85, green: 0.15, blue: 0.2)
-        let bowColor2 = Color(red: 0.65, green: 0.08, blue: 0.12)
-        let wingW = size * 0.13
-        let wingH = size * 0.09
+        let bowSilk1 = Color(red: 0.88, green: 0.12, blue: 0.18)
+        let bowSilk2 = Color(red: 0.62, green: 0.06, blue: 0.1)
+        let wingW = size * 0.14
+        let wingH = size * 0.095
 
         return ZStack {
-            BowTieWingShape()
-                .fill(LinearGradient(colors: [bowColor1, bowColor2], startPoint: .top, endPoint: .bottom))
-                .frame(width: wingW, height: wingH)
-                .offset(x: -wingW * 0.45)
-            BowTieWingShape()
-                .fill(LinearGradient(colors: [bowColor1, bowColor2], startPoint: .top, endPoint: .bottom))
-                .frame(width: wingW, height: wingH)
-                .scaleEffect(x: -1, y: 1)
-                .offset(x: wingW * 0.45)
-            Circle()
-                .fill(bowColor2)
-                .frame(width: size * 0.04, height: size * 0.04)
+            // Subtle glow
+            Ellipse()
+                .fill(bowSilk1.opacity(0.1))
+                .frame(width: wingW * 2.5, height: wingH * 1.5)
+                .blur(radius: size * 0.015)
+
+            // Left wing with silk sheen
+            ZStack {
+                BowTieWingShape()
+                    .fill(
+                        LinearGradient(
+                            colors: [bowSilk1, bowSilk2, bowSilk1.opacity(0.85)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .frame(width: wingW, height: wingH)
+                BowTieWingShape()
+                    .fill(
+                        LinearGradient(
+                            colors: [.white.opacity(0.15), .clear, .white.opacity(0.08)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: wingW, height: wingH)
+            }
+            .offset(x: -wingW * 0.45)
+
+            // Right wing with silk sheen
+            ZStack {
+                BowTieWingShape()
+                    .fill(
+                        LinearGradient(
+                            colors: [bowSilk1, bowSilk2, bowSilk1.opacity(0.85)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .frame(width: wingW, height: wingH)
+                    .scaleEffect(x: -1, y: 1)
+                BowTieWingShape()
+                    .fill(
+                        LinearGradient(
+                            colors: [.white.opacity(0.15), .clear, .white.opacity(0.08)],
+                            startPoint: .topTrailing,
+                            endPoint: .bottomLeading
+                        )
+                    )
+                    .frame(width: wingW, height: wingH)
+                    .scaleEffect(x: -1, y: 1)
+            }
+            .offset(x: wingW * 0.45)
+
+            // Pearl center button
+            ZStack {
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [.white, Color(red: 0.92, green: 0.88, blue: 0.82), Color(red: 0.78, green: 0.72, blue: 0.65)],
+                            center: UnitPoint(x: 0.35, y: 0.3),
+                            startRadius: 0,
+                            endRadius: size * 0.02
+                        )
+                    )
+                    .frame(width: size * 0.04, height: size * 0.04)
+                Circle()
+                    .fill(.white.opacity(0.6))
+                    .frame(width: size * 0.012)
+                    .offset(x: -size * 0.006, y: -size * 0.006)
+            }
         }
         .offset(y: size * 0.16)
     }
 
     private var capeAccessory: some View {
-        CapeShape()
-            .fill(
-                LinearGradient(
-                    colors: [
-                        Color(red: 0.35, green: 0.15, blue: 0.6),
-                        Color(red: 0.25, green: 0.1, blue: 0.45),
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-            )
-            .frame(width: size * 0.95, height: size * 0.8)
-            .overlay(
+        TimelineView(.animation(minimumInterval: 1.0 / 10.0)) { timeline in
+            let t = timeline.date.timeIntervalSinceReferenceDate
+            ZStack {
+                // Cape body — rich purple
                 CapeShape()
                     .fill(
                         LinearGradient(
                             colors: [
-                                Color(red: 0.55, green: 0.2, blue: 0.8).opacity(0.3),
+                                Color(red: 0.3, green: 0.1, blue: 0.55),
+                                Color(red: 0.22, green: 0.08, blue: 0.4),
+                                Color(red: 0.15, green: 0.05, blue: 0.3),
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .frame(width: size * 0.95, height: size * 0.82)
+
+                // Galaxy inner glow (drifting)
+                CapeShape()
+                    .fill(
+                        RadialGradient(
+                            colors: [
+                                Color(red: 0.4, green: 0.15, blue: 0.7).opacity(0.25),
+                                Color(red: 0.2, green: 0.1, blue: 0.5).opacity(0.12),
                                 .clear,
+                            ],
+                            center: UnitPoint(x: 0.5 + 0.1 * sin(t * 0.3), y: 0.4 + 0.1 * cos(t * 0.4)),
+                            startRadius: 0,
+                            endRadius: size * 0.45
+                        )
+                    )
+                    .frame(width: size * 0.95, height: size * 0.82)
+
+                // Inner constellation stars
+                let capeStarPos: [(CGFloat, CGFloat)] = [(0.3, 0.4), (0.65, 0.35), (0.45, 0.55), (0.7, 0.6), (0.35, 0.65), (0.55, 0.45)]
+                ForEach(0..<6, id: \.self) { i in
+                    Circle()
+                        .fill(.white.opacity(0.15 + 0.2 * sin(t * 2.0 + Double(i) * 1.5)))
+                        .frame(width: size * 0.008)
+                        .offset(
+                            x: size * (capeStarPos[i].0 - 0.5) * 0.9,
+                            y: size * (capeStarPos[i].1 - 0.2) * 0.8
+                        )
+                }
+
+                // Sheen overlay
+                CapeShape()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color(red: 0.5, green: 0.2, blue: 0.8).opacity(0.18),
+                                .clear,
+                                Color(red: 0.3, green: 0.1, blue: 0.6).opacity(0.08),
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
                     )
-                    .frame(width: size * 0.95, height: size * 0.8)
-            )
-            .offset(y: size * 0.08)
+                    .frame(width: size * 0.95, height: size * 0.82)
+
+                // Golden clasp at collar
+                ZStack {
+                    Circle()
+                        .fill(
+                            RadialGradient(
+                                colors: [
+                                    Color(red: 1.0, green: 0.9, blue: 0.45),
+                                    Color(red: 0.85, green: 0.65, blue: 0.1),
+                                ],
+                                center: UnitPoint(x: 0.4, y: 0.35),
+                                startRadius: 0,
+                                endRadius: size * 0.02
+                            )
+                        )
+                        .frame(width: size * 0.04, height: size * 0.04)
+                    Circle()
+                        .fill(.white.opacity(0.4))
+                        .frame(width: size * 0.012)
+                        .offset(x: -size * 0.004, y: -size * 0.004)
+                }
+                .offset(y: -size * 0.33)
+            }
+        }
+        .offset(y: size * 0.08)
     }
 
     private var wingsAccessory: some View {
-        HStack(spacing: size * 0.55) {
-            WingShape()
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color.white.opacity(0.7),
-                            Color(red: 0.85, green: 0.9, blue: 1.0).opacity(0.4),
-                        ],
-                        startPoint: .trailing,
-                        endPoint: .leading
-                    )
-                )
-                .frame(width: size * 0.2, height: size * 0.3)
-                .scaleEffect(x: -1, y: 1)
-            WingShape()
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color.white.opacity(0.7),
-                            Color(red: 0.85, green: 0.9, blue: 1.0).opacity(0.4),
-                        ],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
-                .frame(width: size * 0.2, height: size * 0.3)
+        TimelineView(.animation(minimumInterval: 1.0 / 12.0)) { timeline in
+            let t = timeline.date.timeIntervalSinceReferenceDate
+            let glowPulse = 0.3 + 0.15 * sin(t * 1.8)
+
+            HStack(spacing: size * 0.55) {
+                // Left wing
+                ZStack {
+                    // Ethereal glow
+                    WingShape()
+                        .fill(Color(red: 0.85, green: 0.9, blue: 1.0).opacity(glowPulse))
+                        .frame(width: size * 0.22, height: size * 0.32)
+                        .blur(radius: size * 0.025)
+                        .scaleEffect(x: -1, y: 1)
+
+                    // Wing body
+                    WingShape()
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color.white.opacity(0.85),
+                                    Color(red: 0.9, green: 0.92, blue: 1.0).opacity(0.6),
+                                    Color(red: 0.8, green: 0.85, blue: 1.0).opacity(0.3),
+                                ],
+                                startPoint: .trailing,
+                                endPoint: .leading
+                            )
+                        )
+                        .frame(width: size * 0.22, height: size * 0.32)
+                        .scaleEffect(x: -1, y: 1)
+
+                    // Feather outline
+                    WingShape()
+                        .stroke(Color.white.opacity(0.25), lineWidth: size * 0.004)
+                        .frame(width: size * 0.22, height: size * 0.32)
+                        .scaleEffect(x: -1, y: 1)
+
+                    // Sparkle accents
+                    Image(systemName: "sparkle")
+                        .font(.system(size: size * 0.02))
+                        .foregroundStyle(.white.opacity(0.3 + 0.5 * sin(t * 2.5)))
+                        .offset(x: -size * 0.08, y: -size * 0.06)
+                    Image(systemName: "sparkle")
+                        .font(.system(size: size * 0.015))
+                        .foregroundStyle(.white.opacity(0.3 + 0.5 * sin(t * 2.5 + 2.0)))
+                        .offset(x: -size * 0.04, y: size * 0.04)
+                }
+                .rotationEffect(.degrees(Double(breathPhase * 3)), anchor: .trailing)
+
+                // Right wing
+                ZStack {
+                    WingShape()
+                        .fill(Color(red: 0.85, green: 0.9, blue: 1.0).opacity(glowPulse))
+                        .frame(width: size * 0.22, height: size * 0.32)
+                        .blur(radius: size * 0.025)
+
+                    WingShape()
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color.white.opacity(0.85),
+                                    Color(red: 0.9, green: 0.92, blue: 1.0).opacity(0.6),
+                                    Color(red: 0.8, green: 0.85, blue: 1.0).opacity(0.3),
+                                ],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .frame(width: size * 0.22, height: size * 0.32)
+
+                    WingShape()
+                        .stroke(Color.white.opacity(0.25), lineWidth: size * 0.004)
+                        .frame(width: size * 0.22, height: size * 0.32)
+
+                    Image(systemName: "sparkle")
+                        .font(.system(size: size * 0.02))
+                        .foregroundStyle(.white.opacity(0.3 + 0.5 * sin(t * 2.5 + 1.0)))
+                        .offset(x: size * 0.08, y: -size * 0.06)
+                    Image(systemName: "sparkle")
+                        .font(.system(size: size * 0.015))
+                        .foregroundStyle(.white.opacity(0.3 + 0.5 * sin(t * 2.5 + 3.0)))
+                        .offset(x: size * 0.04, y: size * 0.04)
+                }
+                .rotationEffect(.degrees(Double(-breathPhase * 3)), anchor: .leading)
+            }
         }
         .offset(y: -size * 0.02)
+    }
+
+    // MARK: - Crystal Ball Accessory
+
+    private var crystalBallAccessory: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 15.0)) { timeline in
+            let t = timeline.date.timeIntervalSinceReferenceDate
+            let pulse = 0.7 + 0.3 * sin(t * 1.5)
+
+            ZStack {
+                // Mystical aura
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [
+                                Color(red: 0.55, green: 0.2, blue: 0.9).opacity(0.15 * pulse),
+                                Color(red: 0.2, green: 0.6, blue: 0.8).opacity(0.08 * pulse),
+                                .clear,
+                            ],
+                            center: .center,
+                            startRadius: size * 0.04,
+                            endRadius: size * 0.14
+                        )
+                    )
+                    .frame(width: size * 0.28, height: size * 0.28)
+
+                // Glass sphere
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [
+                                Color(red: 0.7, green: 0.5, blue: 0.95).opacity(0.25),
+                                Color(red: 0.3, green: 0.2, blue: 0.6).opacity(0.4),
+                                Color(red: 0.15, green: 0.1, blue: 0.35).opacity(0.6),
+                            ],
+                            center: UnitPoint(x: 0.4, y: 0.35),
+                            startRadius: 0,
+                            endRadius: size * 0.09
+                        )
+                    )
+                    .frame(width: size * 0.16, height: size * 0.16)
+
+                // Swirling inner mist (clipped to sphere)
+                ZStack {
+                    let mistColors: [Color] = [.purple, .cyan, Color(red: 0.9, green: 0.4, blue: 0.9)]
+                    ForEach(0..<3, id: \.self) { i in
+                        let angle = t * 0.8 + Double(i) * (2.0 * .pi / 3.0)
+                        let r = size * 0.035
+                        Circle()
+                            .fill(
+                                RadialGradient(
+                                    colors: [mistColors[i].opacity(0.45), .clear],
+                                    center: .center,
+                                    startRadius: 0,
+                                    endRadius: size * 0.04
+                                )
+                            )
+                            .frame(width: size * 0.08, height: size * 0.08)
+                            .offset(x: cos(angle) * r, y: sin(angle) * r)
+                    }
+                }
+                .frame(width: size * 0.14, height: size * 0.14)
+                .clipShape(Circle())
+
+                // Glass highlight
+                Ellipse()
+                    .fill(.white.opacity(0.3))
+                    .frame(width: size * 0.06, height: size * 0.035)
+                    .rotationEffect(.degrees(-25))
+                    .offset(x: -size * 0.025, y: -size * 0.04)
+
+                // Glass rim
+                Circle()
+                    .stroke(
+                        LinearGradient(
+                            colors: [
+                                Color(red: 0.5, green: 0.3, blue: 0.8).opacity(0.5),
+                                Color(red: 0.3, green: 0.15, blue: 0.55).opacity(0.3),
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: size * 0.006
+                    )
+                    .frame(width: size * 0.16, height: size * 0.16)
+
+                // Orbiting sparkles
+                ForEach(0..<4, id: \.self) { i in
+                    let orbitAngle = t * 1.2 + Double(i) * (.pi / 2.0)
+                    let sparkleColors: [Color] = [.purple, .cyan, Color(red: 0.9, green: 0.5, blue: 1.0), .white]
+                    Image(systemName: "sparkle")
+                        .font(.system(size: size * 0.018))
+                        .foregroundStyle(sparkleColors[i].opacity(0.3 + 0.5 * sin(t * 3.0 + Double(i) * 1.5)))
+                        .offset(
+                            x: cos(orbitAngle) * size * 0.1,
+                            y: sin(orbitAngle) * size * 0.1 * 0.5
+                        )
+                }
+
+                // Ornate golden base
+                ZStack {
+                    Ellipse()
+                        .fill(Color.black.opacity(0.15))
+                        .frame(width: size * 0.12, height: size * 0.03)
+                        .blur(radius: size * 0.005)
+                        .offset(y: size * 0.092)
+
+                    CrystalBallStandShape()
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color(red: 1.0, green: 0.9, blue: 0.45),
+                                    Color(red: 0.85, green: 0.65, blue: 0.1),
+                                    Color(red: 0.65, green: 0.48, blue: 0.05),
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .frame(width: size * 0.12, height: size * 0.06)
+                        .offset(y: size * 0.075)
+
+                    CrystalBallStandShape()
+                        .fill(
+                            LinearGradient(
+                                colors: [.white.opacity(0.2), .clear],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: size * 0.12, height: size * 0.06)
+                        .offset(y: size * 0.075)
+                }
+            }
+        }
+        .offset(x: size * 0.32, y: size * 0.15)
     }
 }
 
@@ -1466,6 +2104,28 @@ struct WingShape: Shape {
         path.addQuadCurve(
             to: CGPoint(x: 0, y: h * 0.7),
             control: CGPoint(x: w * 0.2, y: h * 0.8)
+        )
+        path.closeSubpath()
+        return path
+    }
+}
+
+struct CrystalBallStandShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let w = rect.width
+        let h = rect.height
+        // Ornate trapezoid base with curved edges
+        path.move(to: CGPoint(x: w * 0.3, y: 0))
+        path.addLine(to: CGPoint(x: w * 0.7, y: 0))
+        path.addQuadCurve(
+            to: CGPoint(x: w * 0.85, y: h),
+            control: CGPoint(x: w * 0.8, y: h * 0.5)
+        )
+        path.addLine(to: CGPoint(x: w * 0.15, y: h))
+        path.addQuadCurve(
+            to: CGPoint(x: w * 0.3, y: 0),
+            control: CGPoint(x: w * 0.2, y: h * 0.5)
         )
         path.closeSubpath()
         return path

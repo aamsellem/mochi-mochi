@@ -192,8 +192,8 @@ L'utilisateur peut personnaliser l'apparence du Mochi avec des éléments cosmé
 
 **Catégories d'items** :
 - **Couleurs** : couleur du corps du Mochi (blanc, rose, vert matcha, bleu ciel, doré, gris, noir, bleu nuit, violet, pride/arc-en-ciel). Les couleurs sombres (noir, bleu nuit) inversent automatiquement la couleur du visage pour garder les yeux et la bouche visibles.
-- **Chapeaux** : béret, couronne, casquette, chapeau de sorcier, bandeau ninja…
-- **Accessoires** : lunettes, écharpe, nœud papillon, cape, ailes…
+- **Chapeaux** : béret velours, couronne scintillante, casquette brodée, chapeau de sorcier étoilé, bandeau ninja animé…
+- **Accessoires** : lunettes dorées avec reflet, écharpe animée, nœud papillon satin, cape galaxie, ailes éthérées, boule de voyante…
 - **Décors de fond** : jardin zen, bureau cosy, espace, forêt de bambous…
 
 ---
@@ -707,7 +707,12 @@ L'intégration Notion utilise l'API REST officielle Notion avec authentification
 - Horaires sur les cartes : chaque carte réunion affiche la date relative + heures de début et fin
 - Nettoyage de l'avatar Mochi : suppression des bite marks visuels
 
-### Phase 4.2 — Intégrations (v0.4.2)
+### Phase 4.2 — Polish accessoires & notes (v0.4.2) ✅
+- Refonte visuelle de tous les accessoires Mochi avec animations impressionnantes (TimelineView, RadialGradient, particules, effets de lumière)
+- Nouvel item cosmétique : boule de voyante (mist animé, sparkles orbitants, base dorée ornée)
+- Indicateur de sauvegarde en temps réel sur les notes (non sauvegardé / sauvegarde en cours / sauvegardé)
+
+### Phase 4.3 — Intégrations (v0.4.3)
 - Synchronisation bidirectionnelle Notion
 - Raccourcis clavier globaux
 - Mode focus

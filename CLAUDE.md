@@ -47,9 +47,9 @@ MochiMochi/
 │   │   └── TaskRowView.swift        # Ligne de tâche réutilisable
 │   ├── Mochi/                 # Compagnon virtuel (sidebar droite, rétractable)
 │   │   ├── MochiView.swift    # Carte compagnon + stats + tâches en attente
-│   │   └── MochiAvatarView.swift # Avatar avec 9 émotions
+│   │   └── MochiAvatarView.swift # Avatar avec 9 émotions + accessoires animés (TimelineView)
 │   ├── Notes/                 # Prise de notes rapide
-│   │   └── NotesView.swift    # Éditeur de notes + extraction de tâches via IA
+│   │   └── NotesView.swift    # Éditeur de notes + extraction de tâches via IA + indicateur de sauvegarde
 │   ├── Meetings/              # Veille de réunions Outlook + Notion
 │   │   ├── MeetingsView.swift           # Vue Kanban horizontale (5 colonnes, masquées si vides)
 │   │   └── MeetingProposalDetailView.swift # Détail et validation des tâches suggérées

@@ -61,6 +61,15 @@ struct QuickNote: Identifiable, Codable {
     }
 }
 
+// MARK: - Save Status
+
+private enum NoteSaveStatus: Equatable {
+    case idle       // No pending changes
+    case unsaved    // Changes not yet saved
+    case saving     // Save in progress
+    case saved      // Just saved
+}
+
 // MARK: - NotesView
 
 struct NotesView: View {
@@ -84,6 +93,7 @@ struct NotesView: View {
     @State private var aiAnswer: String = ""
     @State private var showAIAnswer: Bool = false
     @State private var showMarkdownPreview: Bool = false
+    @State private var saveStatus: NoteSaveStatus = .idle
 
     private let storageFile = "content/notes/quick-notes.json"
 
@@ -475,6 +485,9 @@ struct NotesView: View {
                 .buttonStyle(.plain)
                 .help(showMarkdownPreview ? "Mode edition" : "Apercu Markdown")
 
+                // Save status indicator
+                saveStatusIndicator
+
                 // Word/char count
                 Text("\(wordCharCount.words) mots · \(wordCharCount.chars) car.")
                     .font(.system(size: 10))
@@ -594,6 +607,9 @@ struct NotesView: View {
                         guard selectedNoteId == notes[index].id else { return }
                         notes[index].content = newValue
                         notes[index].updatedAt = Date()
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            saveStatus = .unsaved
+                        }
                         saveNotesDebounced()
                     }
             }
@@ -659,6 +675,44 @@ struct NotesView: View {
         }
         .buttonStyle(.plain)
         .disabled(anyAIRunning || editingContent.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+    }
+
+    @ViewBuilder
+    private var saveStatusIndicator: some View {
+        switch saveStatus {
+        case .idle:
+            EmptyView()
+        case .unsaved:
+            HStack(spacing: 4) {
+                Circle()
+                    .fill(Color.orange)
+                    .frame(width: 6, height: 6)
+                Text("Non sauvegarde")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.orange.opacity(0.8))
+            }
+            .transition(.opacity)
+        case .saving:
+            HStack(spacing: 4) {
+                ProgressView()
+                    .controlSize(.mini)
+                    .scaleEffect(0.6)
+                Text("Sauvegarde...")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(MochiTheme.textLight.opacity(0.5))
+            }
+            .transition(.opacity)
+        case .saved:
+            HStack(spacing: 4) {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 10))
+                    .foregroundStyle(MochiTheme.successGreen)
+                Text("Sauvegarde")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(MochiTheme.successGreen.opacity(0.8))
+            }
+            .transition(.opacity)
+        }
     }
 
     private var emptyEditor: some View {
@@ -1212,15 +1266,32 @@ struct NotesView: View {
     // MARK: - Persistence
 
     @State private var pendingSave: DispatchWorkItem?
+    @State private var savedResetTimer: DispatchWorkItem?
 
     private func saveNotesDebounced() {
         pendingSave?.cancel()
         let item = DispatchWorkItem { [notes] in
+            withAnimation(.easeInOut(duration: 0.2)) {
+                saveStatus = .saving
+            }
             let encoder = JSONEncoder()
             encoder.dateEncodingStrategy = .iso8601
             guard let data = try? encoder.encode(notes),
                   let json = String(data: data, encoding: .utf8) else { return }
             try? appState.memoryService.storage.write(file: storageFile, content: json)
+
+            withAnimation(.easeInOut(duration: 0.2)) {
+                saveStatus = .saved
+            }
+            // Reset to idle after 2.5s
+            savedResetTimer?.cancel()
+            let reset = DispatchWorkItem {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    saveStatus = .idle
+                }
+            }
+            savedResetTimer = reset
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.5, execute: reset)
         }
         pendingSave = item
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: item)

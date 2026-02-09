@@ -778,6 +778,7 @@ let shopCatalog: [ShopItem] = [
     ShopItem(name: "Lunettes", category: .accessory, price: 15),
     ShopItem(name: "Echarpe", category: .accessory, price: 20),
     ShopItem(name: "Noeud papillon", category: .accessory, price: 25),
+    ShopItem(name: "Boule de voyante", category: .accessory, price: 80, requiredLevel: 12),
     ShopItem(name: "Cape", category: .accessory, price: 60, requiredLevel: 15),
     ShopItem(name: "Ailes", category: .accessory, price: 100, requiredLevel: 20),
 ]
