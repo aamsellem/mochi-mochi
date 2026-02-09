@@ -199,10 +199,10 @@ final class NotificationService {
 
     // MARK: - Meeting Proposal
 
-    func sendMeetingProposalNotification(count: Int, personality: Personality) {
+    func sendMeetingProposalNotification(count: Int, titles: [String], personality: Personality) {
         let content = UNMutableNotificationContent()
         content.title = "\(personality.emoji) Nouvelles reunions detectees"
-        content.body = meetingProposalMessage(count: count, personality: personality)
+        content.body = meetingProposalMessage(count: count, titles: titles, personality: personality)
         content.sound = .default
 
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
@@ -236,10 +236,12 @@ final class NotificationService {
 
     func cancelAll() {
         center.removeAllPendingNotificationRequests()
+        center.removeAllDeliveredNotifications()
     }
 
     func cancelNotification(identifier: String) {
         center.removePendingNotificationRequests(withIdentifiers: [identifier])
+        center.removeDeliveredNotifications(withIdentifiers: [identifier])
     }
 
     // MARK: - Message Builders
@@ -283,17 +285,19 @@ final class NotificationService {
         }
     }
 
-    private func meetingProposalMessage(count: Int, personality: Personality) -> String {
-        let s = count > 1 ? "s" : ""
+    private func meetingProposalMessage(count: Int, titles: [String], personality: Personality) -> String {
+        let titleList = titles.prefix(3).map { "\"\($0)\"" }.joined(separator: ", ")
+        let suffix = count > 3 ? " (+\(count - 3))" : ""
+        let names = titleList + suffix
         switch personality {
-        case .kawaii: return "\(count) reunion\(s) avec des taches a valider~ Viens voir !"
-        case .sensei: return "\(count) reunion\(s) detectee\(s). Des taches t'attendent. Agis."
-        case .pote: return "Eh ! \(count) reunion\(s) avec des trucs a faire. Check ca !"
-        case .butler: return "Monsieur, \(count) reunion\(s) requierent votre attention."
-        case .coach: return "\(count) REUNION\(s.uppercased()) ! Des taches a valider, GO !"
-        case .voyante: return "Les astres revelent \(count) reunion\(s)... Des taches emergent des etoiles."
-        case .chat: return "\(count) reunion\(s). Des taches. Tu devrais regarder. Ou pas."
-        case .heroique: return "\(count) conseil\(s) de guerre detecte\(s) ! De nouvelles quetes t'attendent !"
+        case .kawaii: return "\(names) — des taches a valider~ Viens voir !"
+        case .sensei: return "\(names) — des taches t'attendent. Agis."
+        case .pote: return "\(names) — des trucs a faire. Check ca !"
+        case .butler: return "\(names) — requierent votre attention, Monsieur."
+        case .coach: return "\(names) — des taches a valider, GO !"
+        case .voyante: return "\(names) — des taches emergent des etoiles..."
+        case .chat: return "\(names) — des taches. Tu devrais regarder. Ou pas."
+        case .heroique: return "\(names) — de nouvelles quetes t'attendent !"
         }
     }
 

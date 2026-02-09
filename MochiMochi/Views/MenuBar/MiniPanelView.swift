@@ -87,11 +87,11 @@ struct MiniPanelView: View {
     private var taskListSection: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text("Taches du jour")
+                Text("Taches en cours")
                     .font(.caption.bold())
                     .foregroundStyle(.secondary)
                 Spacer()
-                Text("\(completedTodayCount)/\(todayTasks.count)")
+                Text("\(todayTasks.count)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -116,20 +116,15 @@ struct MiniPanelView: View {
     private func miniTaskRow(_ task: MochiTask) -> some View {
         HStack(spacing: 8) {
             Button {
-                if !task.isCompleted {
-                    appState.completeTask(task)
-                }
+                appState.completeTask(task)
             } label: {
-                Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(task.isCompleted ? .green : .secondary)
+                Image(systemName: "circle")
+                    .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)
-            .disabled(task.isCompleted)
 
             Text(task.title)
                 .font(.callout)
-                .strikethrough(task.isCompleted)
-                .foregroundStyle(task.isCompleted ? .secondary : .primary)
                 .lineLimit(1)
 
             Spacer()
@@ -180,11 +175,7 @@ struct MiniPanelView: View {
     // MARK: - Helpers
 
     private var todayTasks: [MochiTask] {
-        appState.tasks.filter { !$0.isCompleted || isCompletedToday($0) }
-    }
-
-    private var completedTodayCount: Int {
-        todayTasks.filter { $0.isCompleted }.count
+        appState.tasks.filter { !$0.isCompleted }
     }
 
     private var nextDeadlineTask: MochiTask? {
@@ -192,11 +183,6 @@ struct MiniPanelView: View {
             .filter { !$0.isCompleted && $0.deadline != nil }
             .sorted { ($0.deadline ?? .distantFuture) < ($1.deadline ?? .distantFuture) }
             .first
-    }
-
-    private func isCompletedToday(_ task: MochiTask) -> Bool {
-        guard let completedAt = task.completedAt else { return false }
-        return Calendar.current.isDateInToday(completedAt)
     }
 
     private func deadlineText(_ date: Date) -> String {

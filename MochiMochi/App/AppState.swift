@@ -120,6 +120,17 @@ final class AppState: ObservableObject {
         }
 
         self.tasks = memoryService.loadTasks()
+
+        // Purger les tâches complétées depuis plus de 7 jours
+        let purgeThreshold = Date().addingTimeInterval(-7 * 24 * 3600)
+        let beforeCount = tasks.count
+        tasks.removeAll { task in
+            task.isCompleted && (task.completedAt ?? Date.distantPast) < purgeThreshold
+        }
+        if tasks.count < beforeCount {
+            NSLog("[Mochi] Purged \(beforeCount - tasks.count) old completed tasks")
+        }
+
         self.inventory = memoryService.loadInventory()
         self.meetingProposals = memoryService.loadMeetingProposals()
 
@@ -127,6 +138,9 @@ final class AppState: ObservableObject {
         for i in meetingProposals.indices where meetingProposals[i].status == .preparing {
             meetingProposals[i].status = .discovered
         }
+
+        // Mettre à jour le streak au lancement
+        gamification.checkStreak()
 
         self.mochi.updateEmotion(from: gamification, tasks: tasks)
         updateClaudeMd()
@@ -459,6 +473,9 @@ final class AppState: ObservableObject {
         // Reprogrammer la notification consolidée sans cette tâche
         rescheduleAllNotifications()
 
+        // Mettre à jour le streak quand une tâche est complétée
+        gamification.checkStreak()
+
         let rewards = gamification.rewardForTask(task)
         let leveledUp = gamification.applyRewards(rewards)
 
@@ -643,6 +660,7 @@ final class AppState: ObservableObject {
 
         let existingIds = Set(meetingProposals.map { $0.sourceId })
         var totalNew = 0
+        var newTitles: [String] = []
 
         // 1. Outlook calendar discovery → status .discovered (sans taches)
         do {
@@ -677,6 +695,7 @@ final class AppState: ObservableObject {
             if !newOutlook.isEmpty {
                 meetingProposals.insert(contentsOf: newOutlook, at: 0)
                 totalNew += newOutlook.count
+                newTitles.append(contentsOf: newOutlook.map { $0.meetingTitle })
                 NSLog("[Mochi Meetings] %d new Outlook proposals found", newOutlook.count)
             }
         } catch {
@@ -723,6 +742,7 @@ final class AppState: ObservableObject {
             if !newNotion.isEmpty {
                 meetingProposals.insert(contentsOf: newNotion, at: 0)
                 totalNew += newNotion.count
+                newTitles.append(contentsOf: newNotion.map { $0.meetingTitle })
                 NSLog("[Mochi Meetings] %d new Notion proposals found", newNotion.count)
             }
         } catch {
@@ -733,6 +753,7 @@ final class AppState: ObservableObject {
         if totalNew > 0 {
             notificationService.sendMeetingProposalNotification(
                 count: totalNew,
+                titles: newTitles,
                 personality: currentPersonality
             )
             memoryService.saveMeetingProposals(meetingProposals)

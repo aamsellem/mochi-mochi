@@ -324,8 +324,8 @@ La fenêtre de chat est composée de deux zones :
 
 #### 4.6.1 Icône Menubar
 
-- Icône du Mochi dans la barre de menu macOS
-- L'icône reflète l'état émotionnel actuel du Mochi (content, endormi, inquiet…)
+- Icône mochi custom (NSImage template 18x18pt, daifuku avec yeux et sourire) + compteur de tâches actives
+- L'icône s'adapte automatiquement au thème macOS (clair/sombre) grâce au mode template
 - Badge numérique pour le nombre de tâches du jour restantes
 
 #### 4.6.2 Mini-Panel (clic sur l'icône)
@@ -712,7 +712,16 @@ L'intégration Notion utilise l'API REST officielle Notion avec authentification
 - Nouvel item cosmétique : boule de voyante (mist animé, sparkles orbitants, base dorée ornée)
 - Indicateur de sauvegarde en temps réel sur les notes (non sauvegardé / sauvegarde en cours / sauvegardé)
 
-### Phase 4.3 — Intégrations (v0.4.3)
+### Phase 4.3 — Notifications & status bar (v0.4.3) ✅
+- Nettoyage complet des notifications : `cancelAll()` supprime désormais les notifications pendantes ET délivrées (`removeAllDeliveredNotifications`)
+- Titres de réunions dans les notifications : `sendMeetingProposalNotification` affiche les noms des réunions détectées (jusqu'à 3, avec compteur au-delà)
+- Icône mochi custom dans la status bar : remplacement de l'emoji par un `NSImage` template dessiné programmatiquement (daifuku avec yeux et sourire, 18x18pt)
+- Compteur de tâches actives dans la status bar : utilise le vrai `tasks.filter { !$0.isCompleted }.count` au lieu de `todayRemainingTasks` (qui n'était jamais mis à jour)
+- Mini-panel menubar : n'affiche plus que les tâches en cours (tâches complétées retirées)
+- Purge automatique des tâches complétées >7 jours au lancement de l'app
+- Fix du système de streak : `checkStreak()` est maintenant appelé au lancement et à chaque complétion de tâche (était déclaré mais jamais invoqué)
+
+### Phase 4.4 — Intégrations (v0.4.4)
 - Synchronisation bidirectionnelle Notion
 - Raccourcis clavier globaux
 - Mode focus

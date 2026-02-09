@@ -46,7 +46,7 @@ Mochi Mochi reprend le concept d'ULY et l'enveloppe dans une **application macOS
 - 📝 **Notes rapides** — Prise de notes avec extraction automatique de tâches via IA, indicateur de sauvegarde en temps réel
 - 📅 **Veille de réunions** — Détection Outlook + Notion, préparation automatique via IA, vue Kanban, exclusions configurables
 - 🔗 **Sync Notion** — Bidirectionnelle, vos tâches partout
-- 🖥️ **Menubar** — Accès rapide sans quitter votre travail
+- 🖥️ **Menubar** — Icône mochi avec compteur de tâches, accès rapide sans quitter votre travail
 - 🏠 **Données locales** — Vos données sont stockées localement en Markdown (les messages transitent par Claude Code via votre abonnement Anthropic)
 
 ---
@@ -204,7 +204,7 @@ Mochi Mochi scanne automatiquement vos réunions Outlook et Notion, les prépare
 - **Vue Kanban** — Board horizontal avec colonnes : En préparation, Préparées, Notes à traiter, Traitées, Ignorées (colonnes masquées si vides)
 - **Exclusions configurables** — Patterns regexp dans Réglages > Réunions pour ignorer automatiquement certaines réunions (ex: Sport, GYMINNO). Bouton "Ignorer" avec choix : ignorer cette réunion ou exclure les futures similaires
 - **Validation en un clic** — Acceptez, rejetez ou ignorez les suggestions depuis le détail de chaque réunion
-- **Notifications proactives** — Soyez alerté dès qu'une nouvelle réunion est détectée ou préparée
+- **Notifications proactives** — Soyez alerté avec le nom de la réunion dès qu'elle est détectée ou préparée
 - **Horaires détaillés** — Chaque carte affiche la date relative et les heures de début/fin de la réunion
 - **Recherche** — Recherchez par titre, participant ou tâche
 
@@ -324,7 +324,8 @@ MochiMochi/
 - [x] **Phase 4.0 — Réunions proactives (v0.4.0)** : Préparation automatique des réunions Outlook, vue Kanban horizontale (5 colonnes), patterns d'exclusion regexp, statut "ignoré", dialogue ignorer/exclure
 - [x] **Phase 4.1 — Polish réunions (v0.4.1)** : Parsing de dates robuste (MS Graph), suppression filtre par source, affichage horaires début/fin sur les cartes, nettoyage avatar Mochi
 - [x] **Phase 4.2 — Polish accessoires & notes (v0.4.2)** : Refonte visuelle de tous les accessoires avec animations (TimelineView, gradients, particules), nouvel item boule de voyante, indicateur de sauvegarde sur les notes
-- [ ] **Phase 4.3 — Intégrations (v0.4.3)** : Sync Notion bidirectionnelle, raccourcis globaux, mode focus
+- [x] **Phase 4.3 — Notifications & status bar (v0.4.3)** : Nettoyage complet des notifications (purge delivered + pending), titres de réunions dans les notifications, icône mochi custom dans la status bar avec compteur de tâches actives, purge automatique des tâches complétées >7j, fix du système de streak
+- [ ] **Phase 4.4 — Intégrations (v0.4.4)** : Sync Notion bidirectionnelle, raccourcis globaux, mode focus
 - [ ] **Phase 4 — Polish (v1.0)** : Onboarding complet, toutes les personnalités, distribution DMG
 
 ---

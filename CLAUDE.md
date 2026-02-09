@@ -22,7 +22,7 @@
 ```
 MochiMochi/
 ├── App/                        # Point d'entrée, configuration, thème
-│   ├── MochiMochiApp.swift    # @main, WindowGroup, MenuBarExtra
+│   ├── MochiMochiApp.swift    # @main, WindowGroup, MenuBarExtra, icône mochi status bar
 │   ├── AppState.swift         # État global (@MainActor, @Published, tracked tasks)
 │   ├── ContentView.swift      # Layout principal (3 colonnes + Mochi rétractable)
 │   └── Theme.swift            # Design system (MochiTheme: couleurs, dimensions)
