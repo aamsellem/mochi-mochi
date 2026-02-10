@@ -779,6 +779,7 @@ struct NotionSettingsTab: View {
 
 struct MeetingsSettingsTab: View {
     @EnvironmentObject var appState: AppState
+    @State private var notionSourceIsSpecific: Bool = false
 
     private func menuPicker<T: Hashable>(value: T, options: [(T, String)], onChange: @escaping (T) -> Void) -> some View {
         Menu {
@@ -878,6 +879,52 @@ struct MeetingsSettingsTab: View {
                 }
 
                 Text("La veille cherche vos reunions a venir dans Outlook et les comptes-rendus dans Notion, puis propose des taches.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(MochiTheme.textLight.opacity(0.35))
+                    .padding(.horizontal, 4)
+
+                settingsSectionHeader("Source Notion")
+
+                SettingsCard {
+                    SettingsRow("Source", icon: "book.fill", iconColor: MochiTheme.secondary, showDivider: notionSourceIsSpecific) {
+                        Picker("", selection: $notionSourceIsSpecific) {
+                            Text("Tout le workspace").tag(false)
+                            Text("Base specifique").tag(true)
+                        }
+                        .pickerStyle(.segmented)
+                        .frame(maxWidth: 240)
+                        .onChange(of: notionSourceIsSpecific) {
+                            if !notionSourceIsSpecific {
+                                appState.notionMeetingDatabaseUrl = ""
+                                appState.saveConfig()
+                            }
+                        }
+                    }
+
+                    if notionSourceIsSpecific {
+                        SettingsRow("URL de la base", icon: "link", iconColor: .blue, showDivider: false) {
+                            TextField("https://notion.so/...", text: $appState.notionMeetingDatabaseUrl)
+                                .textFieldStyle(.plain)
+                                .font(.system(size: 12))
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                        .fill(MochiTheme.backgroundLight.opacity(0.6))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                                .stroke(Color.gray.opacity(0.18), lineWidth: 1)
+                                        )
+                                )
+                                .frame(maxWidth: .infinity)
+                                .onChange(of: appState.notionMeetingDatabaseUrl) {
+                                    appState.saveConfig()
+                                }
+                        }
+                    }
+                }
+
+                Text("Choisissez de chercher les notes de reunions dans tout votre workspace Notion ou dans une base specifique.")
                     .font(.system(size: 11))
                     .foregroundStyle(MochiTheme.textLight.opacity(0.35))
                     .padding(.horizontal, 4)
@@ -1089,6 +1136,9 @@ struct MeetingsSettingsTab: View {
             .frame(maxWidth: 480)
             .padding(24)
             .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .onAppear {
+            notionSourceIsSpecific = !appState.notionMeetingDatabaseUrl.isEmpty
         }
     }
 }

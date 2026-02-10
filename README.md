@@ -202,8 +202,9 @@ Mochi Mochi scanne automatiquement vos réunions Outlook et Notion, les prépare
 - **Double source** — Outlook (calendrier via MCP Microsoft 365) + Notion (comptes-rendus via MCP Notion)
 - **Préparation automatique** — Chaque réunion Outlook découverte est automatiquement préparée par Claude Code (recherche de contexte Notion, création de pages Préparation et Réunion, suggestions de tâches)
 - **Vue Kanban** — Board horizontal avec colonnes : En préparation, Préparées, Notes à traiter, Traitées, Ignorées (colonnes masquées si vides)
-- **Exclusions configurables** — Patterns regexp dans Réglages > Réunions pour ignorer automatiquement certaines réunions (ex: Sport, GYMINNO). Bouton "Ignorer" avec choix : ignorer cette réunion ou exclure les futures similaires
-- **Validation en un clic** — Acceptez, rejetez ou ignorez les suggestions depuis le détail de chaque réunion
+- **Source Notion configurable** — Cherchez dans tout le workspace Notion ou ciblez une base de donnees specifique (Reglages > Reunions)
+- **Exclusions configurables** — Patterns regexp dans Reglages > Reunions pour ignorer automatiquement certaines reunions (ex: Sport, GYMINNO). Bouton "Ignorer" avec choix : ignorer cette reunion ou exclure les futures similaires
+- **Validation en un clic** — Acceptez, rejetez ou ignorez les suggestions depuis le detail de chaque reunion
 - **Notifications proactives** — Soyez alerté avec le nom de la réunion dès qu'elle est détectée ou préparée
 - **Horaires détaillés** — Chaque carte affiche la date relative et les heures de début/fin de la réunion
 - **Recherche** — Recherchez par titre, participant ou tâche
@@ -326,7 +327,8 @@ MochiMochi/
 - [x] **Phase 4.2 — Polish accessoires & notes (v0.4.2)** : Refonte visuelle de tous les accessoires avec animations (TimelineView, gradients, particules), nouvel item boule de voyante, indicateur de sauvegarde sur les notes
 - [x] **Phase 4.3 — Notifications & status bar (v0.4.3)** : Nettoyage complet des notifications (purge delivered + pending), titres de réunions dans les notifications, icône mochi custom dans la status bar avec compteur de tâches actives, purge automatique des tâches complétées >7j, fix du système de streak
 - [x] **Phase 4.4 — Onboarding fix (v0.4.4)** : Fix alerte notifications bloquante pendant l'onboarding, ajout étape de configuration du répertoire de stockage (onboarding 10 étapes), détection de configuration existante
-- [ ] **Phase 4.5 — Intégrations (v0.4.5)** : Sync Notion bidirectionnelle, raccourcis globaux, mode focus
+- [x] **Phase 4.5 — Source Notion (v0.4.5)** : Filtrage des notes Notion par base spécifique (picker segmenté tout le workspace / base spécifique dans Réglages > Réunions), persistance dans config.md, prompt conditionnel notion-search vs notion-fetch
+- [ ] **Phase 4.6 — Intégrations (v0.4.6)** : Sync Notion bidirectionnelle, raccourcis globaux, mode focus
 - [ ] **Phase 4 — Polish (v1.0)** : Onboarding complet, toutes les personnalités, distribution DMG
 
 ---

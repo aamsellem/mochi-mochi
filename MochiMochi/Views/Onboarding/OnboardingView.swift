@@ -957,7 +957,7 @@ struct OnboardingView: View {
     }
 
     private func completeOnboarding() {
-        MarkdownStorage.setStoragePath(storagePath)
+        appState.reloadStorage(with: storagePath)
 
         appState.userName = userName
         appState.userOccupation = userOccupation

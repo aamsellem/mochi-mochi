@@ -20,6 +20,7 @@ struct AppConfig {
     var meetingCheckInterval: Int // minutes
     var meetingLookbackDays: Int // how far back to search
     var meetingIgnorePatterns: [String] // regexp patterns to auto-ignore meetings
+    var notionMeetingDatabaseUrl: String // specific Notion database URL for meetings (empty = whole workspace)
 
     init(
         mochiName: String = "Mochi",
@@ -38,7 +39,8 @@ struct AppConfig {
         meetingWatchEnabled: Bool = false,
         meetingCheckInterval: Int = 30,
         meetingLookbackDays: Int = 7,
-        meetingIgnorePatterns: [String] = []
+        meetingIgnorePatterns: [String] = [],
+        notionMeetingDatabaseUrl: String = ""
     ) {
         self.mochiName = mochiName
         self.personality = personality
@@ -57,6 +59,7 @@ struct AppConfig {
         self.meetingCheckInterval = meetingCheckInterval
         self.meetingLookbackDays = meetingLookbackDays
         self.meetingIgnorePatterns = meetingIgnorePatterns
+        self.notionMeetingDatabaseUrl = notionMeetingDatabaseUrl
     }
 }
 
@@ -338,6 +341,8 @@ final class MarkdownStorage {
                 if let v = Int(value) { config.meetingLookbackDays = v }
             case "exclusions_reunions":
                 config.meetingIgnorePatterns = value.split(separator: "|").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+            case "notion_base_reunions":
+                config.notionMeetingDatabaseUrl = value
             default:
                 break
             }
@@ -374,6 +379,9 @@ final class MarkdownStorage {
         lines.append("- historique_reunions: \(config.meetingLookbackDays)")
         if !config.meetingIgnorePatterns.isEmpty {
             lines.append("- exclusions_reunions: \(config.meetingIgnorePatterns.joined(separator: "|"))")
+        }
+        if !config.notionMeetingDatabaseUrl.isEmpty {
+            lines.append("- notion_base_reunions: \(config.notionMeetingDatabaseUrl)")
         }
         lines.append("")
         return lines.joined(separator: "\n")

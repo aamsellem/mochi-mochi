@@ -40,6 +40,7 @@ final class AppState: ObservableObject {
     @Published var isOutlookConnected: Bool = false
     @Published var isCheckingOutlook: Bool = false
     @Published var meetingIgnorePatterns: [String] = []
+    @Published var notionMeetingDatabaseUrl: String = ""
 
     // MARK: - Speech (forwarded from SpeechService)
 
@@ -49,7 +50,7 @@ final class AppState: ObservableObject {
     // MARK: - Services
 
     let claudeCodeService: ClaudeCodeService
-    let memoryService: MemoryService
+    private(set) var memoryService: MemoryService
     let notificationService: NotificationService
     let speechService: SpeechService
 
@@ -113,6 +114,7 @@ final class AppState: ObservableObject {
             self.meetingCheckInterval = config.meetingCheckInterval
             self.meetingLookbackDays = config.meetingLookbackDays
             self.meetingIgnorePatterns = config.meetingIgnorePatterns
+            self.notionMeetingDatabaseUrl = config.notionMeetingDatabaseUrl
         }
 
         if let mochiState = memoryService.loadMochiState() {
@@ -168,7 +170,8 @@ final class AppState: ObservableObject {
             meetingWatchEnabled: meetingWatchEnabled,
             meetingCheckInterval: meetingCheckInterval,
             meetingLookbackDays: meetingLookbackDays,
-            meetingIgnorePatterns: meetingIgnorePatterns
+            meetingIgnorePatterns: meetingIgnorePatterns,
+            notionMeetingDatabaseUrl: notionMeetingDatabaseUrl
         )
         memoryService.saveConfig(config)
     }
@@ -185,6 +188,14 @@ final class AppState: ObservableObject {
     /// Storage directory where CLAUDE.md lives and where Claude Code is launched
     var storageDirectory: URL {
         memoryService.storage.baseDirectory
+    }
+
+    /// Recharge le MemoryService avec un nouveau répertoire de stockage
+    func reloadStorage(with url: URL) {
+        MarkdownStorage.setStoragePath(url)
+        let newStorage = MarkdownStorage(baseDirectory: url)
+        try? newStorage.ensureDirectoryStructure()
+        self.memoryService = MemoryService(storage: newStorage)
     }
 
     /// Write/update the CLAUDE.md file so Claude Code reads context automatically
@@ -715,23 +726,43 @@ final class AppState: ObservableObject {
             let cutoffDate = Calendar.current.date(byAdding: .day, value: -meetingLookbackDays, to: Date()) ?? Date()
             let cutoffString = ISO8601DateFormatter().string(from: cutoffDate)
 
-            let notionPrompt = """
-            Utilise les outils MCP Notion (notion-search, notion-fetch) pour chercher des pages \
-            de reunions ou meetings recents dans le workspace Notion de l'utilisateur. \
-            Cherche avec des mots-cles comme "reunion", "meeting", "compte-rendu", "CR".
+            let notionPrompt: String
+            if notionMeetingDatabaseUrl.isEmpty {
+                notionPrompt = """
+                Utilise les outils MCP Notion (notion-search, notion-fetch) pour chercher des pages \
+                de reunions ou meetings recents dans le workspace Notion de l'utilisateur. \
+                Cherche avec des mots-cles comme "reunion", "meeting", "compte-rendu", "CR".
 
-            Ne remonte pas plus loin que \(meetingLookbackDays) jours (apres le \(cutoffString)).
+                Ne remonte pas plus loin que \(meetingLookbackDays) jours (apres le \(cutoffString)).
 
-            IDs de pages deja traitees a ignorer : \(notionIdsString)
+                IDs de pages deja traitees a ignorer : \(notionIdsString)
 
-            Pour chaque nouvelle reunion trouvee, analyse le contenu et propose des taches \
-            concretes et actionnables.
+                Pour chaque nouvelle reunion trouvee, analyse le contenu et propose des taches \
+                concretes et actionnables.
 
-            Reponds UNIQUEMENT en JSON valide (pas de markdown, pas de commentaires) :
-            [{"notionPageId":"...","title":"...","date":"2025-01-15","suggestedTasks":[{"title":"...","priority":"normal","description":"..."}]}]
+                Reponds UNIQUEMENT en JSON valide (pas de markdown, pas de commentaires) :
+                [{"notionPageId":"...","title":"...","date":"2025-01-15","suggestedTasks":[{"title":"...","priority":"normal","description":"..."}]}]
 
-            Si aucune nouvelle reunion, reponds : []
-            """
+                Si aucune nouvelle reunion, reponds : []
+                """
+            } else {
+                notionPrompt = """
+                Utilise l'outil MCP Notion notion-fetch pour lire la base de donnees Notion \
+                a cette URL : \(notionMeetingDatabaseUrl)
+
+                Liste les pages recentes (apres le \(cutoffString), soit les \(meetingLookbackDays) derniers jours).
+
+                IDs de pages deja traitees a ignorer : \(notionIdsString)
+
+                Pour chaque page de reunion trouvee, analyse le contenu et propose des taches \
+                concretes et actionnables.
+
+                Reponds UNIQUEMENT en JSON valide (pas de markdown, pas de commentaires) :
+                [{"notionPageId":"...","title":"...","date":"2025-01-15","suggestedTasks":[{"title":"...","priority":"normal","description":"..."}]}]
+
+                Si aucune nouvelle reunion, reponds : []
+                """
+            }
 
             let response = try await claudeCodeService.generateQuick(
                 prompt: notionPrompt,

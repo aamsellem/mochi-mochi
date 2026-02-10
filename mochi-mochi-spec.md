@@ -727,7 +727,14 @@ L'intégration Notion utilise l'API REST officielle Notion avec authentification
 - Ajout étape répertoire de stockage : l'utilisateur peut choisir un dossier personnalisé (défaut `~/.mochi-mochi/`) avec détection et restauration de configuration existante
 - Onboarding étendu à 10 étapes (ajout de l'étape répertoire en position 2)
 
-### Phase 4.5 — Intégrations (v0.4.5)
+### Phase 4.5 — Source Notion (v0.4.5) ✅
+- Filtrage des notes Notion par base spécifique : nouveau picker segmenté "Tout le workspace" / "Base spécifique" dans Réglages > Réunions
+- Champ URL pour coller le lien de la base Notion ciblée
+- Prompt conditionnel : `notion-search` global si aucune base renseignée, `notion-fetch` sur la base spécifique sinon
+- Nouvelle clé de configuration `notion_base_reunions` dans `config.md`
+- Nouvelle propriété `notionMeetingDatabaseUrl` dans `AppConfig` et `AppState`
+
+### Phase 4.6 — Intégrations (v0.4.6)
 - Synchronisation bidirectionnelle Notion
 - Raccourcis clavier globaux
 - Mode focus

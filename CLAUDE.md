@@ -120,7 +120,7 @@ Stockage local dans `~/.mochi-mochi/` :
 
 | Fichier | Contenu |
 |---------|---------|
-| `config.md` | Configuration (nom du Mochi, personnalité, préférences, exclusions réunions) |
+| `config.md` | Configuration (nom du Mochi, personnalité, préférences, exclusions réunions, source Notion) |
 | `state/current.md` | Tâches et priorités actuelles |
 | `state/goals.md` | Objectifs long terme |
 | `state/mochi.md` | État du Mochi (niveau, XP, 🍙, streak, items équipés) |
