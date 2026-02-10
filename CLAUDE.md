@@ -54,7 +54,7 @@ MochiMochi/
 │   │   ├── MeetingsView.swift           # Vue Kanban horizontale (5 colonnes, masquées si vides)
 │   │   └── MeetingProposalDetailView.swift # Détail et validation des tâches suggérées
 │   ├── MenuBar/               # Icône menubar + mini-panel
-│   ├── Onboarding/            # Assistant 9 étapes (dont veille réunions)
+│   ├── Onboarding/            # Assistant 10 étapes (répertoire, profil, veille réunions)
 │   ├── Shop/                  # Boutique et inventaire
 │   └── Settings/              # Réglages (6 onglets)
 ├── Services/                   # Services métier

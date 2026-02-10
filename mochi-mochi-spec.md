@@ -127,14 +127,15 @@ Les assistants IA actuels (ChatGPT, Claude) souffrent d'un problème fondamental
 Au premier lancement, l'utilisateur est guidé à travers un assistant de configuration :
 
 1. **Écran d'accueil** : présentation de Mochi Mochi avec animation du Mochi
-2. **À propos de vous** : prénom et activité de l'utilisateur
-3. **Objectifs** : choix de la motivation principale parmi 6 options
-4. **Nom du Mochi** : l'utilisateur choisit un nom pour son compagnon (nom par défaut : "Mochi")
-5. **Personnalisation visuelle** : choix de la couleur initiale du Mochi
-6. **Choix de personnalité** : sélection parmi les 8 personnalités disponibles avec aperçu du ton et citation
-7. **Notifications** : demande de permission pour les notifications macOS avec explication des relances intelligentes
-8. **Veille de réunions** : présentation vendeuse de la veille Notion (détection intelligente, suggestions IA, validation en un clic, notifications proactives) avec activation optionnelle
-9. **Résumé** : récapitulatif de toute la configuration choisie
+2. **Répertoire de stockage** : choix du dossier de données (défaut : `~/.mochi-mochi/`), détection automatique d'une configuration existante avec restauration
+3. **À propos de vous** : prénom et activité de l'utilisateur
+4. **Objectifs** : choix de la motivation principale parmi 6 options
+5. **Nom du Mochi** : l'utilisateur choisit un nom pour son compagnon (nom par défaut : "Mochi")
+6. **Personnalisation visuelle** : choix de la couleur initiale du Mochi
+7. **Choix de personnalité** : sélection parmi les 8 personnalités disponibles avec aperçu du ton et citation
+8. **Notifications** : demande de permission pour les notifications macOS avec explication des relances intelligentes
+9. **Veille de réunions** : présentation vendeuse de la veille Notion (détection intelligente, suggestions IA, validation en un clic, notifications proactives) avec activation optionnelle
+10. **Résumé** : récapitulatif de toute la configuration choisie
 
 **Règles de gestion** :
 - La vérification de Claude Code est bloquante — l'app ne fonctionne pas sans
@@ -721,7 +722,12 @@ L'intégration Notion utilise l'API REST officielle Notion avec authentification
 - Purge automatique des tâches complétées >7 jours au lancement de l'app
 - Fix du système de streak : `checkStreak()` est maintenant appelé au lancement et à chaque complétion de tâche (était déclaré mais jamais invoqué)
 
-### Phase 4.4 — Intégrations (v0.4.4)
+### Phase 4.4 — Onboarding fix (v0.4.4) ✅
+- Fix alerte notifications bloquante : `setupNotifications()` n'est plus appelé pendant l'onboarding (guard sur `isOnboardingComplete`)
+- Ajout étape répertoire de stockage : l'utilisateur peut choisir un dossier personnalisé (défaut `~/.mochi-mochi/`) avec détection et restauration de configuration existante
+- Onboarding étendu à 10 étapes (ajout de l'étape répertoire en position 2)
+
+### Phase 4.5 — Intégrations (v0.4.5)
 - Synchronisation bidirectionnelle Notion
 - Raccourcis clavier globaux
 - Mode focus

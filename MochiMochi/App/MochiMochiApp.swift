@@ -12,6 +12,7 @@ struct MochiMochiApp: App {
                 .environmentObject(appState)
                 .frame(minWidth: 800, minHeight: 600)
                 .task {
+                    guard appState.isOnboardingComplete else { return }
                     await appState.setupNotifications()
                 }
         }

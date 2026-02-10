@@ -17,7 +17,7 @@ struct OnboardingView: View {
 
     @State private var notificationsEnabled = false
     @State private var meetingWatchEnabled = false
-    private let totalSteps = 9
+    private let totalSteps = 10
 
     private let goals = [
         ("🎯", "Mieux m'organiser", "Suivre mes taches et deadlines"),
@@ -39,14 +39,15 @@ struct OnboardingView: View {
             Group {
                 switch currentStep {
                 case 0: welcomeStep
-                case 1: aboutYouStep
-                case 2: goalStep
-                case 3: mochiNameStep
-                case 4: colorStep
-                case 5: personalityStep
-                case 6: notificationStep
-                case 7: meetingWatchStep
-                case 8: summaryStep
+                case 1: storageStep
+                case 2: aboutYouStep
+                case 3: goalStep
+                case 4: mochiNameStep
+                case 5: colorStep
+                case 6: personalityStep
+                case 7: notificationStep
+                case 8: meetingWatchStep
+                case 9: summaryStep
                 default: EmptyView()
                 }
             }
@@ -113,7 +114,98 @@ struct OnboardingView: View {
         }
     }
 
-    // MARK: - Step 1: About You
+    // MARK: - Step 1: Storage
+
+    private var storageStep: some View {
+        VStack(spacing: 24) {
+            Spacer()
+
+            stepHeader(icon: "folder.fill", title: "Ou stocker tes donnees ?")
+
+            Image(systemName: "externaldrive.fill")
+                .font(.system(size: 48))
+                .foregroundStyle(MochiTheme.primary)
+
+            VStack(spacing: 8) {
+                Text("Mochi Mochi sauvegarde tes taches, notes et progression dans un dossier local.")
+                    .font(.system(size: 14))
+                    .foregroundStyle(MochiTheme.textLight.opacity(0.6))
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 420)
+            }
+
+            VStack(spacing: 12) {
+                // Current path display
+                HStack(spacing: 10) {
+                    Image(systemName: "folder.fill")
+                        .font(.system(size: 14))
+                        .foregroundStyle(MochiTheme.primary)
+
+                    Text(storagePath.path)
+                        .font(.system(size: 13, design: .monospaced))
+                        .foregroundStyle(MochiTheme.textLight)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+
+                    Spacer()
+                }
+                .padding(12)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(MochiTheme.surfaceLight)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .stroke(MochiTheme.primary.opacity(0.2), lineWidth: 1.5)
+                        )
+                )
+
+                Button {
+                    chooseStorageFolder()
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "folder.badge.gearshape")
+                            .font(.system(size: 14))
+                        Text("Choisir un autre dossier")
+                            .font(.system(size: 14, weight: .semibold))
+                    }
+                    .foregroundStyle(MochiTheme.primary)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 10)
+                    .background(
+                        Capsule()
+                            .fill(MochiTheme.primary.opacity(0.1))
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+            .frame(maxWidth: 420)
+
+            if existingConfigFound {
+                HStack(spacing: 8) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 16))
+                        .foregroundStyle(.green)
+                    Text("Configuration existante detectee ! Tes donnees seront restaurees.")
+                        .font(.system(size: 13))
+                        .foregroundStyle(MochiTheme.textLight.opacity(0.7))
+                }
+                .padding(12)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(MochiTheme.pastelGreen.opacity(0.3))
+                )
+                .frame(maxWidth: 420)
+            }
+
+            Text("Par defaut : ~/.mochi-mochi/")
+                .font(.system(size: 12))
+                .foregroundStyle(MochiTheme.textLight.opacity(0.4))
+
+            Spacer()
+        }
+    }
+
+    // MARK: - Step 2: About You
 
     private var aboutYouStep: some View {
         VStack(spacing: 24) {
