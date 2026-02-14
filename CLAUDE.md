@@ -166,6 +166,23 @@ Formule d'XP par niveau : `XP_requis = niveau × 50 + (niveau² × 2)`
 Les commandes sont parsées par `SlashCommandParser` et exécutées par `CommandEngine`.
 Les commandes inconnues sont envoyées à Claude Code comme texte naturel.
 
+### Mises à jour et migration
+
+L'application se met à jour automatiquement via Sparkle. Chaque nouvelle feature doit prendre en compte **deux types d'utilisateurs** :
+
+1. **Nouveaux utilisateurs** : premier lancement, onboarding complet, pas de données existantes
+2. **Utilisateurs existants qui mettent à jour** : ont déjà des données, une config, des préférences — la nouvelle feature doit fonctionner sans casser leur état
+
+**Règles à suivre** :
+- **Nouvelles clés de config** : toujours prévoir une valeur par défaut dans `loadConfig()` pour que les utilisateurs existants (dont le `config.md` ne contient pas encore la clé) ne crashent pas
+- **Nouvelles propriétés sur les modèles** : utiliser des optionnels ou des valeurs par défaut dans les `init` et le parsing Markdown, car les fichiers `state/` existants ne contiendront pas ces champs
+- **Nouveau fichier de données** : vérifier son existence avant de le lire, ne pas supposer qu'il est là
+- **Nouvelles `@Published` dans AppState** : s'assurer que `loadState()` gère l'absence de la donnée gracieusement
+- **Nouveaux `@EnvironmentObject`** : les injecter sur **toutes** les scènes qui en ont besoin (`WindowGroup` ET `Settings` ET `MenuBarExtra`)
+- **whatsnew.txt** : mettre à jour le contenu avant chaque release pour que Mochi annonce les nouveautés
+
+**Exemple concret** : si on ajoute un champ `meetingIgnorePatterns` dans la config, un utilisateur qui met à jour n'a pas ce champ dans son `config.md` → le parser doit retourner `[]` par défaut, pas crasher.
+
 ---
 
 ## Contraintes

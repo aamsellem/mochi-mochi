@@ -4,6 +4,25 @@
         <title>Mochi Mochi</title>
         <language>fr</language>
         <item>
+            <title>Version 0.4.8</title>
+            <pubDate>Sat, 14 Feb 2026 15:23:22 +0000</pubDate>
+            <sparkle:version>11</sparkle:version>
+            <sparkle:shortVersionString>0.4.8</sparkle:shortVersionString>
+            <description><![CDATA[
+                <h2>Corrections</h2>
+                <ul>
+                    <li>Fix crash dans Réglages > Mises à jour (updaterService manquant)</li>
+                    <li>Conventions de migration ajoutées pour les futures mises à jour</li>
+                </ul>
+            ]]></description>
+            <enclosure
+                url="https://github.com/aamsellem/mochi-mochi/releases/download/v0.4.8/MochiMochi.dmg"
+                type="application/octet-stream"
+                sparkle:edSignature="fF6Gebjp8tCWAYuJxHkQNzck/KUG5aTTDD5uE08Q9wAEPWXgXOPFtrRqZf2iHafXndS/MUQos6WvpdE+rUOuDg=="
+                length="4028697"
+            />
+        </item>
+        <item>
             <title>Version 0.4.7</title>
             <pubDate>Sat, 14 Feb 2026 14:57:52 +0000</pubDate>
             <sparkle:version>10</sparkle:version>
