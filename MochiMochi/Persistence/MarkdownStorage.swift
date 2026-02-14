@@ -21,6 +21,7 @@ struct AppConfig {
     var meetingLookbackDays: Int // how far back to search
     var meetingIgnorePatterns: [String] // regexp patterns to auto-ignore meetings
     var notionMeetingDatabaseUrl: String // specific Notion database URL for meetings (empty = whole workspace)
+    var notionPrepDatabaseUrl: String // Notion database URL for meeting preparations (auto-created if empty)
 
     init(
         mochiName: String = "Mochi",
@@ -40,7 +41,8 @@ struct AppConfig {
         meetingCheckInterval: Int = 30,
         meetingLookbackDays: Int = 7,
         meetingIgnorePatterns: [String] = [],
-        notionMeetingDatabaseUrl: String = ""
+        notionMeetingDatabaseUrl: String = "",
+        notionPrepDatabaseUrl: String = ""
     ) {
         self.mochiName = mochiName
         self.personality = personality
@@ -60,6 +62,7 @@ struct AppConfig {
         self.meetingLookbackDays = meetingLookbackDays
         self.meetingIgnorePatterns = meetingIgnorePatterns
         self.notionMeetingDatabaseUrl = notionMeetingDatabaseUrl
+        self.notionPrepDatabaseUrl = notionPrepDatabaseUrl
     }
 }
 
@@ -343,6 +346,8 @@ final class MarkdownStorage {
                 config.meetingIgnorePatterns = value.split(separator: "|").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
             case "notion_base_reunions":
                 config.notionMeetingDatabaseUrl = value
+            case "notion_base_preparations":
+                config.notionPrepDatabaseUrl = value
             default:
                 break
             }
@@ -382,6 +387,9 @@ final class MarkdownStorage {
         }
         if !config.notionMeetingDatabaseUrl.isEmpty {
             lines.append("- notion_base_reunions: \(config.notionMeetingDatabaseUrl)")
+        }
+        if !config.notionPrepDatabaseUrl.isEmpty {
+            lines.append("- notion_base_preparations: \(config.notionPrepDatabaseUrl)")
         }
         lines.append("")
         return lines.joined(separator: "\n")

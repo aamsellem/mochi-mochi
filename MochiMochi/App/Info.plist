@@ -30,5 +30,11 @@
     <string>Mochi Mochi a besoin du micro pour la dictée vocale.</string>
     <key>NSAccentColorName</key>
     <string>AccentColor</string>
+    <key>SUFeedURL</key>
+    <string>https://raw.githubusercontent.com/aamsellem/mochi-mochi/main/appcast.xml</string>
+    <key>SUPublicEDKey</key>
+    <string>oHaq0Zhb1KOf9s5qzHN2WoRI/QYwnSJyGdUK2R/hZho=</string>
+    <key>SUEnableAutomaticChecks</key>
+    <true/>
 </dict>
 </plist>

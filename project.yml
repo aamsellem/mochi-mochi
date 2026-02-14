@@ -6,6 +6,11 @@ options:
   xcodeVersion: "15.0"
   generateEmptyDirectories: true
 
+packages:
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    from: "2.8.1"
+
 settings:
   base:
     SWIFT_VERSION: "5.9"
@@ -23,6 +28,8 @@ targets:
       - path: MochiMochi/Resources/Skills
         type: folder
         buildPhase: resources
+    dependencies:
+      - package: Sparkle
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.aamsellem.mochi-mochi

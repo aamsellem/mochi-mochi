@@ -41,6 +41,7 @@ final class AppState: ObservableObject {
     @Published var isCheckingOutlook: Bool = false
     @Published var meetingIgnorePatterns: [String] = []
     @Published var notionMeetingDatabaseUrl: String = ""
+    @Published var notionPrepDatabaseUrl: String = ""
 
     // MARK: - Speech (forwarded from SpeechService)
 
@@ -115,6 +116,7 @@ final class AppState: ObservableObject {
             self.meetingLookbackDays = config.meetingLookbackDays
             self.meetingIgnorePatterns = config.meetingIgnorePatterns
             self.notionMeetingDatabaseUrl = config.notionMeetingDatabaseUrl
+            self.notionPrepDatabaseUrl = config.notionPrepDatabaseUrl
         }
 
         if let mochiState = memoryService.loadMochiState() {
@@ -171,7 +173,8 @@ final class AppState: ObservableObject {
             meetingCheckInterval: meetingCheckInterval,
             meetingLookbackDays: meetingLookbackDays,
             meetingIgnorePatterns: meetingIgnorePatterns,
-            notionMeetingDatabaseUrl: notionMeetingDatabaseUrl
+            notionMeetingDatabaseUrl: notionMeetingDatabaseUrl,
+            notionPrepDatabaseUrl: notionPrepDatabaseUrl
         )
         memoryService.saveConfig(config)
     }
@@ -797,6 +800,52 @@ final class AppState: ObservableObject {
         isCheckingMeetings = false
     }
 
+    func ensureNotionPrepDatabase() async -> String? {
+        if !notionPrepDatabaseUrl.isEmpty {
+            return notionPrepDatabaseUrl
+        }
+
+        let prompt = """
+        Utilise l'outil MCP Notion notion-create-database pour creer une base de donnees \
+        intitulee "Mochi - Preparations Reunions" avec les proprietes suivantes :
+        - Titre (title)
+        - Date (date)
+        - Statut (select avec les options: Preparation, Reunion)
+        - Participants (rich_text)
+
+        Reponds UNIQUEMENT en JSON pur (pas de markdown, pas de ```) :
+        {"url":"https://www.notion.so/..."}
+
+        Si la creation echoue, reponds : {"url":null}
+        """
+
+        do {
+            let response = try await claudeCodeService.generateQuick(
+                prompt: prompt,
+                workingDirectory: storageDirectory,
+                timeout: 60
+            )
+
+            let trimmed = response.trimmingCharacters(in: .whitespacesAndNewlines)
+            if let startIdx = trimmed.firstIndex(of: "{"),
+               let endIdx = trimmed.lastIndex(of: "}"),
+               let data = String(trimmed[startIdx...endIdx]).data(using: .utf8) {
+                struct RawResult: Decodable { let url: String? }
+                if let result = try? JSONDecoder().decode(RawResult.self, from: data),
+                   let url = result.url, !url.isEmpty {
+                    notionPrepDatabaseUrl = url
+                    saveConfig()
+                    NSLog("[Mochi Meetings] Created prep database: %@", url)
+                    return url
+                }
+            }
+        } catch {
+            NSLog("[Mochi Meetings] Failed to create prep database: %@", error.localizedDescription)
+        }
+
+        return nil
+    }
+
     func prepareMeeting(_ proposal: MeetingProposal) async {
         guard let pIdx = meetingProposals.firstIndex(where: { $0.id == proposal.id }) else { return }
 
@@ -808,12 +857,24 @@ final class AppState: ObservableObject {
         let locationStr = proposal.location ?? "non specifie"
         let dateStr = proposal.meetingDate.map { ISO8601DateFormatter().string(from: $0) } ?? "non specifiee"
 
+        let prepDbUrl = await ensureNotionPrepDatabase()
+        let parentInstruction: String
+        if let prepDbUrl {
+            parentInstruction = """
+            IMPORTANT: Cree les pages dans cette base de donnees Notion : \(prepDbUrl)
+            Utilise notion-create-pages avec le parent correspondant a cette base.
+            """
+        } else {
+            parentInstruction = ""
+            NSLog("[Mochi Meetings] No prep database available, pages will be created at top-level")
+        }
+
         let prompt = """
         Prepare cette reunion en utilisant les outils MCP Notion disponibles.
 
         REUNION: "\(proposal.meetingTitle)"
         Date: \(dateStr) | Participants: \(attendeesStr) | Lieu: \(locationStr)
-
+        \(parentInstruction)
         ETAPES (dans cet ordre):
         1. notion-search: cherche "\(proposal.meetingTitle)" et des mots-cles lies au sujet
         2. notion-fetch: lis 1-2 pages pertinentes trouvees (si disponibles)

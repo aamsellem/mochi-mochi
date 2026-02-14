@@ -9,9 +9,9 @@ struct MeetingsView: View {
 
     private var filteredProposals: [MeetingProposal] {
         let sorted = appState.meetingProposals.sorted { a, b in
-            let dateA = a.meetingDate ?? .distantPast
-            let dateB = b.meetingDate ?? .distantPast
-            return dateA > dateB
+            let dateA = a.meetingDate ?? .distantFuture
+            let dateB = b.meetingDate ?? .distantFuture
+            return dateA < dateB
         }
         guard !searchText.isEmpty else { return sorted }
         let query = searchText.lowercased()

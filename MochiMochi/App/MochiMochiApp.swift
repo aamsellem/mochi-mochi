@@ -1,9 +1,11 @@
 import SwiftUI
 import AppKit
+import Sparkle
 
 @main
 struct MochiMochiApp: App {
     @StateObject private var appState = AppState()
+    @StateObject private var updaterService = UpdaterService()
 
     var body: some Scene {
         // Main window
@@ -34,6 +36,7 @@ struct MochiMochiApp: App {
         Settings {
             SettingsView()
                 .environmentObject(appState)
+                .environmentObject(updaterService)
         }
     }
 

@@ -10,6 +10,7 @@ struct SettingsView: View {
         ("Réunions", "calendar.badge.clock"),
         ("Notion", "link"),
         ("Raccourcis", "keyboard"),
+        ("Mises à jour", "arrow.triangle.2.circlepath"),
     ]
 
     var body: some View {
@@ -41,6 +42,7 @@ struct SettingsView: View {
                 case 3: MeetingsSettingsTab()
                 case 4: NotionSettingsTab()
                 case 5: ShortcutSettingsTab()
+                case 6: UpdateSettingsTab()
                 default: GeneralSettingsTab()
                 }
             }
@@ -780,6 +782,7 @@ struct NotionSettingsTab: View {
 struct MeetingsSettingsTab: View {
     @EnvironmentObject var appState: AppState
     @State private var notionSourceIsSpecific: Bool = false
+    @State private var prepDatabaseUrl: String = ""
 
     private func menuPicker<T: Hashable>(value: T, options: [(T, String)], onChange: @escaping (T) -> Void) -> some View {
         Menu {
@@ -925,6 +928,76 @@ struct MeetingsSettingsTab: View {
                 }
 
                 Text("Choisissez de chercher les notes de reunions dans tout votre workspace Notion ou dans une base specifique.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(MochiTheme.textLight.opacity(0.35))
+                    .padding(.horizontal, 4)
+
+                settingsSectionHeader("Base de preparations")
+
+                SettingsCard {
+                    SettingsRow("URL de la base", icon: "tray.2.fill", iconColor: .purple, showDivider: !prepDatabaseUrl.isEmpty) {
+                        if prepDatabaseUrl.isEmpty {
+                            Text("Sera creee automatiquement")
+                                .font(.system(size: 12))
+                                .foregroundStyle(MochiTheme.textLight.opacity(0.4))
+                        } else {
+                            Text("Configuree")
+                                .font(.system(size: 12))
+                                .foregroundStyle(.green)
+                        }
+                    }
+
+                    if !prepDatabaseUrl.isEmpty {
+                        SettingsRow("", showDivider: true) {
+                            TextField("https://notion.so/...", text: $prepDatabaseUrl)
+                                .textFieldStyle(.plain)
+                                .font(.system(size: 12))
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                        .fill(MochiTheme.backgroundLight.opacity(0.6))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                                .stroke(Color.gray.opacity(0.18), lineWidth: 1)
+                                        )
+                                )
+                                .frame(maxWidth: .infinity)
+                                .onChange(of: prepDatabaseUrl) {
+                                    appState.notionPrepDatabaseUrl = prepDatabaseUrl
+                                    appState.saveConfig()
+                                }
+                        }
+                    }
+
+                    VStack(spacing: 0) {
+                        Button {
+                            prepDatabaseUrl = ""
+                            appState.notionPrepDatabaseUrl = ""
+                            appState.saveConfig()
+                        } label: {
+                            HStack {
+                                Image(systemName: "arrow.counterclockwise")
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(.white)
+                                    .frame(width: 22, height: 22)
+                                    .background(RoundedRectangle(cornerRadius: 5, style: .continuous).fill(.orange))
+                                Text("Reinitialiser")
+                                    .font(.system(size: 13))
+                                    .foregroundStyle(MochiTheme.textLight)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundStyle(MochiTheme.textLight.opacity(0.25))
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 10)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+
+                Text("Les preparations de reunions seront sauvegardees dans cette base Notion. Si vide, une base sera creee automatiquement lors de la prochaine preparation.")
                     .font(.system(size: 11))
                     .foregroundStyle(MochiTheme.textLight.opacity(0.35))
                     .padding(.horizontal, 4)
@@ -1139,6 +1212,7 @@ struct MeetingsSettingsTab: View {
         }
         .onAppear {
             notionSourceIsSpecific = !appState.notionMeetingDatabaseUrl.isEmpty
+            prepDatabaseUrl = appState.notionPrepDatabaseUrl
         }
     }
 }
@@ -1210,5 +1284,109 @@ struct ShortcutSettingsTab: View {
 
     private func shortcutKeys(_ shortcut: String) -> [String] {
         shortcut.map { String($0) }
+    }
+}
+
+// MARK: - Update Settings
+
+struct UpdateSettingsTab: View {
+    @EnvironmentObject var updaterService: UpdaterService
+
+    @State private var autoCheck: Bool = true
+    @State private var autoDownload: Bool = false
+
+    private var appVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
+    }
+
+    private var buildNumber: String {
+        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                settingsSectionHeader("Version")
+
+                SettingsCard {
+                    SettingsRow("Version actuelle", icon: "info.circle.fill", iconColor: MochiTheme.secondary, showDivider: false) {
+                        Text("v\(appVersion) (build \(buildNumber))")
+                            .font(.system(size: 12, design: .monospaced))
+                            .foregroundStyle(MochiTheme.textLight.opacity(0.6))
+                    }
+                }
+
+                settingsSectionHeader("Preferences")
+
+                SettingsCard {
+                    SettingsRow("Verification automatique", icon: "clock.arrow.2.circlepath", iconColor: MochiTheme.primary) {
+                        Toggle("", isOn: $autoCheck)
+                            .toggleStyle(.switch)
+                            .labelsHidden()
+                            .tint(MochiTheme.primary)
+                    }
+
+                    SettingsRow("Installation automatique", icon: "arrow.down.circle.fill", iconColor: .green, showDivider: false) {
+                        Toggle("", isOn: $autoDownload)
+                            .toggleStyle(.switch)
+                            .labelsHidden()
+                            .tint(MochiTheme.primary)
+                    }
+                }
+
+                Text("Si active, Mochi Mochi verifiera periodiquement les nouvelles versions et les installera au prochain lancement.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(MochiTheme.textLight.opacity(0.35))
+                    .padding(.horizontal, 4)
+
+                settingsSectionHeader("Mise a jour manuelle")
+
+                Button {
+                    updaterService.checkForUpdates()
+                } label: {
+                    HStack {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.white)
+                            .frame(width: 22, height: 22)
+                            .background(RoundedRectangle(cornerRadius: 5, style: .continuous).fill(MochiTheme.primary))
+                        Text("Verifier les mises a jour")
+                            .font(.system(size: 13))
+                            .foregroundStyle(MochiTheme.textLight)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(MochiTheme.textLight.opacity(0.25))
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(Color.white)
+                            .shadow(color: .black.opacity(0.04), radius: 4, y: 1)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .stroke(Color.gray.opacity(0.12), lineWidth: 1)
+                    )
+                }
+                .buttonStyle(.plain)
+                .disabled(!updaterService.canCheckForUpdates)
+                .opacity(updaterService.canCheckForUpdates ? 1 : 0.5)
+            }
+            .frame(maxWidth: 480)
+            .padding(24)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .onAppear {
+            autoCheck = updaterService.automaticallyChecksForUpdates
+            autoDownload = updaterService.automaticallyDownloadsUpdates
+        }
+        .onChange(of: autoCheck) { _, newValue in
+            updaterService.automaticallyChecksForUpdates = newValue
+        }
+        .onChange(of: autoDownload) { _, newValue in
+            updaterService.automaticallyDownloadsUpdates = newValue
+        }
     }
 }

@@ -41,8 +41,10 @@
 		CC4EB0B383AC651F0CB7595E /* MochiCharacter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8070F23D9FD94996FBE40055 /* MochiCharacter.swift */; };
 		CE4C9564469EEA63175B988F /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5EB956F0A07B8B774E00EEB /* ContentView.swift */; };
 		DA6C1F771F9267FA0B70B555 /* MochiAvatarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 021408C2C68AEA67B66EEBDC /* MochiAvatarView.swift */; };
+		DB980C85BE13DDF82D74F2E4 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = D001279F8208138DA6A41A52 /* Sparkle */; };
 		E17F47AE18ED8D5F59514189 /* ShopView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE488471CAEC649B74453FA /* ShopView.swift */; };
 		E2349302083D99EE281B7A42 /* MochiTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64B52DB21E0DCB97DC1FF7BC /* MochiTask.swift */; };
+		E3CA71F30E5AFD6461EBE80A /* UpdaterService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67806A84EFEF4471BA0C84C2 /* UpdaterService.swift */; };
 		E81C6D30E4359759DDADFE0C /* SlashCommandParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAE47536BAAFAF4B81CA051D /* SlashCommandParser.swift */; };
 		EB4225458494F14780CDBC41 /* GamificationState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A118D86137E506228517AD4 /* GamificationState.swift */; };
 		ED61B7901277ADA1EDBD899A /* SpeechService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F243FB1AF9B7EF8D5540198B /* SpeechService.swift */; };
@@ -77,6 +79,7 @@
 		49BD912EA38C8139C8F95648 /* NavigationBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationBarView.swift; sourceTree = "<group>"; };
 		4EAEE8F3FC45D65C542A5F67 /* MeetingProposalDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeetingProposalDetailView.swift; sourceTree = "<group>"; };
 		64B52DB21E0DCB97DC1FF7BC /* MochiTask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MochiTask.swift; sourceTree = "<group>"; };
+		67806A84EFEF4471BA0C84C2 /* UpdaterService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdaterService.swift; sourceTree = "<group>"; };
 		6B90D1A0246AE377AD3CEE28 /* Personality.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Personality.swift; sourceTree = "<group>"; };
 		7C2ED744C9199CA5D7C9ABBD /* ClaudeCodeContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeCodeContext.swift; sourceTree = "<group>"; };
 		7F4D9B561403758FB54A58DA /* MarkdownStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownStorage.swift; sourceTree = "<group>"; };
@@ -107,6 +110,17 @@
 		F7E13C5EFE8351B58A234852 /* Skills */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Skills; path = MochiMochi/Resources/Skills; sourceTree = SOURCE_ROOT; };
 		FEF8ACFF88B913D0AC1CC094 /* NotesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		62F09D344D1E764C862A4A60 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DB980C85BE13DDF82D74F2E4 /* Sparkle in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		13DC1063F808922A42822E7E /* Notes */ = {
@@ -160,6 +174,7 @@
 				4631B739C9C44DF637EB5066 /* NotificationService.swift */,
 				93F2A97D4A854D8AEF03DC75 /* NotionSyncService.swift */,
 				F243FB1AF9B7EF8D5540198B /* SpeechService.swift */,
+				67806A84EFEF4471BA0C84C2 /* UpdaterService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -329,6 +344,7 @@
 			buildPhases = (
 				3FD3394E31698ECB198B3978 /* Sources */,
 				11A95535FAE13BBE1274CF12 /* Resources */,
+				62F09D344D1E764C862A4A60 /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -336,6 +352,7 @@
 			);
 			name = MochiMochi;
 			packageProductDependencies = (
+				D001279F8208138DA6A41A52 /* Sparkle */,
 			);
 			productName = MochiMochi;
 			productReference = 15986CBC172A94EB312ED0D5 /* MochiMochi.app */;
@@ -386,6 +403,9 @@
 			);
 			mainGroup = 4182FE965574B28C919CF161;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				53712494902210BDADB60049 /* XCRemoteSwiftPackageReference "Sparkle" */,
+			);
 			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
@@ -452,6 +472,7 @@
 				598ABA465508A6F284755E34 /* TasksTrackingView.swift in Sources */,
 				5C818B83416BB09828A075DE /* Theme.swift in Sources */,
 				57C6850AC5F20D48D3405FF4 /* TodaysFocusView.swift in Sources */,
+				E3CA71F30E5AFD6461EBE80A /* UpdaterService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -693,6 +714,25 @@
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		53712494902210BDADB60049 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.8.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		D001279F8208138DA6A41A52 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 53712494902210BDADB60049 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = CBCC499264EF44DE95E42196 /* Project object */;
 }
