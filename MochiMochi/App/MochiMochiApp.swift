@@ -12,6 +12,7 @@ struct MochiMochiApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(appState)
+                .environmentObject(updaterService)
                 .frame(minWidth: 800, minHeight: 600)
                 .task {
                     guard appState.isOnboardingComplete else { return }

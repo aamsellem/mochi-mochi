@@ -19,8 +19,8 @@
             <enclosure
                 url="https://github.com/aamsellem/mochi-mochi/releases/download/v0.4.7/MochiMochi.dmg"
                 type="application/octet-stream"
-                sparkle:edSignature="VhqD4rUebqaIcXWjriBTEJ1cgO9Q634PTzwYDH2TTi5aLHwBfUa7tWxjsj5YWrPbRGyqLcu3kFWDXH3PVMLJBg=="
-                length="4027827"
+                sparkle:edSignature="mQML4riF/4qx0JPEbzi2w3xCeuyap7xmOXeumb+JIHDf48UrKhrCqVG48gdr7EPPjZ9EtXkLRvp3NZTEGrfwAA=="
+                length="4028828"
             />
         </item>
     </channel>
