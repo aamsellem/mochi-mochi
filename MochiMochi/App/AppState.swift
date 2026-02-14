@@ -322,6 +322,54 @@ final class AppState: ObservableObject {
         )
     }
 
+    // MARK: - Update Announcement
+
+    func announceUpdateIfNeeded() async {
+        let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
+        let lastVersion = UserDefaults.standard.string(forKey: "lastKnownAppVersion")
+
+        // Premier lancement ou même version → rien à faire
+        guard let lastVersion, lastVersion != currentVersion else {
+            UserDefaults.standard.set(currentVersion, forKey: "lastKnownAppVersion")
+            return
+        }
+
+        // Lire les notes de release depuis le bundle
+        let releaseNotes: String
+        if let url = Bundle.main.url(forResource: "whatsnew", withExtension: "txt"),
+           let content = try? String(contentsOf: url, encoding: .utf8),
+           !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            releaseNotes = content
+        } else {
+            releaseNotes = "Mise à jour vers la version \(currentVersion)"
+        }
+
+        // Générer l'annonce via Claude Code avec la personnalité
+        let prompt = """
+        Tu es \(currentPersonality.displayName). \(currentPersonality.systemPrompt)
+        L'application Mochi Mochi vient d'être mise à jour de la version \(lastVersion) vers la version \(currentVersion).
+        Voici les nouveautés :
+        \(releaseNotes)
+
+        Annonce ces nouveautés à l'utilisateur de manière enthousiaste et dans ton style.
+        Fais un message court et engageant (3-5 phrases max).
+        Réponds UNIQUEMENT avec le message d'annonce.
+        """
+
+        let announcement: String
+        do {
+            announcement = try await claudeCodeService.generateQuick(prompt: prompt)
+        } catch {
+            // Fallback sans Claude Code
+            announcement = "Mochi Mochi a été mis à jour en version \(currentVersion) !"
+        }
+
+        setTemporaryEmotion(.excited, duration: 6)
+        messages.append(Message(role: .assistant, content: announcement))
+
+        UserDefaults.standard.set(currentVersion, forKey: "lastKnownAppVersion")
+    }
+
     // MARK: - Auto Greeting
 
     @Published var hasGreetedThisSession: Bool = false

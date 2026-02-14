@@ -740,7 +740,13 @@ L'intégration Notion utilise l'API REST officielle Notion avec authentification
 - Base Notion dédiée pour les préparations de réunions : auto-création via Claude Code si vide, configurable dans Réglages > Réunions, nouvelle clé `notion_base_preparations` dans `config.md`
 - Tri des réunions par date la plus proche en premier (ascendant, réunions sans date en dernier)
 
-### Phase 4.7 — Intégrations (v0.4.7)
+### Phase 4.7 — Annonce nouveautés (v0.4.7) ✅
+- Annonce des nouveautés après mise à jour : détection du changement de version via `UserDefaults` (`lastKnownAppVersion`), lecture du fichier `whatsnew.txt` embarqué dans le bundle, génération de l'annonce via Claude Code avec la personnalité active, fallback en cas d'erreur
+- Fichier `whatsnew.txt` dans les ressources du bundle : notes de release en texte brut, mises à jour par le développeur avant chaque release
+- Alignement des versions Info.plist (`CFBundleShortVersionString` et `CFBundleVersion`) avec les numéros de releases GitHub
+- Première entrée dans l'appcast.xml Sparkle pour les mises à jour automatiques
+
+### Phase 4.8 — Intégrations (v0.4.8)
 - Synchronisation bidirectionnelle Notion
 - Raccourcis clavier globaux
 - Mode focus

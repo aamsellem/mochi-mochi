@@ -49,6 +49,7 @@ Mochi Mochi reprend le concept d'ULY et l'enveloppe dans une **application macOS
 - 🖥️ **Menubar** — Icône mochi avec compteur de tâches, accès rapide sans quitter votre travail
 - 🏠 **Données locales** — Vos données sont stockées localement en Markdown (les messages transitent par Claude Code via votre abonnement Anthropic)
 - 🔄 **Mises à jour automatiques** — Sparkle 2 intégré : vérification et installation automatiques des nouvelles versions
+- 🆕 **Annonce des nouveautés** — Mochi annonce les changements dans le chat après chaque mise à jour, avec la personnalité active
 
 ---
 
@@ -332,7 +333,8 @@ MochiMochi/
 - [x] **Phase 4.4 — Onboarding fix (v0.4.4)** : Fix alerte notifications bloquante pendant l'onboarding, ajout étape de configuration du répertoire de stockage (onboarding 10 étapes), détection de configuration existante
 - [x] **Phase 4.5 — Source Notion (v0.4.5)** : Filtrage des notes Notion par base spécifique (picker segmenté tout le workspace / base spécifique dans Réglages > Réunions), persistance dans config.md, prompt conditionnel notion-search vs notion-fetch
 - [x] **Phase 4.6 — Sparkle & préparations (v0.4.6)** : Mises à jour automatiques via Sparkle 2 (clé EdDSA, appcast, onglet Réglages), base Notion dédiée pour les préparations de réunions (auto-création), tri des réunions par date la plus proche
-- [ ] **Phase 4.7 — Intégrations (v0.4.7)** : Sync Notion bidirectionnelle, raccourcis globaux, mode focus
+- [x] **Phase 4.7 — Annonce nouveautés (v0.4.7)** : Mochi annonce les nouveautés après mise à jour (détection de version, whatsnew.txt, annonce IA avec personnalité), alignement version Info.plist avec releases GitHub
+- [ ] **Phase 4.8 — Intégrations (v0.4.8)** : Sync Notion bidirectionnelle, raccourcis globaux, mode focus
 - [ ] **Phase 5 — Polish (v1.0)** : Onboarding complet, toutes les personnalités, distribution DMG
 
 ---

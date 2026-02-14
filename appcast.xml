@@ -3,5 +3,25 @@
     <channel>
         <title>Mochi Mochi</title>
         <language>fr</language>
+        <item>
+            <title>Version 0.4.7</title>
+            <pubDate>Sat, 14 Feb 2026 14:57:52 +0000</pubDate>
+            <sparkle:version>10</sparkle:version>
+            <sparkle:shortVersionString>0.4.7</sparkle:shortVersionString>
+            <description><![CDATA[
+                <h2>Nouveautés</h2>
+                <ul>
+                    <li>Mochi annonce les nouveautés après chaque mise à jour via Claude Code</li>
+                    <li>Fichier whatsnew.txt pour personnaliser les notes de release</li>
+                    <li>Version et build number alignés avec les releases GitHub</li>
+                </ul>
+            ]]></description>
+            <enclosure
+                url="https://github.com/aamsellem/mochi-mochi/releases/download/v0.4.7/MochiMochi.dmg"
+                type="application/octet-stream"
+                sparkle:edSignature="VhqD4rUebqaIcXWjriBTEJ1cgO9Q634PTzwYDH2TTi5aLHwBfUa7tWxjsj5YWrPbRGyqLcu3kFWDXH3PVMLJBg=="
+                length="4027827"
+            />
+        </item>
     </channel>
 </rss>

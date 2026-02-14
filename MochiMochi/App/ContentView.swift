@@ -39,6 +39,7 @@ struct ContentView: View {
         .background(MochiTheme.backgroundLight)
         .task {
             await appState.sendSilentGreeting()
+            await appState.announceUpdateIfNeeded()
         }
     }
 

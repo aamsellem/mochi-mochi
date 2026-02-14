@@ -65,6 +65,9 @@ MochiMochi/
 │   ├── NotificationService.swift  # Notifications macOS + relances tracked
 │   ├── KeyboardShortcutService.swift # Raccourcis globaux
 │   └── UpdaterService.swift       # Mises à jour automatiques (Sparkle 2)
+├── Resources/                  # Ressources embarquées
+│   ├── whatsnew.txt           # Notes de release (lu après mise à jour)
+│   └── Skills/                # Skills Claude Code (folder reference)
 ├── Engine/                     # Moteur de traitement
 │   ├── CommandEngine.swift    # Orchestration des 14 commandes slash
 │   └── SlashCommandParser.swift # Parsing des commandes /slash

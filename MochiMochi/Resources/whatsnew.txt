@@ -1,0 +1,2 @@
+Mochi annonce maintenant les nouveautés après chaque mise à jour !
+Corrections de bugs et améliorations de performances.
