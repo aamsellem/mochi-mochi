@@ -734,7 +734,13 @@ L'intégration Notion utilise l'API REST officielle Notion avec authentification
 - Nouvelle clé de configuration `notion_base_reunions` dans `config.md`
 - Nouvelle propriété `notionMeetingDatabaseUrl` dans `AppConfig` et `AppState`
 
-### Phase 4.6 — Intégrations (v0.4.6)
+### Phase 4.6 — Sparkle & préparations (v0.4.6) ✅
+- Mises à jour automatiques via Sparkle 2 : intégration SPM, clé EdDSA (Ed25519), appcast XML, `UpdaterService` wrapper autour de `SPUStandardUpdaterController`
+- Nouvel onglet "Mises à jour" dans les réglages (7ème) : toggles vérification automatique et installation automatique, bouton vérifier manuellement, affichage version courante
+- Base Notion dédiée pour les préparations de réunions : auto-création via Claude Code si vide, configurable dans Réglages > Réunions, nouvelle clé `notion_base_preparations` dans `config.md`
+- Tri des réunions par date la plus proche en premier (ascendant, réunions sans date en dernier)
+
+### Phase 4.7 — Intégrations (v0.4.7)
 - Synchronisation bidirectionnelle Notion
 - Raccourcis clavier globaux
 - Mode focus

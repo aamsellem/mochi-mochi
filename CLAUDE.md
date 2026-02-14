@@ -14,6 +14,7 @@
 - **Secrets** : macOS Keychain (token Notion)
 - **Backend IA** : Claude Code en processus shell
 - **API externe** : Notion REST API (optionnel)
+- **Mises à jour** : Sparkle 2 (EdDSA, appcast XML)
 - **Build** : XcodeGen + Xcode 15+
 - **Distribution** : DMG via GitHub Releases
 
@@ -56,13 +57,14 @@ MochiMochi/
 │   ├── MenuBar/               # Icône menubar + mini-panel
 │   ├── Onboarding/            # Assistant 10 étapes (répertoire, profil, veille réunions)
 │   ├── Shop/                  # Boutique et inventaire
-│   └── Settings/              # Réglages (6 onglets)
+│   └── Settings/              # Réglages (7 onglets)
 ├── Services/                   # Services métier
 │   ├── ClaudeCodeService.swift    # Communication avec Claude Code (Process)
 │   ├── MemoryService.swift        # Lecture/écriture Markdown
 │   ├── NotionSyncService.swift    # Synchronisation bidirectionnelle
 │   ├── NotificationService.swift  # Notifications macOS + relances tracked
-│   └── KeyboardShortcutService.swift # Raccourcis globaux
+│   ├── KeyboardShortcutService.swift # Raccourcis globaux
+│   └── UpdaterService.swift       # Mises à jour automatiques (Sparkle 2)
 ├── Engine/                     # Moteur de traitement
 │   ├── CommandEngine.swift    # Orchestration des 14 commandes slash
 │   └── SlashCommandParser.swift # Parsing des commandes /slash
@@ -93,7 +95,7 @@ MochiMochi/
 - **Notes** : prise de notes rapide avec extraction de tâches via Claude Code
 - **Réunions** : vue Kanban horizontale (En préparation, Préparées, Notes à traiter, Traitées, Ignorées), auto-préparation Outlook, exclusions regexp
 - **Boutique** : achat de cosmétiques avec 🍙 (inventaire intégré)
-- **Réglages** : 6 sous-onglets (Général, Personnalité, Notifications, Réunions, Notion, Raccourcis)
+- **Réglages** : 7 sous-onglets (Général, Personnalité, Notifications, Réunions, Notion, Raccourcis, Mises à jour)
 
 ### Flux de communication avec Claude Code
 
