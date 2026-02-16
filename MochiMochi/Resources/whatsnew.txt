@@ -1,2 +1,3 @@
-Correction d'un crash dans les réglages Mises à jour.
-Nouvelles conventions de migration pour les mises à jour futures.
+Correction du tri et des filtres sur le suivi des tâches.
+Nouveau tri par priorité, deadline, création ou ordre alphabétique.
+Édition des tâches directement depuis le suivi (bouton crayon ou double-clic).

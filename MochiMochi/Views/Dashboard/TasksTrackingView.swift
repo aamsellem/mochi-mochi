@@ -6,12 +6,22 @@ struct TasksTrackingView: View {
     @State private var newTaskDeadline: Date? = nil
     @State private var showDatePicker = false
     @State private var selectedFilter: TaskFilter = .all
+    @State private var selectedSort: TaskSort = .priority
+    @State private var showSortMenu = false
+    @State private var editingTask: MochiTask?
 
     enum TaskFilter: String, CaseIterable {
         case all = "Toutes"
         case active = "En cours"
         case completed = "Terminées"
         case overdue = "En retard"
+    }
+
+    enum TaskSort: String, CaseIterable {
+        case priority = "Priorité"
+        case deadline = "Deadline"
+        case creation = "Création"
+        case alphabetical = "A → Z"
     }
 
     var body: some View {
@@ -40,6 +50,15 @@ struct TasksTrackingView: View {
                 )
         )
         .clipShape(RoundedRectangle(cornerRadius: MochiTheme.cornerRadiusXL, style: .continuous))
+        .sheet(item: $editingTask) { task in
+            TaskFormSheet(mode: .edit(task)) { updated in
+                if updated.title.isEmpty {
+                    appState.deleteTask(task)
+                } else {
+                    appState.updateTask(updated)
+                }
+            }
+        }
     }
 
     private var header: some View {
@@ -54,10 +73,35 @@ struct TasksTrackingView: View {
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
-                HStack(spacing: 8) {
-                    headerButton(icon: "arrow.up.arrow.down")
-                    headerButton(icon: "line.3.horizontal.decrease")
+                Menu {
+                    ForEach(TaskSort.allCases, id: \.self) { sort in
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.2)) { selectedSort = sort }
+                        } label: {
+                            HStack {
+                                Text(sort.rawValue)
+                                if selectedSort == sort {
+                                    Image(systemName: "checkmark")
+                                }
+                            }
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "arrow.up.arrow.down")
+                            .font(.system(size: 12, weight: .medium))
+                        Text(selectedSort.rawValue)
+                            .font(.system(size: 11, weight: .medium))
+                    }
+                    .foregroundStyle(MochiTheme.textLight.opacity(0.6))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(
+                        Capsule().fill(Color.gray.opacity(0.08))
+                    )
                 }
+                .menuStyle(.borderlessButton)
+                .fixedSize()
             }
 
             HStack(spacing: 6) {
@@ -69,17 +113,6 @@ struct TasksTrackingView: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 14)
-    }
-
-    private func headerButton(icon: String) -> some View {
-        Button(action: {}) {
-            Image(systemName: icon)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(MochiTheme.textLight.opacity(0.6))
-                .frame(width: 32, height: 32)
-                .background(Circle().fill(Color.gray.opacity(0.08)))
-        }
-        .buttonStyle(.plain)
     }
 
     private func filterPill(_ filter: TaskFilter) -> some View {
@@ -193,6 +226,17 @@ struct TasksTrackingView: View {
                 .background(
                     Capsule().fill(MochiTheme.primary.opacity(0.1))
                 )
+
+            if !task.isCompleted {
+                Button {
+                    editingTask = task
+                } label: {
+                    Image(systemName: "pencil")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(MochiTheme.textLight.opacity(0.3))
+                }
+                .buttonStyle(.plain)
+            }
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
@@ -200,6 +244,10 @@ struct TasksTrackingView: View {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(task.isOverdue ? Color.red.opacity(0.04) : Color.gray.opacity(0.03))
         )
+        .onTapGesture(count: 2) {
+            guard !task.isCompleted else { return }
+            editingTask = task
+        }
     }
 
     private func priorityDot(_ priority: TaskPriority) -> some View {
@@ -481,16 +529,52 @@ struct TasksTrackingView: View {
     // MARK: - Data
 
     private var filteredTasks: [MochiTask] {
+        let base: [MochiTask]
         switch selectedFilter {
-        case .all: return appState.tasks.sorted { !$0.isCompleted && $1.isCompleted }
-        case .active: return activeTasks
-        case .completed: return completedTasks
-        case .overdue: return overdueTasks
+        case .all:
+            // Actives en haut, complétées en bas
+            let active = sortTasks(appState.tasks.filter { !$0.isCompleted })
+            let completed = appState.tasks.filter { $0.isCompleted }
+                .sorted { ($0.completedAt ?? .distantPast) > ($1.completedAt ?? .distantPast) }
+            return active + completed
+        case .active:
+            base = activeTasks
+        case .completed:
+            return completedTasks.sorted { ($0.completedAt ?? .distantPast) > ($1.completedAt ?? .distantPast) }
+        case .overdue:
+            base = overdueTasks
+        }
+        return sortTasks(base)
+    }
+
+    private func sortTasks(_ tasks: [MochiTask]) -> [MochiTask] {
+        switch selectedSort {
+        case .priority:
+            return tasks.sorted { t1, t2 in
+                if t1.priority != t2.priority {
+                    return t1.priority.sortOrder < t2.priority.sortOrder
+                }
+                // A priorité égale, deadline la plus proche d'abord
+                let d1 = t1.deadline ?? .distantFuture
+                let d2 = t2.deadline ?? .distantFuture
+                return d1 < d2
+            }
+        case .deadline:
+            return tasks.sorted { t1, t2 in
+                let d1 = t1.deadline ?? .distantFuture
+                let d2 = t2.deadline ?? .distantFuture
+                if d1 != d2 { return d1 < d2 }
+                return t1.priority.sortOrder < t2.priority.sortOrder
+            }
+        case .creation:
+            return tasks.sorted { $0.createdAt > $1.createdAt }
+        case .alphabetical:
+            return tasks.sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
         }
     }
 
     private var activeTasks: [MochiTask] {
-        appState.tasks.filter { !$0.isCompleted && !$0.isOverdue }
+        appState.tasks.filter { !$0.isCompleted }
     }
 
     private var completedTasks: [MochiTask] {

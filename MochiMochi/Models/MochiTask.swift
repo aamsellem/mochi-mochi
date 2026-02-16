@@ -30,6 +30,15 @@ enum TaskPriority: String, Codable, CaseIterable {
         case .high: return 10
         }
     }
+
+    /// Ordre de tri (plus petit = plus prioritaire)
+    var sortOrder: Int {
+        switch self {
+        case .high: return 0
+        case .normal: return 1
+        case .low: return 2
+        }
+    }
 }
 
 // MARK: - Mochi Task

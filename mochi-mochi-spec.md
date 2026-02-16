@@ -746,7 +746,16 @@ L'intégration Notion utilise l'API REST officielle Notion avec authentification
 - Alignement des versions Info.plist (`CFBundleShortVersionString` et `CFBundleVersion`) avec les numéros de releases GitHub
 - Première entrée dans l'appcast.xml Sparkle pour les mises à jour automatiques
 
-### Phase 4.8 — Intégrations (v0.4.8)
+### Phase 4.8 — Fix crash & migration (v0.4.8) ✅
+- Fix crash dans Réglages > Mises à jour : `UpdaterService` manquant en `@EnvironmentObject` dans le `WindowGroup` principal
+- Conventions de migration ajoutées dans CLAUDE.md : règles pour gérer les utilisateurs existants lors des mises à jour (valeurs par défaut, optionnels, vérification de fichiers)
+
+### Phase 4.9 — Tri & édition tâches (v0.4.9) ✅
+- Tri des tâches : enum `TaskSort` avec 4 options (priorité, deadline, date de création, alphabétique), menu de sélection dans le header du suivi
+- Correction des filtres : le filtre "En cours" inclut désormais les tâches en retard (avant elles disparaissaient), comparateur de tri corrigé
+- Édition des tâches depuis le suivi : bouton crayon sur chaque tâche active + double-clic, ouverture du `TaskFormSheet` existant en mode `.edit(task)`, suppression si titre vidé
+
+### Phase 5.0 — Intégrations (v0.5.0)
 - Synchronisation bidirectionnelle Notion
 - Raccourcis clavier globaux
 - Mode focus
