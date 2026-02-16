@@ -783,6 +783,8 @@ struct MeetingsSettingsTab: View {
     @EnvironmentObject var appState: AppState
     @State private var notionSourceIsSpecific: Bool = false
     @State private var prepDatabaseUrl: String = ""
+    @State private var isCreatingPrepDatabase: Bool = false
+    @State private var prepDatabaseResult: String?
 
     private func menuPicker<T: Hashable>(value: T, options: [(T, String)], onChange: @escaping (T) -> Void) -> some View {
         Menu {
@@ -935,46 +937,95 @@ struct MeetingsSettingsTab: View {
                 settingsSectionHeader("Base de preparations")
 
                 SettingsCard {
-                    SettingsRow("URL de la base", icon: "tray.2.fill", iconColor: .purple, showDivider: !prepDatabaseUrl.isEmpty) {
+                    SettingsRow("Statut", icon: "tray.2.fill", iconColor: .purple, showDivider: true) {
                         if prepDatabaseUrl.isEmpty {
-                            Text("Sera creee automatiquement")
+                            Text("Non configuree")
                                 .font(.system(size: 12))
                                 .foregroundStyle(MochiTheme.textLight.opacity(0.4))
                         } else {
-                            Text("Configuree")
-                                .font(.system(size: 12))
-                                .foregroundStyle(.green)
+                            HStack(spacing: 6) {
+                                Circle()
+                                    .fill(.green)
+                                    .frame(width: 7, height: 7)
+                                Text("Configuree")
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(.green)
+                            }
                         }
                     }
 
-                    if !prepDatabaseUrl.isEmpty {
-                        SettingsRow("", showDivider: true) {
-                            TextField("https://notion.so/...", text: $prepDatabaseUrl)
-                                .textFieldStyle(.plain)
-                                .font(.system(size: 12))
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 6)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                        .fill(MochiTheme.backgroundLight.opacity(0.6))
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                                .stroke(Color.gray.opacity(0.18), lineWidth: 1)
-                                        )
-                                )
-                                .frame(maxWidth: .infinity)
-                                .onChange(of: prepDatabaseUrl) {
-                                    appState.notionPrepDatabaseUrl = prepDatabaseUrl
-                                    appState.saveConfig()
-                                }
-                        }
+                    SettingsRow("URL de la base", icon: "link", iconColor: .blue, showDivider: true) {
+                        TextField("https://notion.so/...", text: $prepDatabaseUrl)
+                            .textFieldStyle(.plain)
+                            .font(.system(size: 12))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(
+                                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                    .fill(MochiTheme.backgroundLight.opacity(0.6))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                            .stroke(Color.gray.opacity(0.18), lineWidth: 1)
+                                    )
+                            )
+                            .frame(maxWidth: .infinity)
+                            .onChange(of: prepDatabaseUrl) {
+                                appState.notionPrepDatabaseUrl = prepDatabaseUrl
+                                appState.saveConfig()
+                            }
                     }
 
                     VStack(spacing: 0) {
                         Button {
+                            guard !isCreatingPrepDatabase else { return }
+                            isCreatingPrepDatabase = true
+                            prepDatabaseResult = nil
+                            Task {
+                                let url = await appState.ensureNotionPrepDatabase()
+                                isCreatingPrepDatabase = false
+                                if let url {
+                                    prepDatabaseUrl = url
+                                    prepDatabaseResult = "Base creee avec succes"
+                                } else {
+                                    prepDatabaseResult = "Echec de la creation"
+                                }
+                            }
+                        } label: {
+                            HStack {
+                                if isCreatingPrepDatabase {
+                                    ProgressView()
+                                        .scaleEffect(0.5)
+                                        .frame(width: 22, height: 22)
+                                } else {
+                                    Image(systemName: "plus.square.fill")
+                                        .font(.system(size: 11))
+                                        .foregroundStyle(.white)
+                                        .frame(width: 22, height: 22)
+                                        .background(RoundedRectangle(cornerRadius: 5, style: .continuous).fill(.green))
+                                }
+                                Text(isCreatingPrepDatabase ? "Creation en cours..." : "Creer la base maintenant")
+                                    .font(.system(size: 13))
+                                    .foregroundStyle(MochiTheme.textLight)
+                                Spacer()
+                                if !isCreatingPrepDatabase {
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 11, weight: .semibold))
+                                        .foregroundStyle(MochiTheme.textLight.opacity(0.25))
+                                }
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 10)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(isCreatingPrepDatabase)
+
+                        Divider().opacity(0.15).padding(.horizontal, 14)
+
+                        Button {
                             prepDatabaseUrl = ""
                             appState.notionPrepDatabaseUrl = ""
                             appState.saveConfig()
+                            prepDatabaseResult = nil
                         } label: {
                             HStack {
                                 Image(systemName: "arrow.counterclockwise")
@@ -997,7 +1048,20 @@ struct MeetingsSettingsTab: View {
                     }
                 }
 
-                Text("Les preparations de reunions seront sauvegardees dans cette base Notion. Si vide, une base sera creee automatiquement lors de la prochaine preparation.")
+                if let result = prepDatabaseResult {
+                    HStack(spacing: 8) {
+                        Image(systemName: result.hasPrefix("Echec") ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
+                            .font(.system(size: 12))
+                            .foregroundStyle(result.hasPrefix("Echec") ? .red : .green)
+                        Text(result)
+                            .font(.system(size: 12))
+                            .foregroundStyle(MochiTheme.textLight.opacity(0.6))
+                    }
+                    .padding(.horizontal, 4)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+
+                Text("Collez l'URL d'une base Notion existante ou cliquez \"Creer la base maintenant\" pour en generer une automatiquement. Mochi y stockera les preparations et comptes-rendus de reunions.")
                     .font(.system(size: 11))
                     .foregroundStyle(MochiTheme.textLight.opacity(0.35))
                     .padding(.horizontal, 4)

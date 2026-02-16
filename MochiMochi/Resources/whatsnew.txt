@@ -1,3 +1,4 @@
-Correction du tri et des filtres sur le suivi des tâches.
-Nouveau tri par priorité, deadline, création ou ordre alphabétique.
-Édition des tâches directement depuis le suivi (bouton crayon ou double-clic).
+Tri et filtres bien visibles sur le suivi des tâches.
+Label "Trier par" et chevron sur le menu de tri.
+Base de préparations Notion configurable manuellement dans les réglages.
+Bouton "Créer la base maintenant" pour forcer la création Notion.

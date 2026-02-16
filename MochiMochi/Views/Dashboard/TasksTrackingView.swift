@@ -73,35 +73,47 @@ struct TasksTrackingView: View {
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
-                Menu {
-                    ForEach(TaskSort.allCases, id: \.self) { sort in
-                        Button {
-                            withAnimation(.easeInOut(duration: 0.2)) { selectedSort = sort }
-                        } label: {
-                            HStack {
-                                Text(sort.rawValue)
-                                if selectedSort == sort {
-                                    Image(systemName: "checkmark")
+                HStack(spacing: 6) {
+                    Text("Trier par")
+                        .font(.system(size: 12))
+                        .foregroundStyle(MochiTheme.textLight.opacity(0.5))
+
+                    Menu {
+                        ForEach(TaskSort.allCases, id: \.self) { sort in
+                            Button {
+                                withAnimation(.easeInOut(duration: 0.2)) { selectedSort = sort }
+                            } label: {
+                                HStack {
+                                    Text(sort.rawValue)
+                                    if selectedSort == sort {
+                                        Image(systemName: "checkmark")
+                                    }
                                 }
                             }
                         }
+                    } label: {
+                        HStack(spacing: 5) {
+                            Image(systemName: "arrow.up.arrow.down")
+                                .font(.system(size: 11, weight: .semibold))
+                            Text(selectedSort.rawValue)
+                                .font(.system(size: 12, weight: .semibold))
+                            Image(systemName: "chevron.down")
+                                .font(.system(size: 9, weight: .bold))
+                        }
+                        .foregroundStyle(MochiTheme.primary)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 7)
+                        .background(
+                            Capsule()
+                                .fill(MochiTheme.primary.opacity(0.1))
+                                .overlay(
+                                    Capsule().stroke(MochiTheme.primary.opacity(0.25), lineWidth: 1)
+                                )
+                        )
                     }
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "arrow.up.arrow.down")
-                            .font(.system(size: 12, weight: .medium))
-                        Text(selectedSort.rawValue)
-                            .font(.system(size: 11, weight: .medium))
-                    }
-                    .foregroundStyle(MochiTheme.textLight.opacity(0.6))
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(
-                        Capsule().fill(Color.gray.opacity(0.08))
-                    )
+                    .menuStyle(.borderlessButton)
+                    .fixedSize()
                 }
-                .menuStyle(.borderlessButton)
-                .fixedSize()
             }
 
             HStack(spacing: 6) {
@@ -119,25 +131,32 @@ struct TasksTrackingView: View {
         Button {
             withAnimation(.easeInOut(duration: 0.2)) { selectedFilter = filter }
         } label: {
-            HStack(spacing: 4) {
+            HStack(spacing: 5) {
                 Text(filter.rawValue)
                     .font(.system(size: 12, weight: .semibold))
                 if filter != .all {
                     Text("\(countFor(filter))")
                         .font(.system(size: 10, weight: .bold))
-                        .padding(.horizontal, 5)
-                        .padding(.vertical, 1)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
                         .background(
-                            Capsule().fill(selectedFilter == filter ? Color.white.opacity(0.3) : Color.gray.opacity(0.1))
+                            Capsule().fill(selectedFilter == filter ? Color.white.opacity(0.3) : MochiTheme.textLight.opacity(0.08))
                         )
                 }
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 7)
             .background(
-                Capsule().fill(selectedFilter == filter ? MochiTheme.primary : Color.gray.opacity(0.06))
+                Capsule()
+                    .fill(selectedFilter == filter ? MochiTheme.primary : Color.gray.opacity(0.08))
+                    .overlay(
+                        Capsule().stroke(
+                            selectedFilter == filter ? Color.clear : Color.gray.opacity(0.15),
+                            lineWidth: 1
+                        )
+                    )
             )
-            .foregroundStyle(selectedFilter == filter ? .white : MochiTheme.textLight.opacity(0.6))
+            .foregroundStyle(selectedFilter == filter ? .white : MochiTheme.textLight.opacity(0.7))
         }
         .buttonStyle(.plain)
     }

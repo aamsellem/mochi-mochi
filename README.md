@@ -336,7 +336,8 @@ MochiMochi/
 - [x] **Phase 4.7 — Annonce nouveautés (v0.4.7)** : Mochi annonce les nouveautés après mise à jour (détection de version, whatsnew.txt, annonce IA avec personnalité), alignement version Info.plist avec releases GitHub
 - [x] **Phase 4.8 — Fix crash & migration (v0.4.8)** : Fix crash réglages Mises à jour (EnvironmentObject manquant), conventions de migration pour les mises à jour futures
 - [x] **Phase 4.9 — Tri & édition tâches (v0.4.9)** : Tri des tâches par priorité/deadline/création/alphabétique, correction des filtres (tâches en retard visibles dans "En cours"), édition des tâches depuis le suivi (crayon + double-clic)
-- [ ] **Phase 5.0 — Intégrations (v0.5.0)** : Sync Notion bidirectionnelle, raccourcis globaux, mode focus
+- [x] **Phase 5.0 — UX tri & Notion (v0.5.0)** : Tri et filtres bien visibles (label "Trier par", chevron, contraste augmenté), base de préparations Notion configurable manuellement (URL + bouton "Créer la base maintenant")
+- [ ] **Phase 5.1 — Intégrations (v0.5.1)** : Sync Notion bidirectionnelle, raccourcis globaux, mode focus
 - [ ] **Phase 5 — Polish (v1.0)** : Onboarding complet, toutes les personnalités, distribution DMG
 
 ---

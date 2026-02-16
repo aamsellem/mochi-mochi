@@ -755,7 +755,13 @@ L'intégration Notion utilise l'API REST officielle Notion avec authentification
 - Correction des filtres : le filtre "En cours" inclut désormais les tâches en retard (avant elles disparaissaient), comparateur de tri corrigé
 - Édition des tâches depuis le suivi : bouton crayon sur chaque tâche active + double-clic, ouverture du `TaskFormSheet` existant en mode `.edit(task)`, suppression si titre vidé
 
-### Phase 5.0 — Intégrations (v0.5.0)
+### Phase 5.0 — UX tri & Notion (v0.5.0) ✅
+- Tri et filtres visibles : label "Trier par" ajouté devant le menu de tri, chevron ↓ pour indiquer le menu déroulant, contraste des filtres augmenté (fond 8% gris avec bordure au lieu de 6% sans bordure)
+- Menu de tri en rose MochiTheme.primary avec bordure rose, plus lisible
+- Base de préparations Notion configurable manuellement : champ URL toujours visible (même quand vide), bouton "Créer la base maintenant" avec spinner et feedback succès/échec
+- Bouton "Réinitialiser" conservé pour forcer la recréation
+
+### Phase 5.1 — Intégrations (v0.5.1)
 - Synchronisation bidirectionnelle Notion
 - Raccourcis clavier globaux
 - Mode focus
